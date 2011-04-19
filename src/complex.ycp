@@ -74,6 +74,7 @@ symbol ReadDialog() {
  */
 symbol WriteDialog() {
     Wizard::RestoreHelp(HELPS["write"]:"");
+    y2milestone( "Writing configuration" );
     // FcoeClient::SetAbortFunction(PollAbort);
     boolean ret = FcoeClient::Write();
     return ret ? `next : `abort;
@@ -106,9 +107,13 @@ symbol HandleServicesDialog( string id, map event )
 symbol HandleInterfacesDialog( string id, map event )
 {
      any action = event["ID"]:nil;
-     y2milestone( "Action: %1, returning `edit", action);
+
      if ( action == `edit )
+     {
+	 y2milestone( "Action: %1, returning `edit", action);
 	 return `edit;
+     }
+
      return nil;
 }
 

@@ -82,7 +82,7 @@ term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate ),
-				    `header(_("Portal Address"), _("Target Name"), _("Start-Up")),
+				    `header(_("Device Name"), _("Model"), _("FCoE Satus"), _("DCB Status")),
 				    []
 				    ),
 			     `Left(`HBox(
