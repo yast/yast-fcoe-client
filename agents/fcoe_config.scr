@@ -1,0 +1,29 @@
+/**
+ * File:
+ *   fcoe_config.scr
+ * Summary:
+ *   SCR Agent for reading/writing /etc/fcoe/config
+ *   using the ini-agent
+ * Access:
+ *   read/write
+ * Authors:
+ *   Gabriele Mohr <gs@suse.de>
+ * See:
+ *   yast2-agent-ini/ini.html
+ *   libscr
+ * Example:
+ *   Read(.fcoe.config.USE_SYSLOG)
+ *   ("yes")
+ **
+ *   Write(.fcoe.cfg-ethx.USE_SYSLOG, "no")
+ *   (true)
+ *
+ *
+ * Read/Sets the values defined in <tt>/etc/fcoe/config</tt>
+ * in an easy manner.
+ */
+.fcoe.config
+
+`ag_ini(
+  `SysConfigFile("/etc/fcoe/config")
+)
