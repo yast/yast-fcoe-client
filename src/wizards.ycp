@@ -1,0 +1,226 @@
+/* ------------------------------------------------------------------------------
+ * Copyright (c) 2006 Novell, Inc. All Rights Reserved.
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of version 2 of the GNU General Public License as published by the
+ * Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, contact Novell, Inc.
+ *
+ * To contact Novell about this file by physical or electronic mail, you may find
+ * current contact information at www.novell.com.
+ * ------------------------------------------------------------------------------
+ */
+
+/**
+ * File:	include/fcoe-client/wizards.ycp
+ * Package:	Configuration of fcoe-client
+ * Summary:	Wizards definitions
+ * Authors:	Gabriele Mohr <gs@suse.de>
+ *
+ */
+
+{
+
+    textdomain "fcoe-client";
+
+    import "Sequencer";
+    import "Wizard";
+    import "CWM";
+    import "CWMTab";
+    import "CWMServiceStart";
+    
+    include "fcoe-client/complex.ycp";
+    include "fcoe-client/dialogs.ycp";
+
+
+/**
+ * Main workflow of the fcoe-client configuration
+ * @return sequence result
+ */
+    
+any GlobalDialog() {
+
+    map <string, map <string, any> > widgets =
+	$[
+	  "serv" : $[
+		     "widget"		: `custom,
+		     "help"		: HELPS["services"]:"",
+		     "custom_widget"	: ServicesDialogContent(),
+		     "handle"		: HandleServicesDialog,
+		     "init"		: InitServicesDialog,
+		     "store"		: StoreServicesDialog,
+		     ],
+	  "inter" : $[
+		      "widget"		: `custom,
+		      "help"		: HELPS["interfaces"]:"",
+		      "custom_widget"	: InterfacesDialogContent(),
+		      "handle"		: HandleInterfacesDialog,
+		      "init"		: InitInterfacesDialog,
+		      "store"		: StoreInterfacesDialog,
+		      ],
+	  "config" : $[
+		       "widget"		: `custom,
+		       "help"		: HELPS["configuration"]:"",
+		       "custom_widget"	: ConfigurationDialogContent(),
+		       "init"		: InitConfigurationDialog,
+		       "handle"		: HandleConfigurationDialog,
+		       "store"		: StoreConfigurationDialog,
+		       ],
+	  ];
+    map <string, any> tabs =
+	$[
+	  "services" : $[
+			 // Header of tab in tab widget
+			 "header" : _("&Services"),
+			 "widget_names" : ["serv"],
+			 "contents" : ServicesDialogContent(),
+			 ],
+	  "interfaces" : $[
+			   // Header of tab in tab widget		 
+			   "header" : _("&Interfaces"),
+			   "widget_names" : ["inter"],
+			   "contents" : InterfacesDialogContent(),
+			   ],
+	  "configuration" : $[
+			      // Header of tab in tab widget		 
+			      "header" : _("&Configuration"),
+			      "widget_names" : ["config"],
+			      "contents" : ConfigurationDialogContent(),
+			      ],
+	  ];
+
+    string ini_tab = "";
+    
+    if ( true )			// TODO: check lldpad / fcoemon running
+	ini_tab = "interfaces";
+    else
+	ini_tab = "services";
+    
+    map <string, any> wd =
+	$[
+	  "tab" : CWMTab::CreateWidget (
+					$[
+					  "tab_order" : ["services", "interfaces", "configuration"],
+					  "tabs" : tabs,
+					  "widget_descr" : widgets,
+					  "initial_tab" : ini_tab,
+					  ])
+	  ];  
+
+    term contents = `VBox("tab");
+
+    list <map <string, any> > w = CWM::CreateWidgets (["tab"], (map <string, map <string, any> >) wd);
+
+    // Initialization dialog caption
+    string caption = _("Fibre Channel over Ethernet Configuration");
+    contents = CWM::PrepareDialog (contents, w);
+
+    Wizard::SetContentsButtons (
+				caption,
+				contents,
+				"",
+				Label::BackButton (),
+				Label::FinishButton()
+				);
+    Wizard::DisableBackButton ();
+    // TODO: provide icon
+    // Wizard::SetTitleIcon("yast-fcoe-client");
+
+    return CWM::Run (w, $[`abort : ReallyAbort]);
+}
+
+any MainSequence() {
+
+	map aliases = $[
+			"global": ``( GlobalDialog() ),
+			"edit"	: ``( EditDialog() )
+			];
+
+	map sequence = $[
+			 "ws_start" : "global",
+			 "global" : $[
+				    `abort	: `abort,
+				    `edit	:  "edit",
+				    `next	: `next
+				    ],
+			 "edit" : $[
+				    `abort	: `abort,
+				    `next	: "global"
+				    ]
+			 ];
+
+	Wizard::CreateDialog();
+
+	any ret = Sequencer::Run(aliases, sequence);
+
+	UI::CloseDialog();
+	return ret;
+    }
+
+/**
+ * Whole configuration of fcoe-client
+ * @return sequence result
+ */
+    any FcoeClientSequence() {
+
+	map aliases = $[
+			"read"	: [ ``( ReadDialog() ), true ],
+			"main"	:   ``( MainSequence() ),
+			"write"	: [ ``( WriteDialog() ), true ]
+			];
+
+	map sequence = $[
+			 "ws_start" : "read",
+			 "read" : $[
+				    `abort	: `abort,
+				    `next	: "main"
+				    ],
+			 "main" : $[
+				    `abort	: `abort,
+				    `next	: "write",
+				    ],
+			 "write" : $[
+				     `abort	: `abort,
+				     `next	: `next
+				     ]
+			 ];
+
+	Wizard::CreateDialog();
+
+	any ret = Sequencer::Run(aliases, sequence);
+
+	UI::CloseDialog();
+	return ret;
+    }
+
+/**
+ * Whole configuration of fcoe-client but without reading and writing.
+ * For use with autoinstallation.
+ * @return sequence result
+ */
+    any FcoeClientAutoSequence() {
+
+	/* Initialization dialog caption */
+	string caption = _("FcoeClient Configuration");
+	/* Initialization dialog contents */
+	term contents = `Label(_("Initializing..."));
+
+	Wizard::CreateDialog();
+	Wizard::SetContentsButtons(caption, contents, "",
+				   Label::BackButton(), Label::NextButton());
+
+	any ret = MainSequence();
+
+	UI::CloseDialog();
+	return ret;
+    }
+
+/* EOF */
+}

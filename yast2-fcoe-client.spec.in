@@ -1,0 +1,31 @@
+@HEADER-COMMENT@
+
+@HEADER@
+Requires:	yast2
+BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-devtools yast2-testsuite
+
+BuildArchitectures:	noarch
+
+Summary:	Configuration of fcoe-client
+
+%description
+-
+
+@PREP@
+
+@BUILD@
+
+@INSTALL@
+
+@CLEAN@
+
+%files
+%defattr(-,root,root)
+%dir @yncludedir@/fcoe-client
+@yncludedir@/fcoe-client/*
+@clientdir@/fcoe-client.ycp
+@clientdir@/fcoe-client_*.ycp
+@moduledir@/FcoeClient.*
+@moduledir@/FcoeClient2.*
+@desktopdir@/fcoe-client.desktop
+%doc @docdir@

@@ -1,0 +1,138 @@
+/* ------------------------------------------------------------------------------
+ * Copyright (c) 2006 Novell, Inc. All Rights Reserved.
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of version 2 of the GNU General Public License as published by the
+ * Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, contact Novell, Inc.
+ *
+ * To contact Novell about this file by physical or electronic mail, you may find
+ * current contact information at www.novell.com.
+ * ------------------------------------------------------------------------------
+ */
+
+/**
+ * File:	include/fcoe-client/complex.ycp
+ * Package:	Configuration of fcoe-client
+ * Summary:	Dialogs definitions
+ * Authors:	Gabriele Mohr <gs@suse.de>
+ *
+ */
+
+{
+
+textdomain "fcoe-client";
+
+import "Label";
+import "Popup";
+import "Wizard";
+import "Wizard_hw";
+import "Confirm";
+import "FcoeClient";
+
+
+include "fcoe-client/helps.ycp";
+
+/**
+ * Return a modification status
+ * @return true if data was modified
+ */
+boolean Modified() {
+    return FcoeClient::Modified();
+}
+
+boolean ReallyAbort() {
+    return !FcoeClient::Modified() || Popup::ReallyAbort(true);
+}
+
+boolean PollAbort() {
+    return UI::PollInput() == `abort;
+}
+
+/**
+ * Read settings dialog
+ * @return `abort if aborted and `next otherwise
+ */
+symbol ReadDialog() {
+    Wizard::RestoreHelp(HELPS["read"]:"");
+    // FcoeClient::SetAbortFunction(PollAbort);
+    if (!Confirm::MustBeRoot()) return `abort;
+    boolean ret = FcoeClient::Read();
+    return ret ? `next : `abort;
+}
+
+/**
+ * Write settings dialog
+ * @return `abort if aborted and `next otherwise
+ */
+symbol WriteDialog() {
+    Wizard::RestoreHelp(HELPS["write"]:"");
+    // FcoeClient::SetAbortFunction(PollAbort);
+    boolean ret = FcoeClient::Write();
+    return ret ? `next : `abort;
+}
+
+/**
+ * Init
+ **/
+void InitServicesDialog (string id) {
+    y2milestone( "Init services dialog" );
+}
+
+void InitInterfacesDialog (string id) {
+    y2milestone( "Init interfaces dialog" );
+}
+
+void InitConfigurationDialog (string id) {
+    y2milestone( "Init configuration dialog" );
+}
+     
+/**
+ * Handle
+ **/
+symbol HandleServicesDialog( string id, map event )
+{
+     any action = event["ID"]:nil;
+     return nil;
+}
+
+symbol HandleInterfacesDialog( string id, map event )
+{
+     any action = event["ID"]:nil;
+     y2milestone( "Action: %1, returning `edit", action);
+     if ( action == `edit )
+	 return `edit;
+     return nil;
+}
+
+symbol HandleConfigurationDialog( string id, map event )
+{
+     any action = event["ID"]:nil;
+     return nil;
+}
+
+/**
+ * Store
+ **/
+
+void StoreServicesDialog (string id, map event) {
+ y2milestone( "Store services dialog" );
+}
+
+void StoreInterfacesDialog (string id, map event) {
+ y2milestone( "Store interfaces dialog" );
+}
+
+void StoreConfigurationDialog (string id, map event) {
+ y2milestone( "Store configuration dialog" );
+}
+
+/* EOF */
+}

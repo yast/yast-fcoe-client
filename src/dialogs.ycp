@@ -1,0 +1,128 @@
+/* ------------------------------------------------------------------------------
+ * Copyright (c) 2006 Novell, Inc. All Rights Reserved.
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of version 2 of the GNU General Public License as published by the
+ * Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, contact Novell, Inc.
+ *
+ * To contact Novell about this file by physical or electronic mail, you may find
+ * current contact information at www.novell.com.
+ * ------------------------------------------------------------------------------
+ */
+
+/**
+ * File:	include/fcoe-client/dialogs.ycp
+ * Package:	Configuration of fcoe-client
+ * Summary:	Dialogs definitions
+ * Authors:	Gabriele Mohr <gs@suse.de>
+ *
+ */
+
+{
+
+    textdomain "fcoe-client";
+
+    import "Label";
+    import "Wizard";
+    import "FcoeClient";
+
+    include "fcoe-client/helps.ycp";
+
+integer mbox_x = 1;
+integer mbox_y = 0.5;
+
+term items = `VBox(
+		   `VSpacing (0.4),
+		   `Left (`RadioButton (`id ("startup_auto"), `opt (`notify),
+					"When Booting")),
+		   `Left (`RadioButton (`id ("startup_manual"), `opt (`notify),
+					"Manually")
+			  ),
+		   `VSpacing (0.4)
+		   );
+
+symbol EditDialog() {
+
+    y2milestone( "Edit dialog ***" );
+    return `next;
+}
+
+/**
+ * Services dialog
+ * @return term
+ */
+
+term ServicesDialogContent () {
+
+    return `MarginBox( mbox_x, mbox_y,
+		       `VBox (
+			      `VSpacing(2.0),
+			      // frame
+			      `Frame (_("Service Start"),
+				      `VBox (`RadioButtonGroup (`id ("service_startup"), items))
+				      ),
+			      `VStretch()
+			      )
+		       );
+}
+
+/**
+ * Interfaces dialog
+ * @return term
+ */
+term InterfacesDialogContent () {
+    return `MarginBox( mbox_x, mbox_y,
+		       `VBox(
+			     `Table(`id(`interfaces), `opt(`notify, `immediate ),
+				    `header(_("Portal Address"), _("Target Name"), _("Start-Up")),
+				    []
+				    ),
+			     `Left(`HBox(
+					 `PushButton(`id(`add), _("Add")),
+					 `PushButton(`id(`edit), _("Edit"))
+					 ))
+			     )
+		       );
+}
+
+/**
+ * Configuration dialog
+ * @return term
+ */
+term ConfigurationDialogContent() {
+    return `MarginBox( mbox_x, mbox_y,
+		       `VBox(
+			     `VSpacing(2.0),
+			     `Frame (
+				     // Frame label - configuration settings of FCoE
+				     _("Configuration Settings"),
+				     `VBox (
+					    // ComboBox label
+					    `Left(`ComboBox(`id("debug"), _("&Debug"),
+							    [`item(`id("yes"), "yes", true ),
+							     `item(`id("no"), "no" )
+							     ])
+						  ),
+					    `Left(`ComboBox(`id("syslog"), _("&Use syslog"),
+							    [`item(`id("yes"), "yes", true ),
+							     `item(`id("no"), "no" )
+							     ])
+						  )
+					    )
+				     ),
+			     `VStretch()
+			     )
+		       );
+}
+	
+
+/* EOF */
+}
