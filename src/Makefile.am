@@ -17,9 +17,8 @@ desktop_DATA =			\
 	fcoe-client.desktop
 
 module_DATA =			\
-	FcoeClient.ycp		\
-	FcoeClient2.pm		\
-	FcoeClient3.py
+	FcoeClient.ycp
+
 
 # create a symlink for local build, #145327
 fcoe-client:
