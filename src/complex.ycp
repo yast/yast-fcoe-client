@@ -88,6 +88,32 @@ void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
 }
 
+//
+//
+//
+boolean GetFCoEStatus( string interface )
+{
+    boolean ret = true;
+    string vlan_interface = "";
+    string command = sformat( "sed -n \"s/\([^ ]*\) *.*${%1}/\1/p\" /proc/net/vlan/config", interface );
+    y2milestone( "Executing command: %1", command );
+
+    map output = (map)SCR::Execute( .target.bash_output, command );
+    vlan_interface = output["stdout"]:"";
+    if (vlan_interface != "")
+    {
+	y2milestone( "VLAN channel %1 found, reading /etc/fcoe/cfg-%1", vlan_interface );
+	
+    }
+    else
+    {
+	y2milestone( "Nothing configured for %1", interface );
+	ret = false;
+    }
+
+    return ret;
+}
+
 void InitInterfacesDialog (string id) {
     y2milestone( "Init interfaces dialog" );
 
@@ -96,7 +122,10 @@ void InitInterfacesDialog (string id) {
     
     list <term> table_items = [];
     integer row = 0;
+    boolean fcoe_status = false;
+    
     foreach ( map card, netcards, {
+	    fcoe_status = GetFCoEStatus( card["dev_name"]:"" );
 	    table_items = add( table_items, `item(`id(row), card["dev_name"]:"", card["device"]:"" ) );
 	    row = row + 1;
 	});
@@ -104,6 +133,7 @@ void InitInterfacesDialog (string id) {
     UI::ChangeWidget( `id(`interfaces), `Items, table_items );
     
 }
+
 
 void InitConfigurationDialog (string id) {
     y2milestone( "Init configuration dialog" );
