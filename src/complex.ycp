@@ -95,11 +95,13 @@ boolean GetFCoEStatus( string interface )
 {
     boolean ret = true;
     string vlan_interface = "";
-    string command = sformat( "sed -n \"s/\([^ ]*\) *.*${%1}/\1/p\" /proc/net/vlan/config", interface );
+    string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1/\\1/p' /proc/net/vlan/config", interface );
     y2milestone( "Executing command: %1", command );
 
     map output = (map)SCR::Execute( .target.bash_output, command );
+    y2milestone( "Output: %1", output );	
     vlan_interface = output["stdout"]:"";
+
     if (vlan_interface != "")
     {
 	y2milestone( "VLAN channel %1 found, reading /etc/fcoe/cfg-%1", vlan_interface );
