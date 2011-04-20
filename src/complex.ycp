@@ -39,6 +39,7 @@ import "FcoeClient";
 
 
 include "fcoe-client/helps.ycp";
+include "fcoe-client/dialogs.ycp";
 
 /**
  * Return a modification status
@@ -89,6 +90,19 @@ void InitServicesDialog (string id) {
 
 void InitInterfacesDialog (string id) {
     y2milestone( "Init interfaces dialog" );
+
+    list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
+    y2milestone( "Detected netcards: %1", netcards );
+    
+    list <term> table_items = [];
+    integer row = 0;
+    foreach ( map card, netcards, {
+	    table_items = add( table_items, `item(`id(row), card["dev_name"]:"", card["device"]:"" ) );
+	    row = row + 1;
+	});
+	      
+    UI::ChangeWidget( `id(`interfaces), `Items, table_items );
+    
 }
 
 void InitConfigurationDialog (string id) {
