@@ -99,10 +99,10 @@ boolean GetFCoEStatus( string interface )
     y2milestone( "Executing command: %1", command );
 
     map output = (map)SCR::Execute( .target.bash_output, command );
-    y2milestone( "Output: %1", output );	
-    vlan_interface = output["stdout"]:"";
+    // read stdout (remove \n at the end)
+    vlan_interface = substring( output["stdout"]:"", 0, size(output["stdout"]:"") -1 );
 
-    if (vlan_interface != "")
+    if ( vlan_interface != "")
     {
 	y2milestone( "VLAN channel %1 found, reading /etc/fcoe/cfg-%1", vlan_interface );
 	
