@@ -22,7 +22,7 @@
  * Read/Sets the values defined in <tt>/etc/fcoe/config</tt>
  * in an easy manner.
  */
-.fcoe.config
+.fcoe
 
 `ag_ini(
   `SysConfigFile("/etc/fcoe/config")

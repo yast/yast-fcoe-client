@@ -139,6 +139,24 @@ void InitInterfacesDialog (string id) {
 
 void InitConfigurationDialog (string id) {
     y2milestone( "Init configuration dialog" );
+
+    list <string> options = (list<string>) SCR::Dir(.fcoe);
+    y2milestone( "List of options: %1", options );
+
+    if ( options != [] )
+    {	
+	string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
+	string syslog_val = (string)SCR::Read(add(.fcoe, "SYSLOG"));
+
+	if ( debug_val == "yes" )
+	    UI::ChangeWidget(`id("debug"), `Value, "yes" );
+	else
+	    UI::ChangeWidget(`id("debug"), `Value, "no" );
+    }
+    else
+    {
+	y2error( "Cannot read /etc/fcoe/config");
+    }
 }
      
 /**
