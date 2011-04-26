@@ -82,7 +82,7 @@ term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate ),
-				    `header(_("Device Name"), _("Model"), _("FCoE Satus"), _("DCB Status")),
+				    `header(_("Device Name"), _("Model"), _("FCoE Enabled"), _("DCB Required")),
 				    []
 				    ),
 			     `Left(`HBox(
@@ -107,8 +107,8 @@ term ConfigurationDialogContent() {
 				     `VBox (
 					    // ComboBox label
 					    `Left(`ComboBox(`id("debug"), _("&Debug"),
-							    [`item(`id("yes"), "yes", true ),
-							     `item(`id("no"), "no" )
+							    [`item(`id("yes"), "yes" ),
+							     `item(`id("no"), "no", true )
 							     ])
 						  ),
 					    `Left(`ComboBox(`id("syslog"), _("&Use syslog"),

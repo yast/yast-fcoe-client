@@ -91,9 +91,9 @@ void InitServicesDialog (string id) {
 //
 //
 //
-boolean GetFCoEStatus( string interface )
+string GetFCoEStatus( string interface )
 {
-    boolean ret = true;
+    string status = "\"no\"";
     string vlan_interface = "";
     string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1/\\1/p' /proc/net/vlan/config", interface );
     y2milestone( "Executing command: %1", command );
@@ -104,17 +104,28 @@ boolean GetFCoEStatus( string interface )
 
     if ( vlan_interface != "")
     {
-	y2milestone( "VLAN channel %1 found, reading /etc/fcoe/cfg-%1", vlan_interface );
-	
+	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_interface );
+	y2milestone( "VLAN channel %1 found, reading %2", vlan_interface, file_name );
+	string content = (string)SCR::Read(.target.string, file_name);
+	y2milestone( "Content: %1", content );
+	list <string> lines = splitstring( content, "\n" );
+
+	foreach( string line, (list<string>)lines, {
+		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+		{
+		    status = substring( line, 12 );
+		    y2milestone( "FCOE_ENABLE: %1", status );
+		}
+	    });
     }
     else
     {
 	y2milestone( "Nothing configured for %1", interface );
-	ret = false;
     }
 
-    return ret;
+    return status;
 }
+
 
 void InitInterfacesDialog (string id) {
     y2milestone( "Init interfaces dialog" );
@@ -124,11 +135,12 @@ void InitInterfacesDialog (string id) {
     
     list <term> table_items = [];
     integer row = 0;
-    boolean fcoe_status = false;
     
     foreach ( map card, netcards, {
-	    fcoe_status = GetFCoEStatus( card["dev_name"]:"" );
-	    table_items = add( table_items, `item(`id(row), card["dev_name"]:"", card["device"]:"" ) );
+	    table_items = add( table_items,
+			       `item(`id(row), card["dev_name"]:"", card["device"]:"",
+				     GetFCoEStatus(card["dev_name"]:"") )
+			       );
 	    row = row + 1;
 	});
 	      
@@ -152,6 +164,11 @@ void InitConfigurationDialog (string id) {
 	    UI::ChangeWidget(`id("debug"), `Value, "yes" );
 	else
 	    UI::ChangeWidget(`id("debug"), `Value, "no" );
+
+	if ( syslog_val == "yes" )
+	    UI::ChangeWidget(`id("syslog"), `Value, "yes" );
+	else
+	    UI::ChangeWidget(`id("syslog"), `Value, "no" );   
     }
     else
     {
