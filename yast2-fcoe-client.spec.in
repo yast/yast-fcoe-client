@@ -27,4 +27,6 @@ Summary:	Configuration of fcoe-client
 @clientdir@/fcoe-client_*.ycp
 @moduledir@/FcoeClient.*
 @desktopdir@/fcoe-client.desktop
+%dir @scrconfdir@
+@scrconfdir@/*.scr
 %doc @docdir@
