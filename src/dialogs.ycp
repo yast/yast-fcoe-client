@@ -85,10 +85,7 @@ term InterfacesDialogContent () {
 				    `header(_("Device Name"), _("Model"), _("FCoE Enabled"), _("DCB Required")),
 				    []
 				    ),
-			     `Left(`HBox(
-					 `PushButton(`id(`add), _("Add")),
-					 `PushButton(`id(`edit), _("Edit"))
-					 ))
+			     `Left( `PushButton(`id(`edit), _("Change &Settings")) )
 			     )
 		       );
 }
