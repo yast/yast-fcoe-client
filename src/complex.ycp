@@ -88,12 +88,12 @@ void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
 }
 
+
 //
+// Check whether a VLAN interface is configured for a given network interface 
 //
-//
-string GetFCoEStatus( string interface )
+string GetVlanInterface ( string interface )
 {
-    string status = "\"no\"";
     string vlan_interface = "";
     string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1/\\1/p' /proc/net/vlan/config", interface );
     y2milestone( "Executing command: %1", command );
@@ -102,34 +102,51 @@ string GetFCoEStatus( string interface )
     // read stdout (remove \n at the end)
     vlan_interface = substring( output["stdout"]:"", 0, size(output["stdout"]:"") -1 );
 
+    return vlan_interface;
+}
+
+map <string, string> GetFCoEStatus( string vlan_interface )
+{
+    map <string, string> status_map = $[];
+    
     if ( vlan_interface != "")
     {
 	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_interface );
 	y2milestone( "VLAN channel %1 found, reading %2", vlan_interface, file_name );
 	string content = (string)SCR::Read(.target.string, file_name);
-	y2milestone( "Content: %1", content );
+	if ( content == "" )
+	    y2warning( "Cannot read %1", file_name );
+	else
+	    y2milestone( "Content: %1", content );
+
 	list <string> lines = splitstring( content, "\n" );
 
 	foreach( string line, (list<string>)lines, {
 		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
 		{
-		    status = substring( line, 12 );
-		    y2milestone( "FCOE_ENABLE: %1", status );
+		    status_map = add( status_map, "FCOE_ENABLE", substring( line, 12 ) );
+		    y2milestone( "FCOE_ENABLE: %1", status_map["FCOE_ENABLE"]:"" );
+		}
+		if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+		{
+		    status_map = add( status_map, "DCB_REQUIRED", substring( line, 13 ) );
+		    y2milestone( "DCB_REQUIRED: %1", status_map["DCB_REQUIRED"]:"" );
 		}
 	    });
     }
     else
     {
-	y2milestone( "Nothing configured for %1", interface );
+	y2error( "Interface not valid" );
     }
 
-    return status;
+    return status_map;
 }
 
 
 void InitInterfacesDialog (string id) {
     y2milestone( "Init interfaces dialog" );
-
+    string vlan_interface = "";
+    
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
     y2milestone( "Detected netcards: %1", netcards );
     
@@ -137,9 +154,16 @@ void InitInterfacesDialog (string id) {
     integer row = 0;
     
     foreach ( map card, netcards, {
+	    map <string, string> status_map = $[];
+	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
+	    if ( vlan_interface != "" )
+		status_map = GetFCoEStatus( vlan_interface );
+	    else
+		vlan_interface = "not configured";
+	    
 	    table_items = add( table_items,
-			       `item(`id(row), card["dev_name"]:"", card["device"]:"",
-				     GetFCoEStatus(card["dev_name"]:"") )
+			       `item(`id(row), card["dev_name"]:"", card["device"]:"", vlan_interface,
+				     status_map["FCOE_ENABLE"]:"", status_map["DCB_REQUIRED"]:"" )
 			       );
 	    row = row + 1;
 	});

@@ -82,10 +82,13 @@ term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate ),
-				    `header(_("Device Name"), _("Model"), _("FCoE Enabled"), _("DCB Required")),
+				    `header(_("Device Name"), _("Model"), _("VLAN Interface"),
+					    _("FCoE Enabled"), _("DCB Required")),
 				    []
 				    ),
-			     `Left( `PushButton(`id(`edit), _("Change &Settings")) )
+			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings") ),
+					  `PushButton(`id(`config), _("Configure &VLAN")) )
+				   )
 			     )
 		       );
 }
