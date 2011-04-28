@@ -87,7 +87,7 @@ term InterfacesDialogContent () {
 				    []
 				    ),
 			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings") ),
-					  `PushButton(`id(`config), _("Configure &VLAN")) )
+					  `PushButton(`id(`config), _("Create &VLAN Interface")) )
 				   )
 			     )
 		       );
