@@ -38,6 +38,10 @@ import "Progress";
 import "Report";
 import "Summary";
 import "Message";
+import "Stage";
+import "Mode";
+import "Package";
+import "Popup";
 
 /**
  * Prototypes
@@ -122,19 +126,148 @@ global void SetAbortFunction(boolean() function) {
 
 
 // Settings: Define all variables needed for configuration of fcoe-client
-// TODO FIXME: Define all the variables necessary to hold
-// TODO FIXME: the configuration here (with the appropriate
-// TODO FIXME: description)
-// TODO FIXME: For example:
-//   /**
-//    * List of the configured cards.
-//    */
-//   list cards = [];
+
+// Define all the variables necessary to hold
+
+global string NOT_CONFIGURED = "not configured";
+
+// map containing information about networks cards and VLAN, FCoE aand DCB status
+map <integer, list> network_interfaces = $[];
+
+// map containing information about values in /etc/fcoe/config
+map <string, string> fcoe_general_config = $[];
+
 //
-//   /**
-//    * Some additional parameter needed for the configuration.
-//    */
-//   boolean additional_parameter = true;
+// Check whether open-fcoe is installed and do installation if user agrees
+// (dependencies: 'lldpad', 'libhbalinux2' and 'libHBAAPI2') 
+//
+boolean CheckInstalledPackages()
+{
+    boolean ret = false;
+    
+    // don't check interactively for packages (bnc#367300)
+    // skip it during initial and second stage or when create AY profile
+    if(Stage::cont() || Stage::initial() || Mode::config()) return true;
+    y2milestone("Check if open-fcoe package installed");
+
+    if( !Package::InstallMsg( "open-fcoe",
+			      _("<p>To continue the FCoE configuration, the <b>%1</b> package must be installed.</p>") +
+			      _("<p>Install it now?</p>")) )
+    {
+        Popup::Error( Message::CannotContinueWithoutPackagesInstalled() );
+    }
+    else
+    {
+	ret = true;
+    }
+    return ret;
+}
+
+
+//
+// Check whether a VLAN interface is configured for a given network interface 
+//
+string GetVlanInterface ( string interface )
+{
+    string vlan_interface = "";
+    string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1/\\1/p' /proc/net/vlan/config",
+			      interface );
+    y2milestone( "Executing command: %1", command );
+
+    map output = (map)SCR::Execute( .target.bash_output, command );
+    // read stdout (remove \n at the end)
+    vlan_interface = substring( output["stdout"]:"", 0, size(output["stdout"]:"") -1 );
+
+    return vlan_interface;
+}
+
+//
+// Get status of FCoE and DCB from /etc/fcoe/cfg-eth<vlan_interface
+//
+map <string, string> GetFCoEStatus( string vlan_interface )
+{
+    map <string, string> status_map = $[];
+    
+    if ( vlan_interface != "")
+    {
+	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_interface );
+	y2milestone( "VLAN channel %1 found, reading %2", vlan_interface, file_name );
+
+	string content = (string)SCR::Read(.target.string, file_name);
+	if ( content == "" )
+	    y2warning( "Cannot read %1", file_name );
+	else
+	    y2milestone( "Content: %1", content );
+
+	list <string> lines = splitstring( content, "\n" );
+
+	foreach( string line, (list<string>)lines, {
+		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+		{
+		    status_map = add( status_map, "FCOE_ENABLE", substring( line, 12 ) );
+		}
+		if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+		{
+		    status_map = add( status_map, "DCB_REQUIRED", substring( line, 13 ) );
+		}
+	    });
+    }
+    else
+    {
+	y2error( "Interface not valid" );
+    }
+
+    return status_map;
+}
+
+//
+// Detect network interface cards (hardware probe) and get status  
+//
+void DetectNetworkCards()
+{
+    string vlan_interface = "";
+    
+    list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
+    y2milestone( "Detected netcards: %1", netcards );
+    integer row = 0;
+    
+    foreach ( map card, netcards, {
+	    list info_list = [];
+	    map <string, string> status_map = $[];
+	    
+	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
+	    if ( vlan_interface != "" )
+		status_map = GetFCoEStatus( vlan_interface );
+	    else
+		vlan_interface = NOT_CONFIGURED;
+
+	    info_list = add( info_list, card["dev_name"]:"");
+	    info_list = add( info_list, card["device"]:"");
+	    info_list = add( info_list, vlan_interface );
+	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");
+	    info_list = add( info_list, status_map["DCB_REQUIRED"]:"");
+	    
+	    network_interfaces = add( network_interfaces, row, info_list );
+	    row = row + 1;
+	} );
+}
+
+//
+// Returns the map containing all detected interfaces including
+// configuration status of VLAN, FCoE and DCB
+//
+global map <integer, list> GetNetworkCards()
+{
+    return network_interfaces;
+}
+
+//
+// Returns the map containing general FCoE configuration
+//
+global map <string, string> GetFcoeConfig()
+{
+    return fcoe_general_config;
+}
 
 /**
  * Read all fcoe-client settings
@@ -154,18 +287,18 @@ global boolean Read() {
     // We do not set help text here, because it was set outside
     Progress::New( caption, " ", steps, [
 	    /* Progress stage 1/3 */
-	    _("Read the database"),
+	    _("Check installed packages"),
 	    /* Progress stage 2/3 */
-	    _("Read the previous settings"),
+	    _("Detect network cards"),
 	    /* Progress stage 3/3 */
-	    _("Detect the devices")
+	    _("Check services")
 	], [
 	    /* Progress step 1/3 */
-	    _("Reading the database..."),
+	    _("Checking for installed packages..."),
 	    /* Progress step 2/3 */
-	    _("Reading the previous settings..."),
+	    _("Detecting network cards..."),
 	    /* Progress step 3/3 */
-	    _("Detecting the devices..."),
+	    _("Checking for services..."),
 	    /* Progress finished */
 	    _("Finished")
 	],
@@ -175,15 +308,21 @@ global boolean Read() {
     // read database
     if(Abort()) return false;
     Progress::NextStage();
+
+    boolean installed = CheckInstalledPackages();
+    
     /* Error message */
-    if(false) Report::Error(_("Cannot read database."));
+    if( !installed ) return false;
     sleep(sl);
 
     // read current settings
     if(Abort()) return false;
     Progress::NextStage();
+
+    DetectNetworkCards();
+
     /* Error message */
-    if(false) Report::Error(Message::CannotReadCurrentSettings());
+    if(false) Report::Error(_("Cannot get information about netcards"));
     sleep(sl);
 
     // detect devices

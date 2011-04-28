@@ -88,58 +88,28 @@ void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
 }
 
-
 //
-// Check whether a VLAN interface is configured for a given network interface 
 //
-string GetVlanInterface ( string interface )
+//
+void AdjustButtons()
 {
-    string vlan_interface = "";
-    string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1/\\1/p' /proc/net/vlan/config", interface );
-    y2milestone( "Executing command: %1", command );
-
-    map output = (map)SCR::Execute( .target.bash_output, command );
-    // read stdout (remove \n at the end)
-    vlan_interface = substring( output["stdout"]:"", 0, size(output["stdout"]:"") -1 );
-
-    return vlan_interface;
-}
-
-map <string, string> GetFCoEStatus( string vlan_interface )
-{
-    map <string, string> status_map = $[];
+    map <integer, list> netcards = FcoeClient::GetNetworkCards();
+    integer row = (integer)UI::QueryWidget( `id(`interfaces), `CurrentItem );
+    list card = netcards[row]:[];
     
-    if ( vlan_interface != "")
+    y2milestone( "row: %1 card: %2", row, card );
+
+    // check VLAN status 
+    if ( card[2]:"" == FcoeClient::NOT_CONFIGURED )
     {
-	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_interface );
-	y2milestone( "VLAN channel %1 found, reading %2", vlan_interface, file_name );
-	string content = (string)SCR::Read(.target.string, file_name);
-	if ( content == "" )
-	    y2warning( "Cannot read %1", file_name );
-	else
-	    y2milestone( "Content: %1", content );
-
-	list <string> lines = splitstring( content, "\n" );
-
-	foreach( string line, (list<string>)lines, {
-		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
-		{
-		    status_map = add( status_map, "FCOE_ENABLE", substring( line, 12 ) );
-		    y2milestone( "FCOE_ENABLE: %1", status_map["FCOE_ENABLE"]:"" );
-		}
-		if ( regexpmatch( line, "^DCB_REQUIRED" ) )
-		{
-		    status_map = add( status_map, "DCB_REQUIRED", substring( line, 13 ) );
-		    y2milestone( "DCB_REQUIRED: %1", status_map["DCB_REQUIRED"]:"" );
-		}
-	    });
+	UI::ChangeWidget( `id(`edit), `Enabled, false );
+	UI::ChangeWidget( `id(`config), `Enabled, true );
     }
     else
     {
-	y2error( "Interface not valid" );
+	UI::ChangeWidget( `id(`edit), `Enabled, true );
+	UI::ChangeWidget( `id(`config), `Enabled, false );
     }
-
-    return status_map;
 }
 
 
@@ -147,32 +117,27 @@ void InitInterfacesDialog (string id) {
     y2milestone( "Init interfaces dialog" );
     string vlan_interface = "";
     
-    list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
-    y2milestone( "Detected netcards: %1", netcards );
+    map <integer, list> netcards = FcoeClient::GetNetworkCards();
+    y2milestone( "Got netcards: %1", netcards );
     
     list <term> table_items = [];
-    integer row = 0;
     
-    foreach ( map card, netcards, {
-	    map <string, string> status_map = $[];
-	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
-	    if ( vlan_interface != "" )
-		status_map = GetFCoEStatus( vlan_interface );
-	    else
-		vlan_interface = "not configured";
-	    
+    foreach ( integer row, list card, netcards, {
 	    table_items = add( table_items,
-			       `item(`id(row), card["dev_name"]:"", card["device"]:"", vlan_interface,
-				     status_map["FCOE_ENABLE"]:"", status_map["DCB_REQUIRED"]:"" )
+			       `item(`id(row), card[0]:"", card[1]:"", card[2]:"",
+				     card[3]:"", card[4]:"" )
 			       );
-	    row = row + 1;
 	});
 	      
     UI::ChangeWidget( `id(`interfaces), `Items, table_items );
+    UI::ChangeWidget( `id(`interfaces), `CurrentItem, `id(0) );
     
+    AdjustButtons();
 }
 
-
+//
+//
+//
 void InitConfigurationDialog (string id) {
     y2milestone( "Init configuration dialog" );
 
@@ -213,10 +178,16 @@ symbol HandleInterfacesDialog( string id, map event )
 {
      any action = event["ID"]:nil;
 
+     y2milestone( "Event: %1", event );
+     
      if ( action == `edit )
      {
 	 y2milestone( "Action: %1, returning `edit", action);
 	 return `edit;
+     }
+     else if ( action == `interfaces )
+     {
+	 AdjustButtons();
      }
 
      return nil;
