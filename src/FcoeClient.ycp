@@ -221,11 +221,40 @@ map <string, string> GetFCoEStatus( string vlan_interface )
 }
 
 //
+// Check whether the network interface (netcard, e.g. eth0 is DCB capable)
+//
+string DCBCapable( string netcard )
+{
+    string command = sformat( "LANG=POSIX dcbtool gc %1 dcb", netcard );
+    y2milestone( "Executing command: %1", command );
+
+    // TODO: lldpad must be started to be able to use dcbtool
+    //       -> started in CheckServices() -> Read()
+    //          ACHTUNG: Reihenfolge !!!
+    map output = (map)SCR::Execute( .target.bash_output, command );
+    y2milestone( "Output:  %1", output);
+
+    if ( output["exit"]:255 == 0 )
+    {
+	list <string> lines = splitstring( output["stdout"]:"", "\n" );	
+    }
+    else
+    {
+	y2error( "Error: %1", output["stderr"]:"" );
+	Popup::Error ( output["stderr"]:"" );
+	return "no";
+    }
+
+    return "no";
+}
+
+//
 // Detect network interface cards (hardware probe) and get status  
 //
 void DetectNetworkCards()
 {
     string vlan_interface = "";
+    string dcb_capable = "";
     
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
     y2milestone( "Detected netcards: %1", netcards );
@@ -241,9 +270,12 @@ void DetectNetworkCards()
 	    else
 		vlan_interface = NOT_CONFIGURED;
 
+	    dcb_capable = DCBCapable( card["dev_name"]:"" );
+	    
 	    info_list = add( info_list, card["dev_name"]:"");
 	    info_list = add( info_list, card["device"]:"");
 	    info_list = add( info_list, vlan_interface );
+	    info_list = add( info_list, dcb_capable );
 	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");
 	    info_list = add( info_list, status_map["DCB_REQUIRED"]:"");
 	    

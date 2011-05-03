@@ -89,26 +89,37 @@ void InitServicesDialog (string id) {
 }
 
 //
+// Get current network interface (netcard)
 //
+list GetCurrentNetcard()
+{
+    list card = [];
+    
+    map <integer, list> netcards = FcoeClient::GetNetworkCards();
+    integer row = (integer)UI::QueryWidget( `id(`interfaces), `CurrentItem );
+    card = netcards[row]:[];
+    y2milestone( "Current row: %1 card: %2", row, card );
+    
+    return card;
+}
+
+//
+// Adjust buttons, means set 'Change Settings' and 'Create VLAN' sensitive or insensitive
 //
 void AdjustButtons()
 {
-    map <integer, list> netcards = FcoeClient::GetNetworkCards();
-    integer row = (integer)UI::QueryWidget( `id(`interfaces), `CurrentItem );
-    list card = netcards[row]:[];
-    
-    y2milestone( "row: %1 card: %2", row, card );
+    list card = GetCurrentNetcard();
 
     // check VLAN status 
     if ( card[2]:"" == FcoeClient::NOT_CONFIGURED )
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
-	UI::ChangeWidget( `id(`config), `Enabled, true );
+	UI::ChangeWidget( `id(`create), `Enabled, true );
     }
     else
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, true );
-	UI::ChangeWidget( `id(`config), `Enabled, false );
+	UI::ChangeWidget( `id(`create), `Enabled, false );
     }
 }
 
@@ -125,7 +136,7 @@ void InitInterfacesDialog (string id) {
     foreach ( integer row, list card, netcards, {
 	    table_items = add( table_items,
 			       `item(`id(row), card[0]:"", card[1]:"", card[2]:"",
-				     card[3]:"", card[4]:"" )
+				     card[3]:"", card[4]:"", card[5]:"" )
 			       );
 	});
 	      
@@ -182,12 +193,29 @@ symbol HandleInterfacesDialog( string id, map event )
      
      if ( action == `edit )
      {
-	 y2milestone( "Action: %1, returning `edit", action);
+	 y2milestone( "Action: %1, returning %1", action);
 	 return `edit;
      }
      else if ( action == `interfaces )
      {
 	 AdjustButtons();
+     }
+     else if ( action == `create )
+     {
+	 list card = (list)GetCurrentNetcard();
+	 string dev_name = card[0]:"";
+	 boolean ret = Popup::YesNoHeadline( _("Creating VLAN Interface"),
+					     sformat( _("Do you really want to create
+ a VLAN Interface on %1?"), dev_name ) );
+	 if ( ret == true )
+	 {
+	     string command = sformat( "fipvlan -c -s %1", dev_name );
+	     y2milestone( "Executing command: %1", command );
+	 }
+	 else
+	 {
+	     y2milestone( "Creating VLAN interface canceled" );
+	 }
      }
 
      return nil;
