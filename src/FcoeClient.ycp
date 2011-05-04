@@ -245,7 +245,9 @@ string DCBCapable( string netcard )
 		{
 		    // Status:         Failed		interface not DCB capable
 		    // Status:         Successful
-		    status = substring( line, 16 );
+		    line = deletechars ( line, " \t:" );
+		    status = substring( line, 6 );
+		    y2milestone( "Status: %1", status );
 		} } );
 	if ( status == "Successful" )
 	{
@@ -254,8 +256,8 @@ string DCBCapable( string netcard )
     }
     else
     {
-	y2error( "Error: %1", output["stderr"]:"" );
-	Popup::Error ( output["stderr"]:"" );
+	y2error( "Exit code: %1 Error: %2", output["exit"]:255, output["stderr"]:"" );
+	// if ( output["stderr"]:"" != "" ) Popup::Error ( output["stderr"]:"" );
     }
 
     return ret;
