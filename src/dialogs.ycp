@@ -49,10 +49,37 @@ term items = `VBox(
 		   `VSpacing (0.4)
 		   );
 
-symbol EditDialog() {
+/*symbol EditDialog() {
 
     y2milestone( "Edit dialog ***" );
     return `next;
+}
+*/
+
+term EditDialogContents()
+{
+    return `VBox(
+		 `VStretch(),
+		 `HBox(
+		       `HStretch(),
+		       `HSpacing (1),
+		       `VBox(
+			     `ComboBox( `id(`fcoe), _("FCoE Enabled"),
+					[`item(`id("yes"), "yes" ),
+					 `item(`id("no"), "no", true ) ]
+					),
+			     `VSpacing (2),
+			     `ComboBox( `id(`dcb), _("DCB Required"),
+					[`item(`id("yes"), "yes" ),
+					 `item(`id("no"), "no", true ) ]
+					),
+			     `VSpacing (2)
+			     ),
+		       `HSpacing (1),
+		       `HStretch()
+		       ),
+		 `VStretch()
+		 );
 }
 
 /**

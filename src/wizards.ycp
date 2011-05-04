@@ -125,7 +125,7 @@ any GlobalDialog() {
     Wizard::SetContentsButtons (
 				caption,
 				contents,
-				"",
+				"",		//help
 				Label::BackButton (),
 				Label::FinishButton()
 				);
@@ -135,6 +135,36 @@ any GlobalDialog() {
 
     return CWM::Run (w, $[`abort : ReallyAbort]);
 }
+
+any EditDialog() {
+    string caption = _("Change FCoE Settings");
+
+    map <string, any> widgets =
+	$[
+	  "edit" : $[
+		     "widget": 	`custom,
+		     "custom_widget": EditDialogContents(), 
+		     "help"  : HELPS["change"]:""
+		     ]
+	  ];
+ 
+    term contents = `VBox("edit");
+    
+    list<map <string, any> > w = CWM::CreateWidgets (["edit"],
+						     (map <string, map <string, any> >)widgets);
+    contents = CWM::PrepareDialog( contents, w );
+
+    Wizard::SetContentsButtons( caption,
+				contents,
+				"",		// help HELP["edit"]
+				Label::BackButton(),
+				Label::NextButton());
+
+    any ret = CWM::Run( w, $[`abort:ReallyAbort ]);
+
+    return ret;
+}
+
 
 any MainSequence() {
 
@@ -168,59 +198,59 @@ any MainSequence() {
  * Whole configuration of fcoe-client
  * @return sequence result
  */
-    any FcoeClientSequence() {
+any FcoeClientSequence() {
 
-	map aliases = $[
-			"read"	: [ ``( ReadDialog() ), true ],
-			"main"	:   ``( MainSequence() ),
-			"write"	: [ ``( WriteDialog() ), true ]
-			];
+    map aliases = $[
+		    "read"	: [ ``( ReadDialog() ), true ],
+		    "main"	:   ``( MainSequence() ),
+		    "write"	: [ ``( WriteDialog() ), true ]
+		    ];
 
-	map sequence = $[
-			 "ws_start" : "read",
-			 "read" : $[
-				    `abort	: `abort,
-				    `next	: "main"
-				    ],
-			 "main" : $[
-				    `abort	: `abort,
-				    `next	: "write",
-				    ],
-			 "write" : $[
-				     `abort	: `abort,
-				     `next	: `next
-				     ]
-			 ];
+    map sequence = $[
+		     "ws_start" : "read",
+		     "read" : $[
+				`abort	: `abort,
+				`next	: "main"
+				],
+		     "main" : $[
+				`abort	: `abort,
+				`next	: "write",
+				],
+		     "write" : $[
+				 `abort	: `abort,
+				 `next	: `next
+				 ]
+		     ];
 
-	Wizard::CreateDialog();
+    Wizard::CreateDialog();
 
-	any ret = Sequencer::Run(aliases, sequence);
+    any ret = Sequencer::Run(aliases, sequence);
 
-	UI::CloseDialog();
-	return ret;
-    }
+    UI::CloseDialog();
+    return ret;
+}
 
 /**
  * Whole configuration of fcoe-client but without reading and writing.
  * For use with autoinstallation.
  * @return sequence result
  */
-    any FcoeClientAutoSequence() {
+any FcoeClientAutoSequence() {
 
-	/* Initialization dialog caption */
-	string caption = _("FcoeClient Configuration");
-	/* Initialization dialog contents */
-	term contents = `Label(_("Initializing..."));
+    /* Initialization dialog caption */
+    string caption = _("FcoeClient Configuration");
+    /* Initialization dialog contents */
+    term contents = `Label(_("Initializing..."));
 
-	Wizard::CreateDialog();
-	Wizard::SetContentsButtons(caption, contents, "",
-				   Label::BackButton(), Label::NextButton());
+    Wizard::CreateDialog();
+    Wizard::SetContentsButtons(caption, contents, "",
+			       Label::BackButton(), Label::NextButton());
 
-	any ret = MainSequence();
+    any ret = MainSequence();
 
-	UI::CloseDialog();
-	return ret;
-    }
+    UI::CloseDialog();
+    return ret;
+}
 
 /* EOF */
 }
