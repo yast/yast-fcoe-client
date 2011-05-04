@@ -147,7 +147,7 @@ boolean CheckInstalledPackages()
 {
     boolean ret = false;
     
-    // don't check interactively for packages (bnc#367300)
+    // don't check interactively for packages (bnc#367300) -> comment from iscsi-client
     // skip it during initial and second stage or when create AY profile
     if(Stage::cont() || Stage::initial() || Mode::config()) return true;
     y2milestone("Check if open-fcoe package installed");
@@ -266,6 +266,14 @@ string DCBCapable( string netcard )
 }
 
 //
+//
+//
+void CheckServices()
+{
+    
+}
+
+//
 // Detect network interface cards (hardware probe) and get status  
 //
 void DetectNetworkCards()
@@ -311,6 +319,28 @@ global map <integer, list> GetNetworkCards()
 }
 
 //
+// Read /etc/fcoe/config
+//
+void ReadFcoeConfig()
+{
+    list <string> options = (list<string>) SCR::Dir(.fcoe);
+    y2milestone( "List of options: %1", options );
+    // TODO take values from list
+    if ( options != [] )
+    {	
+	string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
+	fcoe_general_config = add( fcoe_general_config, "DEBUG", debug_val );
+	
+	string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
+	fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
+    }
+    else
+    {
+	y2error( "Cannot read /etc/fcoe/config" ); 
+    }
+}
+
+//
 // Returns the map containing general FCoE configuration
 //
 global map <string, string> GetFcoeConfig()
@@ -339,9 +369,11 @@ global boolean Read()
 					 /* Progress stage 1/3 */
 					 _("Check installed packages"),
 					 /* Progress stage 2/3 */
-					 _("Detect network cards"),
+					 _("Check services"),
 					 /* Progress stage 3/3 */
-					 _("Check services")
+					 _("Detect network cards"),
+					 /* Progress stage 4/4 */
+					 _("Read /etc/fcoe/config" )
 					 ], [
 					     /* Progress step 1/3 */
 					     _("Checking for installed packages..."),
@@ -349,16 +381,18 @@ global boolean Read()
 					     _("Detecting network cards..."),
 					     /* Progress step 3/3 */
 					     _("Checking for services..."),
+					     /* Progress step 4/4 */
+					     _("Reading /etc/fcoe/config" ),
 					     /* Progress finished */
 					     _("Finished")
 					     ],
 		   ""
 		   );
 
-    // read database
     if(Abort()) return false;
     Progress::NextStage();
 
+    // checking whether open-fcoe is installed (requires lldpad, ...)
     boolean installed = CheckInstalledPackages();
     
     /* Error message */
@@ -369,19 +403,34 @@ global boolean Read()
     if(Abort()) return false;
     Progress::NextStage();
 
-    DetectNetworkCards();
-
+    // check daemon fcoemon and lldpad
+    CheckServices();
+    
     /* Error message */
-    if(false) Report::Error(_("Cannot get information about netcards"));
+    if(false) Report::Error(_("Checking for services failed"));
     sleep(sl);
 
-    // detect devices
     if(Abort()) return false;
     Progress::NextStage();
+
+    // detect netcards - TODO return value
+    DetectNetworkCards();
+    
     /* Error message */
     if(false) Report::Warning(_("Cannot detect devices."));
     sleep(sl);
 
+    // read general FCoE settings
+    if(Abort()) return false;
+    Progress::NextStage();
+
+    // check daemon fcoemon and lldpad
+    ReadFcoeConfig();
+    
+    /* Error message */
+    if(false) Report::Error(_("Checking for services failed"));
+    sleep(sl);
+    
     Progress::Finish();
     
     if(Abort()) return false;

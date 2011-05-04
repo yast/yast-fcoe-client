@@ -153,27 +153,20 @@ void InitInterfacesDialog (string id) {
 void InitConfigurationDialog (string id) {
     y2milestone( "Init configuration dialog" );
 
-    list <string> options = (list<string>) SCR::Dir(.fcoe);
-    y2milestone( "List of options: %1", options );
+    map <string, string> fcoe_config = FcoeClient::GetFcoeConfig();
+    y2milestone( "Fcoe configuration %1", fcoe_config  );
 
-    if ( options != [] )
+    if ( fcoe_config!= $[] )
     {	
-	string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
-	string syslog_val = (string)SCR::Read(add(.fcoe, "SYSLOG"));
-
-	if ( debug_val == "yes" )
+	if ( fcoe_config["DEBUG"]:"" == "yes" )
 	    UI::ChangeWidget(`id("debug"), `Value, "yes" );
 	else
 	    UI::ChangeWidget(`id("debug"), `Value, "no" );
 
-	if ( syslog_val == "yes" )
+	if ( fcoe_config["USE_SYSLOG"]:"" == "yes" )
 	    UI::ChangeWidget(`id("syslog"), `Value, "yes" );
 	else
 	    UI::ChangeWidget(`id("syslog"), `Value, "no" );   
-    }
-    else
-    {
-	y2error( "Cannot read /etc/fcoe/config");
     }
 }
 
@@ -267,6 +260,11 @@ void StoreConfigurationDialog (string id, map event) {
 
 void StoreEditDialog (string id, map event) {
  y2milestone( "Store edit dialog" );
+
+ string fcoe_enabled = (string)UI::QueryWidget( `id(`fcoe), `Value );
+ string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
+
+ 
 }
 
 /* EOF */

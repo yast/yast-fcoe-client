@@ -49,12 +49,6 @@ term items = `VBox(
 		   `VSpacing (0.4)
 		   );
 
-/*symbol EditDialog() {
-
-    y2milestone( "Edit dialog ***" );
-    return `next;
-}
-*/
 
 term EditDialogContents()
 {
