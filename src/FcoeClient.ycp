@@ -129,6 +129,8 @@ global void SetAbortFunction(boolean() function) {
 
 // Define all the variables necessary to hold
 
+global integer current_card = 0;		// currently selected card, means row in list of cards
+
 global string NOT_CONFIGURED = "not configured";
 
 // map containing information about networks cards and VLAN, FCoE aand DCB status
@@ -204,11 +206,11 @@ map <string, string> GetFCoEStatus( string vlan_interface )
 	foreach( string line, (list<string>)lines, {
 		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
 		{
-		    status_map = add( status_map, "FCOE_ENABLE", substring( line, 12 ) );
+		    status_map = add( status_map, "FCOE_ENABLE", deletechars( substring(line, 12), "\"") );
 		}
 		if ( regexpmatch( line, "^DCB_REQUIRED" ) )
 		{
-		    status_map = add( status_map, "DCB_REQUIRED", substring( line, 13 ) );
+		    status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
 		}
 	    });
     }

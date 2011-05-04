@@ -144,7 +144,10 @@ any EditDialog() {
 	  "edit" : $[
 		     "widget": 	`custom,
 		     "custom_widget": EditDialogContents(), 
-		     "help"  : HELPS["change"]:""
+		     "help"  : HELPS["change"]:"",
+		     "init"	: InitEditDialog,
+		     "handle"	: HandleEditDialog,
+		     "store"	: StoreEditDialog,
 		     ]
 	  ];
  
@@ -156,7 +159,7 @@ any EditDialog() {
 
     Wizard::SetContentsButtons( caption,
 				contents,
-				"",		// help HELP["edit"]
+				"",		// help HELP["change"]
 				Label::BackButton(),
 				Label::NextButton());
 

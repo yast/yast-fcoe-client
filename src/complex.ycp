@@ -142,6 +142,7 @@ void InitInterfacesDialog (string id) {
 	      
     UI::ChangeWidget( `id(`interfaces), `Items, table_items );
     UI::ChangeWidget( `id(`interfaces), `CurrentItem, `id(0) );
+    FcoeClient::current_card = 0;
     
     AdjustButtons();
 }
@@ -175,7 +176,21 @@ void InitConfigurationDialog (string id) {
 	y2error( "Cannot read /etc/fcoe/config");
     }
 }
-     
+
+//
+// InitEditDialog
+//
+void InitEditDialog( string id )
+{
+    y2milestone( "Init edit dialog" );
+    map <integer, list> cards = FcoeClient::GetNetworkCards();
+    list card = cards[ FcoeClient::current_card ]:[];
+
+    // set values for 'FCoE Enabled' and 'DCB Required'
+    UI::ChangeWidget( `id(`fcoe), `Value, card[4]:"" );
+    UI::ChangeWidget( `id(`dcb), `Value, card[5]:"" );
+}
+
 /**
  * Handle
  **/
@@ -198,6 +213,7 @@ symbol HandleInterfacesDialog( string id, map event )
      }
      else if ( action == `interfaces )
      {
+	 FcoeClient::current_card = (integer)UI::QueryWidget( `id(`interfaces), `CurrentItem );
 	 AdjustButtons();
      }
      else if ( action == `create )
@@ -227,6 +243,12 @@ symbol HandleConfigurationDialog( string id, map event )
      return nil;
 }
 
+symbol HandleEditDialog( string id, map event )
+{
+     any action = event["ID"]:nil;
+     return nil;
+}
+
 /**
  * Store
  **/
@@ -241,6 +263,10 @@ void StoreInterfacesDialog (string id, map event) {
 
 void StoreConfigurationDialog (string id, map event) {
  y2milestone( "Store configuration dialog" );
+}
+
+void StoreEditDialog (string id, map event) {
+ y2milestone( "Store edit dialog" );
 }
 
 /* EOF */
