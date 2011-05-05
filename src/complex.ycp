@@ -218,13 +218,54 @@ symbol HandleInterfacesDialog( string id, map event )
      {
 	 list card = (list)GetCurrentNetcard();
 	 string dev_name = card[0]:"";
-	 boolean ret = Popup::YesNoHeadline( _("Creating VLAN Interface"),
-					     sformat( _("Do you really want to create
- a VLAN Interface on %1?"), dev_name ) );
+	 boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
+					     sformat( _("Do you really want to create a network
+interface on %1 for discovered FCoE VLAN interface
+and start the FCoE initiator?"), dev_name ) );
 	 if ( ret == true )
 	 {
+	     string vlan_interface = "";
+	     string fcoe_vlan_interface = "";
+	     map status_map = $[];
+	     // create and start FCoE with 'fipvlan -c -s eth3'
+	     // revert this (in case of 'Abort') with 'vconfig rem eth3.200'
 	     string command = sformat( "fipvlan -c -s %1", dev_name );
 	     y2milestone( "Executing command: %1", command );
+	     map output = (map)SCR::Execute( .target.bash_output, command );
+	     y2milestone( "Output: %1", output );
+
+	     if ( output["exit"]:255 == 0 )
+	     {
+		 // Get new status and exchange list (table) entry
+		 vlan_interface = FcoeClient::GetVlanInterface( card[0]:"" );
+		 if ( vlan_interface == "" )
+		 {
+		     fcoe_vlan_interface = FcoeClient::NOT_AVAILABLE;
+		 }
+		 else
+		 {
+		     fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card[0]:"", vlan_interface );
+
+		     if ( fcoe_vlan_interface != "" )
+			 status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
+		     else
+			 fcoe_vlan_interface = FcoeClient::NOT_CONFIGURED;
+		 }
+		 y2milestone( "FCoE VLAN interface: %1", fcoe_vlan_interface );     
+		 // set new value in global map network_interfaces
+		 card[2] = fcoe_vlan_interface;
+		 FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
+		 y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
+		 y2milestone( "Replace value 2 in row %1 by %2", FcoeClient::current_card,  fcoe_vlan_interface );
+		 // replace value in table 
+		 UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), fcoe_vlan_interface );
+		 AdjustButtons();
+
+	     }
+	     else
+	     {
+		 Popup::Error( sformat( _("Cannot create and start FCoE on %1"), dev_name ) ); 
+	     }
 	 }
 	 else
 	 {

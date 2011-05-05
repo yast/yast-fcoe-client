@@ -180,7 +180,7 @@ boolean CheckInstalledPackages()
 //------------------------------------------
 //eth3            | 200  | 00:0d:ec:a2:ef:00
 //
-string GetVlanInterface( string interface )
+global string GetVlanInterface( string interface )
 {
     string vlan_interface = "";
 
@@ -221,7 +221,7 @@ string GetVlanInterface( string interface )
 //Name-Type: VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD
 //eth3.200  | 200  | eth3
 
-string GetFcoeVlanInterface ( string interface, string vlan_interface )
+global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 {
     string vlan_device_name = "";
 
@@ -230,25 +230,35 @@ string GetFcoeVlanInterface ( string interface, string vlan_interface )
     y2milestone( "Executing command: %1", command );
 
     map output = (map)SCR::Execute( .target.bash_output, command );
-    // read stdout (remove \n at the end)
-    vlan_interface = substring( output["stdout"]:"", 0, size(output["stdout"]:"") -1 );
-
+    y2milestone( "Output: %1", output );
+    // read stdout (remove \n and white spaces)
+    vlan_device_name = deletechars( output["stdout"]:"", " \n\t" );
+    
+    y2milestone( "Returning: %1", vlan_device_name );
     return vlan_device_name;
 }
 
 //
 // Get status of FCoE and DCB from /etc/fcoe/cfg-eth<vlan_device_name>
 //
-map <string, string> GetFCoEStatus( string vlan_device_name )
+global map <string, string> GetFCoEStatus( string vlan_device_name )
 {
     map <string, string> status_map = $[];
+    string content = "";
     
     if ( vlan_device_name != "")
     {
 	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
 
-	string content = (string)SCR::Read(.target.string, file_name);
+	content = (string)SCR::Read(.target.string, file_name);
+	if ( content == "" || content == nil )
+	{
+	    y2warning( "Cannot read %1", file_name );
+	    file_name = substring( file_name, 0, size(file_name)-5 );  // remove '-fcoe';
+	    content = (string)SCR::Read(.target.string, file_name);
+	}
+
 	if ( content == "" || content == nil )
 	{
 	    y2warning( "Cannot read %1", file_name );
@@ -258,6 +268,7 @@ map <string, string> GetFCoEStatus( string vlan_device_name )
 	{
 	    y2milestone( "Content: %1", content );
 	}
+	
 	list <string> lines = splitstring( content, "\n" );
 
 	foreach( string line, (list<string>)lines, {
@@ -385,6 +396,11 @@ void DetectNetworkCards()
 global map <integer, list> GetNetworkCards()
 {
     return network_interfaces;
+}
+
+global void SetNetworkCardsValue( integer row, list card )
+{
+    network_interfaces[row] = card;
 }
 
 //
