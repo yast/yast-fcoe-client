@@ -254,11 +254,15 @@ and start the FCoE initiator?"), dev_name ) );
 		 y2milestone( "FCoE VLAN interface: %1", fcoe_vlan_interface );     
 		 // set new value in global map network_interfaces
 		 card[2] = fcoe_vlan_interface;
+		 card[4] = status_map["FCOE_ENABLE"]:"";
+		 card[5] = status_map["DCB_REQUIRED"]:"";
 		 FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 		 y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
-		 y2milestone( "Replace value 2 in row %1 by %2", FcoeClient::current_card,  fcoe_vlan_interface );
+
 		 // replace value in table 
 		 UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), fcoe_vlan_interface );
+		 UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["FCOE_ENABLE"]:"" );
+		 UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["DCB_REQUIRED"]:"" );
 		 AdjustButtons();
 
 	     }
