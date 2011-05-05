@@ -58,7 +58,7 @@ term EditDialogContents()
 		       `HStretch(),
 		       `HSpacing (1),
 		       `VBox(
-			     `ComboBox( `id(`fcoe), _("FCoE Enabled"),
+			     `ComboBox( `id(`fcoe), _("FCoE Enable"),
 					[`item(`id("yes"), "yes" ),
 					 `item(`id("no"), "no", true ) ]
 					),
@@ -103,12 +103,12 @@ term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate ),
-				    `header(_("Device Name"), _("Model"), _("VLAN Interface"), _("DCB capable"),
-					    _("FCoE Enabled"), _("DCB Required")),
+				    `header(_("Device Name"), _("Model"), _("FCoE VLAN Interface"), _("DCB capable"),
+					    _("FCoE Enable"), _("DCB Required")),
 				    []
 				    ),
 			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings") ),
-					  `PushButton(`id(`create), _("Create &VLAN Interface")) )
+					  `PushButton(`id(`create), _("Create FCoE &VLAN Interface")) )
 				   )
 			     )
 		       );
