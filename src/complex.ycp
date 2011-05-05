@@ -116,6 +116,11 @@ void AdjustButtons()
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
 	UI::ChangeWidget( `id(`create), `Enabled, true );
     }
+    else if ( card[2]:"" == FcoeClient::NOT_AVAILABLE )
+    {
+	UI::ChangeWidget( `id(`edit), `Enabled, false );
+	UI::ChangeWidget( `id(`create), `Enabled, false );	
+    }
     else
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, true );

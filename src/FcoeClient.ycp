@@ -132,6 +132,7 @@ global void SetAbortFunction(boolean() function) {
 global integer current_card = 0;		// currently selected card, means row in list of cards
 
 global string NOT_CONFIGURED = "not configured";
+global string NOT_AVAILABLE = "not available";
 
 // map containing information about networks cards and VLAN, FCoE aand DCB status
 map <integer, list> network_interfaces = $[];
@@ -165,42 +166,98 @@ boolean CheckInstalledPackages()
     return ret;
 }
 
-
 //
-// Check whether a VLAN interface is configured for a given network interface 
+// Check whether a VLAN interface is configured for FCoE on the switch (for given interface)
 //
-string GetVlanInterface ( string interface )
+// Params:
+// string 	interface	network interface card, e.g. eth3
+// Return:
+// string	Vlan interface number, e.g. 200
+// Example:
+// # fipvlan eth3
+//Fibre Channel Forwarders Discovered
+//interface       | VLAN | FCF MAC          
+//------------------------------------------
+//eth3            | 200  | 00:0d:ec:a2:ef:00
+//
+string GetVlanInterface( string interface )
 {
     string vlan_interface = "";
-    string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1/\\1/p' /proc/net/vlan/config",
-			      interface );
+
+    // check whether there is a VLAN interface which is configured for FCoE
+    string cmd_fcoe = sformat( "LANG=POSIX fipvlan %1", interface );
+    y2milestone( "Executing command: %1", cmd_fcoe );
+    map output = (map)SCR::Execute( .target.bash_output, cmd_fcoe );
+    y2milestone( "Output: %1", output );
+
+    list <string> lines = splitstring( output["stdout"]:"", "\n" );
+    foreach( string line, (list<string>)lines, {
+	    // check whether there is a line for the given interface, e.g.
+	    // eth3            | 200  | 00:0d:ec:a2:ef:00\n
+	    // and extract name/number of VLAN channel.
+	    if ( regexpmatch( line, sformat( "^%1", interface) ) )
+	    {
+		line = deletechars( line, " " );
+		vlan_interface = substring( line, findfirstof( line, "|" )+1,
+					    findlastof( line, "|" )-findfirstof( line, "|")-1 );
+		y2milestone( "VLAN: %1", vlan_interface );
+	    }
+	} );
+    
+    return vlan_interface;
+}
+
+//
+// Check whether the VLAN device is created (check entries in /proc/net/vlan/config)  
+//
+// Params:
+// string 	interface	network interface card, e.g. eth3
+// string 	vlan_interface	Vlan Interface configured for FCoE (on switch)
+// Return:
+// string	Vlan device name, e.g. eth3.200
+// Example:
+// # cat /proc/net/vlan/config
+//VLAN Dev name    | VLAN ID
+//Name-Type: VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD
+//eth3.200  | 200  | eth3
+
+string GetFcoeVlanInterface ( string interface, string vlan_interface )
+{
+    string vlan_device_name = "";
+
+    string command = sformat( "sed -n 's/\\([^ ]*\\) |.*%1*.*%2/\\1/p' /proc/net/vlan/config",
+			       vlan_interface, interface );
     y2milestone( "Executing command: %1", command );
 
     map output = (map)SCR::Execute( .target.bash_output, command );
     // read stdout (remove \n at the end)
     vlan_interface = substring( output["stdout"]:"", 0, size(output["stdout"]:"") -1 );
 
-    return vlan_interface;
+    return vlan_device_name;
 }
 
 //
-// Get status of FCoE and DCB from /etc/fcoe/cfg-eth<vlan_interface
+// Get status of FCoE and DCB from /etc/fcoe/cfg-eth<vlan_device_name>
 //
-map <string, string> GetFCoEStatus( string vlan_interface )
+map <string, string> GetFCoEStatus( string vlan_device_name )
 {
     map <string, string> status_map = $[];
     
-    if ( vlan_interface != "")
+    if ( vlan_device_name != "")
     {
-	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_interface );
-	y2milestone( "VLAN channel %1 found, reading %2", vlan_interface, file_name );
+	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
+	y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
 
 	string content = (string)SCR::Read(.target.string, file_name);
-	if ( content == "" )
+	if ( content == "" || content == nil )
+	{
 	    y2warning( "Cannot read %1", file_name );
+	    return status_map;
+	}
 	else
+	{
 	    y2milestone( "Content: %1", content );
-
+	}
 	list <string> lines = splitstring( content, "\n" );
 
 	foreach( string line, (list<string>)lines, {
@@ -279,6 +336,7 @@ void CheckServices()
 void DetectNetworkCards()
 {
     string vlan_interface = "";
+    string fcoe_vlan_interface = "";
     string dcb_capable = "";
     
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
@@ -288,22 +346,33 @@ void DetectNetworkCards()
     foreach ( map card, netcards, {
 	    list info_list = [];
 	    map <string, string> status_map = $[];
-	    
-	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
-	    if ( vlan_interface != "" )
-		status_map = GetFCoEStatus( vlan_interface );
-	    else
-		vlan_interface = NOT_CONFIGURED;
 
+	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
+
+	    if ( vlan_interface == "" )
+	    {
+		fcoe_vlan_interface = NOT_AVAILABLE;
+	    }
+	    else
+	    {
+		fcoe_vlan_interface = GetFcoeVlanInterface( card["dev_name"]:"", vlan_interface );
+
+		if ( fcoe_vlan_interface != "" )
+		    status_map = GetFCoEStatus( fcoe_vlan_interface );
+		else
+		    fcoe_vlan_interface = NOT_CONFIGURED;
+	    }
+	    
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
 	    
 	    info_list = add( info_list, card["dev_name"]:"");
 	    info_list = add( info_list, card["device"]:"");
-	    info_list = add( info_list, vlan_interface );
+	    info_list = add( info_list, fcoe_vlan_interface );
 	    info_list = add( info_list, dcb_capable );
 	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");
 	    info_list = add( info_list, status_map["DCB_REQUIRED"]:"");
-	    
+	    info_list = add( info_list, vlan_interface );
+
 	    network_interfaces = add( network_interfaces, row, info_list );
 	    row = row + 1;
 	} );
@@ -359,7 +428,7 @@ global boolean Read()
     string caption = _("Initializing fcoe-client Configuration");
 
     // Set the right number of stages
-    integer steps = 3;
+    integer steps = 4;
 
     integer sl = 500;
     sleep(sl);
@@ -378,9 +447,9 @@ global boolean Read()
 					     /* Progress step 1/3 */
 					     _("Checking for installed packages..."),
 					     /* Progress step 2/3 */
-					     _("Detecting network cards..."),
-					     /* Progress step 3/3 */
 					     _("Checking for services..."),
+					     /* Progress step 3/3 */
+					     _("Detecting network cards..."),
 					     /* Progress step 4/4 */
 					     _("Reading /etc/fcoe/config" ),
 					     /* Progress finished */
