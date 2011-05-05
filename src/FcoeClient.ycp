@@ -250,18 +250,37 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
     {
 	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
-
 	content = (string)SCR::Read(.target.string, file_name);
-	if ( content == "" || content == nil )
-	{
-	    y2warning( "Cannot read %1", file_name );
-	    file_name = substring( file_name, 0, size(file_name)-5 );  // remove '-fcoe';
-	    content = (string)SCR::Read(.target.string, file_name);
-	}
 
 	if ( content == "" || content == nil )
 	{
-	    y2warning( "Cannot read %1", file_name );
+	    // remove '-fcoe' and try again
+	    y2milestone( "Reading %1", substring( file_name, 0, size(file_name)-5 ) );
+	    content = (string)SCR::Read(.target.string, substring( file_name, 0, size(file_name)-5 ) );
+	}
+	if ( content == "" || content == nil )
+	{
+	    y2milestone( "Cannot read cfg-file creating %1 with default values from /etc/fcoe/cfg-ethx",
+			 file_name );
+	    string def_values = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
+
+	    if ( def_values != "" )
+	    {
+		boolean ret = SCR::Write( .target.string, file_name, def_values );
+		if ( ret == true )
+		{
+		    status_map = add( status_map, "FCOE_ENABLE", "yes");
+		    status_map = add( status_map, "DCB_REQUIRED", "yes");
+		}
+		else
+		{
+		    y2error( "Cannot create %1", file_name );
+		}
+	    }
+	    else
+	    {
+		y2error( "Cannot read /etc/fcoe/cfg-ethx" );
+	    }
 	    return status_map;
 	}
 	else
@@ -362,6 +381,7 @@ void DetectNetworkCards()
 
 	    if ( vlan_interface == "" )
 	    {
+		// FCoE isn't enabled on the switch - we can't do anything here
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -369,9 +389,14 @@ void DetectNetworkCards()
 		fcoe_vlan_interface = GetFcoeVlanInterface( card["dev_name"]:"", vlan_interface );
 
 		if ( fcoe_vlan_interface != "" )
+		{
 		    status_map = GetFCoEStatus( fcoe_vlan_interface );
+		}
 		else
+		{
+		    // FCoE VLAN interface not yet configured
 		    fcoe_vlan_interface = NOT_CONFIGURED;
+		}
 	    }
 	    
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
