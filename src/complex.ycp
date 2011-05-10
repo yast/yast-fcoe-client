@@ -36,6 +36,7 @@ import "Wizard";
 import "Wizard_hw";
 import "Confirm";
 import "FcoeClient";
+import "Service";
 
 
 include "fcoe-client/helps.ycp";
@@ -85,6 +86,19 @@ symbol WriteDialog() {
  * Init
  **/
 void InitServicesDialog (string id) {
+
+    map status_map = FcoeClient::GetServiceStatus();
+
+    if ( status_map["fcoe"]:false == true )
+    {
+	UI::ChangeWidget( `id( "fcoe_startup_auto" ), `Value, true );
+	UI::ChangeWidget( `id( "fcoe_startup_manual" ), `Value, false );
+    }
+    else
+    {
+	UI::ChangeWidget( `id( "fcoe_startup_auto" ), `Value, false );
+	UI::ChangeWidget( `id( "fcoe_startup_manual" ), `Value, true );	
+    }
     y2milestone( "Init services dialog" );
 }
 
@@ -264,7 +278,12 @@ and start the FCoE initiator?"), dev_name ) );
 		 UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["FCOE_ENABLE"]:"" );
 		 UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["DCB_REQUIRED"]:"" );
 		 AdjustButtons();
-
+		 if ( fcoe_vlan_interface != "" )
+		 {
+		     // store command to be able to redo the creation of FCoE VLAN interface
+		     // in case of abort
+		     FcoeClient::AddRedoCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
+		 }
 	     }
 	     else
 	     {
@@ -296,8 +315,30 @@ symbol HandleEditDialog( string id, map event )
  * Store
  **/
 
-void StoreServicesDialog (string id, map event) {
- y2milestone( "Store services dialog" );
+void StoreServicesDialog (string id, map event)
+{
+    y2milestone( "Store services dialog" );
+    boolean fcoe_auto = (boolean)UI::QueryWidget( `id ("fcoe_startup_auto"), `Value );
+
+    if ( fcoe_auto )
+    {
+	FcoeClient::SetServiceStatus( "fcoe", true );
+	y2milestone( "Setting auto start of FCoE to true");
+    }
+    // Check whether FCoE already running and start if required
+    integer status = Service::Status("fcoe");
+
+    if ( status != 0 )
+    {
+	Service::Start("fcoe");
+	y2milestone( "Starting FCoE (/etc/init.d/fcoe start)");
+    }
+    else
+    {
+	y2milestone( "FCoE running");
+    }
+   
+    
 }
 
 void StoreInterfacesDialog (string id, map event) {

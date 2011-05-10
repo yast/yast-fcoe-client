@@ -41,9 +41,9 @@ integer mbox_y = 0.5;
 
 term items = `VBox(
 		   `VSpacing (0.4),
-		   `Left (`RadioButton (`id ("startup_auto"), `opt (`notify),
+		   `Left (`RadioButton (`id ("fcoe_startup_auto"), `opt (`notify),
 					"When Booting")),
-		   `Left (`RadioButton (`id ("startup_manual"), `opt (`notify),
+		   `Left (`RadioButton (`id ("fcoe_startup_manual"), `opt (`notify),
 					"Manually")
 			  ),
 		   `VSpacing (0.4)
@@ -87,7 +87,7 @@ term ServicesDialogContent () {
 		       `VBox (
 			      `VSpacing(2.0),
 			      // frame
-			      `Frame (_("Service Start"),
+			      `Frame (_("FCoE Service Start"),
 				      `VBox (`RadioButtonGroup (`id ("service_startup"), items))
 				      ),
 			      `VStretch()

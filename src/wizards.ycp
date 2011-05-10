@@ -97,8 +97,10 @@ any GlobalDialog() {
 	  ];
 
     string ini_tab = "";
-    
-    if ( true )			// TODO: check lldpad / fcoemon running
+
+    map <string, boolean> status_map = FcoeClient::GetServiceStatus();
+
+    if ( status_map["fcoe"]:false == true || status_map["lldpad"]:false == true )
 	ini_tab = "interfaces";
     else
 	ini_tab = "services";

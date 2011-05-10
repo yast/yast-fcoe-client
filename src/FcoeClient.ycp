@@ -42,6 +42,7 @@ import "Stage";
 import "Mode";
 import "Package";
 import "Popup";
+import "Service";
 
 /**
  * Prototypes
@@ -124,21 +125,42 @@ global void SetAbortFunction(boolean() function) {
     AbortFunction = function;
 }
 
+/*
+  from IscsiClientLib.ycp (line 53) - reading output
+
+  string from_bios = ((map<string, any>)SCR::Execute(.target.bash_output, "iscsiadm -m fw"))["stdout"]:"";
+  foreach(string row, splitstring(from_bios, "\n"), {
+  list<string> key_val=splitstring(row, "=");
+//   if (size(key_val[0]:"")>0) ibft[key_val[0]:""] = key_val[1]:"";
+   string kv = String::CutBlanks(key_val[0]:"");
+   if (size(kv) > 0) ibft[kv] = String::CutBlanks(key_val[1]:"");
+   });
+ */
+
+
 
 // Settings: Define all variables needed for configuration of fcoe-client
 
 // Define all the variables necessary to hold
 
-global integer current_card = 0;		// currently selected card, means row in list of cards
+global integer current_card = 0;  // currently selected card, means row in list of cards
 
 global string NOT_CONFIGURED = "not configured";
 global string NOT_AVAILABLE = "not available";
 
-// map containing information about networks cards and VLAN, FCoE aand DCB status
+// map containing information about networks cards and VLAN, FCoE and DCB status
 map <integer, list> network_interfaces = $[];
 
 // map containing information about values in /etc/fcoe/config
-map <string, string> fcoe_general_config = $[];
+map <string, string> fcoe_general_config = $[ "DEBUG":"no",
+					      "USE_SYSLOG":"yes" ];
+
+// list containing information about 'redo' commands
+list <string> redo_list = [];
+
+// map containing information about start of services
+map <string, boolean> service_start = $[ "fcoe":false,
+					 "lldpad":false ];
 
 //
 // Check whether open-fcoe is installed and do installation if user agrees
@@ -289,7 +311,7 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	}
 	
 	list <string> lines = splitstring( content, "\n" );
-
+	// TODO: better/more elegant way of reading values (use SysConfig agent?)
 	foreach( string line, (list<string>)lines, {
 		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
 		{
@@ -353,11 +375,50 @@ string DCBCapable( string netcard )
 }
 
 //
+// Set status of services
 //
-//
-void CheckServices()
+global void AdjustStatusOfServices( )
 {
+    y2milestone( "Setting start of /etc/init.d/fcoe to %1", service_start["fcoe"]:false );
+    if ( service_start["fcoe"]:false == true )
+	Service::Enable("fcoe");	
+    else
+	Service::Disable("open-fcoe");
+
+    y2milestone( "Setting start of /etc/init.d/lldpad to %1", service_start["lldpad"]:false );
+    if ( service_start["lldpad"]:false == true )
+	Service::Enable("lldpad");	
+    else
+	Service::Disable("lldpad");
     
+}
+
+global void SetServiceStatus( string service, boolean status )
+{
+    y2milestone( "Setting status of %1 to %2", service, status );
+    service_start[ service ] = status;
+}
+
+//
+// Get status of services
+//
+void DetectStatusOfServices()
+{
+    boolean status = false;
+    
+    status = Service::Enabled( "fcoe" );
+    y2milestone( "Status of fcoe: %1", status );
+    service_start = add( service_start, "fcoe", status );
+
+    status = Service::Enabled( "lldpad" );
+    y2milestone( "Status of lldpad: %1", status );
+    service_start = add( service_start, "lldpad", status );
+
+}
+
+global map<string, boolean> GetServiceStatus()
+{
+    return service_start;
 }
 
 //
@@ -458,6 +519,23 @@ global map <string, string> GetFcoeConfig()
     return fcoe_general_config;
 }
 
+//
+// Add a command to the list of redo commands
+//
+global void AddRedoCommand( string command )
+{
+    redo_list = add( redo_list, command );
+    y2milestone( "Adding redo command: %1", command );
+}
+
+//
+// Get the list of redo commands
+//
+global list GetRedoCommands()
+{
+    return redo_list;
+}
+    
 /**
  * Read all fcoe-client settings
  * @return true on success
@@ -514,7 +592,7 @@ global boolean Read()
     Progress::NextStage();
 
     // check daemon fcoemon and lldpad
-    CheckServices();
+    DetectStatusOfServices();
     
     /* Error message */
     if(false) Report::Error(_("Checking for services failed"));
