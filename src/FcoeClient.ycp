@@ -484,6 +484,11 @@ global map <integer, list> GetNetworkCards()
     return network_interfaces;
 }
 
+global list <string> GetCurrentNetworkCard()
+{
+    return (list <string>)network_interfaces[ current_card ]:[];
+}
+
 global void SetNetworkCardsValue( integer row, list card )
 {
     network_interfaces[row] = card;
@@ -509,6 +514,14 @@ void ReadFcoeConfig()
     {
 	y2error( "Cannot read /etc/fcoe/config" ); 
     }
+}
+
+//
+// Set value in fcoe_general_config
+//
+global void SetFcoeConfigValue( string param, string value )
+{
+    fcoe_general_config[ param ] = value; 
 }
 
 //

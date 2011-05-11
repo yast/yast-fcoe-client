@@ -86,7 +86,8 @@ symbol WriteDialog() {
  * Init
  **/
 void InitServicesDialog (string id) {
-
+    y2milestone( "Init services dialog" );
+    
     map status_map = FcoeClient::GetServiceStatus();
 
     if ( status_map["fcoe"]:false == true )
@@ -99,7 +100,6 @@ void InitServicesDialog (string id) {
 	UI::ChangeWidget( `id( "fcoe_startup_auto" ), `Value, false );
 	UI::ChangeWidget( `id( "fcoe_startup_manual" ), `Value, true );	
     }
-    y2milestone( "Init services dialog" );
 }
 
 //
@@ -325,37 +325,49 @@ void StoreServicesDialog (string id, map event)
 	FcoeClient::SetServiceStatus( "fcoe", true );
 	y2milestone( "Setting auto start of FCoE to true");
     }
-    // Check whether FCoE already running and start if required
+    // Check whether FCoE is already running and start if required
     integer status = Service::Status("fcoe");
 
     if ( status != 0 )
     {
-	Service::Start("fcoe");
-	y2milestone( "Starting FCoE (/etc/init.d/fcoe start)");
+	boolean success = Service::Start("fcoe");
+	if ( success )
+	{
+	    y2milestone( "FCoE started (/etc/init.d/fcoe start)");
+	}
+	else
+	{
+	    y2error( "Cannot start FCoE service - '/etc/init.d/fcoe start' failed" );
+	    Popup::Error( "Cannot start FCoE service.
+'/etc/init.d/fcoe start' failed" );
+	}
     }
     else
     {
-	y2milestone( "FCoE running");
+	y2milestone( "FCoE service is running");
     }
-   
+}
+
+void StoreInterfacesDialog (string id, map event)
+{
+    y2milestone( "Store interfaces dialog" );
+}
+
+void StoreConfigurationDialog (string id, map event)
+{
+    y2milestone( "Store configuration dialog" );
+}
+
+void StoreEditDialog (string id, map event)
+{
+    y2milestone( "Store edit dialog" );
+    list <string> card = FcoeClient::GetCurrentNetworkCard();
+    string fcoe_enabled = (string)UI::QueryWidget( `id(`fcoe), `Value );
+    card[4] = fcoe_enabled;
+    string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
+    card[5] = dcb_required;
     
-}
-
-void StoreInterfacesDialog (string id, map event) {
- y2milestone( "Store interfaces dialog" );
-}
-
-void StoreConfigurationDialog (string id, map event) {
- y2milestone( "Store configuration dialog" );
-}
-
-void StoreEditDialog (string id, map event) {
- y2milestone( "Store edit dialog" );
-
- string fcoe_enabled = (string)UI::QueryWidget( `id(`fcoe), `Value );
- string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
-
- 
+    FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card ); 
 }
 
 /* EOF */
