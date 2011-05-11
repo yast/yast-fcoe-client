@@ -596,7 +596,25 @@ global list GetRedoCommands()
 {
     return redo_list;
 }
+
+boolean WriteFcoeConfig()
+{
+    boolean ret = true;
     
+    boolean success = (boolean)SCR::Write(add(.fcoe, "DEBUG"), GetFcoeConfig()["DEBUG"]:"" );
+    if ( !success )
+	ret = false;
+
+    success = (boolean)SCR::Write(add(.fcoe, "USE_SYSLOG"), GetFcoeConfig()["USE_SYSLOG"]:"" );	
+    if ( !success )
+	ret = false;
+
+    // This is very important- it flushes the cache, and stores the configuration on the disk
+    SCR::Write(.fcoe, nil);
+
+    return ret;
+}
+
 /**
  * Read all fcoe-client settings
  * @return true on success
@@ -732,8 +750,10 @@ global boolean Write()
     if(Abort()) return false;
     Progress::NextStage();
 
+    boolean success = WriteFcoeConfig();
+    
     /* Error message */
-    if(false) Report::Error (_("Cannot write settings."));
+    if( !success ) Report::Error (_("Cannot write settings to /etc/fcoe/config."));
     sleep(sl);
 
     // run SuSEconfig
