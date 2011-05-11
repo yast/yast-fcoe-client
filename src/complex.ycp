@@ -82,13 +82,15 @@ symbol WriteDialog() {
     return ret ? `next : `abort;
 }
 
+// TODO - check whether a 'validate' is required
+
 /**
  * Init
  **/
 void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
     
-    map status_map = FcoeClient::GetServiceStatus();
+    map status_map = FcoeClient::GetStartStatus();
 
     if ( status_map["fcoe"]:false == true )
     {
@@ -99,6 +101,17 @@ void InitServicesDialog (string id) {
     {
 	UI::ChangeWidget( `id( "fcoe_startup_auto" ), `Value, false );
 	UI::ChangeWidget( `id( "fcoe_startup_manual" ), `Value, true );	
+    }
+
+    if ( status_map["lldpad"]:false == true )
+    {
+	UI::ChangeWidget( `id( "lldpad_startup_auto" ), `Value, true );
+	UI::ChangeWidget( `id( "lldpad_startup_manual" ), `Value, false );
+    }
+    else
+    {
+	UI::ChangeWidget( `id( "lldap_startup_auto" ), `Value, false );
+	UI::ChangeWidget( `id( "lldpad_startup_manual" ), `Value, true );	
     }
 }
 
@@ -322,29 +335,16 @@ void StoreServicesDialog (string id, map event)
 
     if ( fcoe_auto )
     {
-	FcoeClient::SetServiceStatus( "fcoe", true );
+	FcoeClient::SetStartStatus( "fcoe", true );
 	y2milestone( "Setting auto start of FCoE to true");
     }
-    // Check whether FCoE is already running and start if required
-    integer status = Service::Status("fcoe");
 
-    if ( status != 0 )
+    boolean lldpad_auto = (boolean)UI::QueryWidget( `id ("llpad_startup_auto"), `Value );
+
+    if ( lldpad_auto )
     {
-	boolean success = Service::Start("fcoe");
-	if ( success )
-	{
-	    y2milestone( "FCoE started (/etc/init.d/fcoe start)");
-	}
-	else
-	{
-	    y2error( "Cannot start FCoE service - '/etc/init.d/fcoe start' failed" );
-	    Popup::Error( "Cannot start FCoE service.
-'/etc/init.d/fcoe start' failed" );
-	}
-    }
-    else
-    {
-	y2milestone( "FCoE service is running");
+	FcoeClient::SetStartStatus( "lldpad", true );
+	y2milestone( "Setting auto start of lldpad to true");
     }
 }
 
@@ -356,6 +356,10 @@ void StoreInterfacesDialog (string id, map event)
 void StoreConfigurationDialog (string id, map event)
 {
     y2milestone( "Store configuration dialog" );
+    string debug_val = (string)UI::QueryWidget( `id("debug"), `Value );
+    string syslog_val = (string)UI::QueryWidget( `id("syslog"), `Value );
+    FcoeClient::SetFcoeConfigValue( "DEBUG", debug_val );
+    FcoeClient::SetFcoeConfigValue( "USE_SYSLOG", syslog_val );
 }
 
 void StoreEditDialog (string id, map event)

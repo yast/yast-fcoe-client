@@ -377,7 +377,7 @@ string DCBCapable( string netcard )
 //
 // Set status of services
 //
-global void AdjustStatusOfServices( )
+global void AdjustStartStatus( )
 {
     y2milestone( "Setting start of /etc/init.d/fcoe to %1", service_start["fcoe"]:false );
     if ( service_start["fcoe"]:false == true )
@@ -393,7 +393,7 @@ global void AdjustStatusOfServices( )
     
 }
 
-global void SetServiceStatus( string service, boolean status )
+global void SetStartStatus( string service, boolean status )
 {
     y2milestone( "Setting status of %1 to %2", service, status );
     service_start[ service ] = status;
@@ -402,7 +402,7 @@ global void SetServiceStatus( string service, boolean status )
 //
 // Get status of services
 //
-void DetectStatusOfServices()
+void DetectStartStatus()
 {
     boolean status = false;
     
@@ -416,9 +416,57 @@ void DetectStatusOfServices()
 
 }
 
-global map<string, boolean> GetServiceStatus()
+global map<string, boolean> GetStartStatus()
 {
     return service_start;
+}
+
+global boolean ServiceStatus()
+{
+    // TODO - check whether loading any modules in Stage::initial() is required
+    // (like in IsciClientLib.ycp, line 469 )
+    boolean ret = true;
+			 
+    if ( Service::Status( "fcoe" ) != 0 ) 
+    {
+	boolean success = Service::Start( "fcoe" );
+	if ( success )
+	{
+	    y2milestone( "FCoE started (/etc/init.d/fcoe start)");
+	}
+	else
+	{
+	    y2error( "Cannot start FCoE service - '/etc/init.d/fcoe start' failed" );
+	    Popup::Error( "Cannot start FCoE service.
+'/etc/init.d/fcoe start' failed" );
+	    ret = false;
+	}
+    }
+    else
+    {
+	y2milestone( "FCoE service is running");
+    }
+
+    if ( Service::Status( "lldpad" ) != 0 ) 
+    {
+	boolean success = Service::Start( "lldpad" );
+	if ( success )
+	{
+	    y2milestone( "Lldpad started (/etc/init.d/lldpad start)");
+	}
+	else
+	{
+	    y2error( "Cannot start service lldpad - '/etc/init.d/lldpad start' failed" );
+	    Popup::Error( "Cannot start service lldpad.
+'/etc/init.d/lldpad start' failed" );
+	    ret = false;
+	}
+    }
+    else
+    {
+	y2milestone( "Lldpad service is running");
+    }
+    return ret;
 }
 
 //
@@ -590,6 +638,9 @@ global boolean Read()
 		   ""
 		   );
 
+    // TODO - is this check needed here (like in IsciClient.ycp)
+    // if(!NetworkService::RunningNetworkPopup()) return false;
+     
     if(Abort()) return false;
     Progress::NextStage();
 
@@ -604,11 +655,13 @@ global boolean Read()
     if(Abort()) return false;
     Progress::NextStage();
 
-    // check daemon fcoemon and lldpad
-    DetectStatusOfServices();
+    // check whether auto start of daemon fcoemon and lldpad is enabled or not
+    DetectStartStatus();
+    // check whether fcoe and lldpad are running and start services if required
+    boolean start_status = ServiceStatus();
     
     /* Error message */
-    if(false) Report::Error(_("Checking for services failed"));
+    if(!start_status) Report::Error(_("Starting of services failed"));
     sleep(sl);
 
     if(Abort()) return false;
@@ -661,12 +714,12 @@ global boolean Write()
 					/* Progress stage 1/2 */
 					_("Write the settings"),
 					/* Progress stage 2/2 */
-					_("Run SuSEconfig")
+					_("Adjust start of services")
 					], [
 					    /* Progress step 1/2 */
 					    _("Writing the settings..."),
 					    /* Progress step 2/2 */
-					    _("Running SuSEconfig..."),
+					    _("Adjusting start of services..."),
 					    /* Progress finished */
 					    _("Finished")
 					    ],
@@ -687,6 +740,8 @@ global boolean Write()
     if(Abort()) return false;
     Progress::NextStage ();
 
+    AdjustStartStatus();
+    
     /* Error message */
     if(false) Report::Error (Message::SuSEConfigFailed());
     sleep(sl);

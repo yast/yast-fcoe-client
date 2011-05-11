@@ -39,7 +39,7 @@
 integer mbox_x = 1;
 integer mbox_y = 0.5;
 
-term items = `VBox(
+term items_fcoe = `VBox(
 		   `VSpacing (0.4),
 		   `Left (`RadioButton (`id ("fcoe_startup_auto"), `opt (`notify),
 					"When Booting")),
@@ -49,6 +49,15 @@ term items = `VBox(
 		   `VSpacing (0.4)
 		   );
 
+term items_lldpad = `VBox(
+			  `VSpacing (0.4),
+			  `Left (`RadioButton (`id ("lldpad_startup_auto"), `opt (`notify),
+					       "When Booting")),
+			  `Left (`RadioButton (`id ("lldpad_startup_manual"), `opt (`notify),
+					       "Manually")
+				 ),
+			  `VSpacing (0.4)
+			  );
 
 term EditDialogContents()
 {
@@ -88,9 +97,13 @@ term ServicesDialogContent () {
 			      `VSpacing(2.0),
 			      // frame
 			      `Frame (_("FCoE Service Start"),
-				      `VBox (`RadioButtonGroup (`id ("service_startup"), items))
+				      `VBox (`RadioButtonGroup (`id ("fcoe_service_startup"), items_fcoe))
 				      ),
-			      `VStretch()
+			      `VStretch(),
+			      `Frame (_("Lldpad Service Start"),
+				      `VBox (`RadioButtonGroup (`id ("lldpadservice_startup"), items_lldpad))
+				      ),
+			      `VStretch()  
 			      )
 		       );
 }
