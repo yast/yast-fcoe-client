@@ -75,42 +75,41 @@ If you press <b>Edit</b>, an additional dialog in which to change
 the configuration opens.</p>
 "),
 
-    /* Ovreview dialog help 1/3 */
-    "overview" : _("<p><b><big>FcoeClient Configuration Overview</big></b><br>
-Obtain an overview of installed fcoe-clients. Additionally
-edit their configurations.<br></p>
+    /* Services dialog help 1/2 */
+    "services" : _("<p><b><big>Starting of services</big><br></b><br>
+There is the possibility to enable/disable the start of the services
+<b>fcoe</b> and <b>lldpad</b> at boot time.<br></p>
 ") +
 
-    /* Ovreview dialog help 2/3 */
-_("<p><b><big>Adding a fcoe-client:</big></b><br>
-Press <b>Add</b> to configure a fcoe-client.</p>") +
+    /* Services dialog help 2/2 */
+_("<p>Check the appropriate button, e.g. if you want to start FCoE automatically at
+boot time click on 'When booting' in 'FcoE' frame.</p>"),
 
-    /* Ovreview dialog help 3/3 */
-_("<p><b><big>Editing or Deleting:</big></b><br>
-Choose a fcoe-client to change or remove.
-Then press <b>Edit</b> or <b>Delete</b> as desired.</p>
-"),
+    /* Interfaces dialog help 1/4 */
+    "interfaces" : _("<p><b><big>Network interface overview</big></b><br></p>") +
 
-    /* Configure1 dialog help 1/2 */
-    "c1" : _("<p><b><big>Configuration Part One</big></b><br>
-Press <b>Next</b> to continue.
-<br></p>") +
+    /* Interfaces dialog help 2/4 */
+_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FcoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column 'FCoE VLAN interface'.</p>") +
+    
+    /* Interfaces dialog help 3/4 */
+    _("<i>not available</i> means, FCoE isn't possible (must be enabled on the switch first)<br>
+<i>not configered</i>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN interface</b> to do this.<br>") +
 
-    /* Configure1 dialog help 2/2 */
-_("<p><b><big>Selecting Something</big></b><br>
-It is not possible. You must code it first. :-)
-</p>"),
+     /* Interfaces dialog help 4/4 */
+    _("If the FCoE VLAN interface is already created it is shown in the column, e.g. eth3.200"),
 
-    /* Configure2 dialog help 1/2 */
-    "c2" : _("<p><b><big>Configuration Part Two</big></b><br>
-Press <b>Next</b> to continue.
-<br></p>
-") +
+    /* Configuration dialog help 1/2 */
+    "configuration" : _("<p><b><big>General configuration of FCoE</big></b></p>") +
 
-    /* Configure2 dialog help 2/2 */
-_("<p><b><big>Selecting Something</big></b><br>
-It is not possible. You must code it first. :-)
-</p>"),
+    /* Configuration dialog help 2/2 */
+_("<p>Here you can configure the general settings for FCoE (/etc/fcoe/config).<br>
+Debug: <i>yes</i> or <i>no</i>, Use syslog: <i>yes</i> or <i>no</i></p>"),
+
+    /* edit dialog help 1/2 */
+    "change" : _("<p>Edit settings in /etc/fcoe/ethx</p>" ) +
+    
+    /* Edit dialog help 2/2 */
+    _( "FCoE enable: <i>yes</i> or <i>no</i>, DCB required: <i>yes</i> or <i>no</i>" ),
 
 ];
 
