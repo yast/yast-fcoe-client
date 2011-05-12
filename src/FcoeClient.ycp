@@ -337,13 +337,12 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 string DCBCapable( string netcard )
 {
     string ret = "no";
-    
+
+    // 'lldpad' must be started to be able to use 'dcbtool'
+    // -> is started in ServiceStatus() ( called in Read() before DetectNetworkCards() ) 
     string command = sformat( "LANG=POSIX dcbtool gc %1 dcb", netcard );
     y2milestone( "Executing command: %1", command );
 
-    // TODO: lldpad must be started to be able to use dcbtool
-    //       -> started in CheckServices() -> Read()
-    //          ACHTUNG: Reihenfolge !!!#
     map output = (map)SCR::Execute( .target.bash_output, command );
     y2milestone( "Output:  %1", output);
     string status = "";
@@ -470,6 +469,10 @@ global boolean ServiceStatus()
 }
 
 //
+// dev_name  device             FCoE VLAN  DCB capable FCoE enable  VLAN  data modified
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       200   yes/no
+// 0	     1                  2          3           4            5     6
+//
 // Detect network interface cards (hardware probe) and get status  
 //
 void DetectNetworkCards()
@@ -510,14 +513,14 @@ void DetectNetworkCards()
 	    
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
 	    
-	    info_list = add( info_list, card["dev_name"]:"");
-	    info_list = add( info_list, card["device"]:"");
-	    info_list = add( info_list, fcoe_vlan_interface );
-	    info_list = add( info_list, dcb_capable );
+	    info_list = add( info_list, card["dev_name"]:"");	// network card, e.g. eth3
+	    info_list = add( info_list, card["device"]:"");     // description
+	    info_list = add( info_list, fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
+	    info_list = add( info_list, dcb_capable );		// DCB capable
 	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");
 	    info_list = add( info_list, status_map["DCB_REQUIRED"]:"");
-	    info_list = add( info_list, vlan_interface );
-
+	    info_list = add( info_list, vlan_interface );	// VLAN interface, e.g. 200
+	    info_list = add( info_list, "no" );		// data not modified
 	    network_interfaces = add( network_interfaces, row, info_list );
 	    row = row + 1;
 	} );

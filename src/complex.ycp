@@ -365,12 +365,22 @@ void StoreConfigurationDialog (string id, map event)
 void StoreEditDialog (string id, map event)
 {
     y2milestone( "Store edit dialog" );
+    string modified = "no";
+    
     list <string> card = FcoeClient::GetCurrentNetworkCard();
     string fcoe_enabled = (string)UI::QueryWidget( `id(`fcoe), `Value );
-    card[4] = fcoe_enabled;
+    if ( card[4]:"" != fcoe_enabled )
+    {
+	card[4] = fcoe_enabled;
+	modified = "yes";
+    }
     string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
-    card[5] = dcb_required;
-    
+    if ( card[5]:"" != dcb_required )
+    {
+	card[5] = dcb_required;
+	modified = "yes";
+    }
+    card[6] = modified;
     FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card ); 
 }
 
