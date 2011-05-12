@@ -101,7 +101,7 @@ term ServicesDialogContent () {
 				      ),
 			      `VStretch(),
 			      `Frame (_("Lldpad Service Start"),
-				      `VBox (`RadioButtonGroup (`id ("lldpadservice_startup"), items_lldpad))
+				      `VBox (`RadioButtonGroup (`id ("lldpad_service_startup"), items_lldpad))
 				      ),
 			      `VStretch()  
 			      )

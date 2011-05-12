@@ -110,7 +110,7 @@ void InitServicesDialog (string id) {
     }
     else
     {
-	UI::ChangeWidget( `id( "lldap_startup_auto" ), `Value, false );
+	UI::ChangeWidget( `id( "lldpad_startup_auto" ), `Value, false );
 	UI::ChangeWidget( `id( "lldpad_startup_manual" ), `Value, true );	
     }
 }
