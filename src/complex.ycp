@@ -380,8 +380,10 @@ void StoreEditDialog (string id, map event)
 	card[5] = dcb_required;
 	modified = "yes";
     }
-    card[6] = modified;
-    FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card ); 
+    card[7] = modified;
+    FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
+
+    y2milestone( "Current data: %1", FcoeClient::GetNetworkCards() );
 }
 
 /* EOF */

@@ -469,9 +469,9 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             FCoE VLAN  DCB capable FCoE enable  VLAN  data modified
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       200   yes/no
-// 0	     1                  2          3           4            5     6
+// dev_name  device             FCoE VLAN  DCB capable FCoE enable  DCB required VLAN  	data modified
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   	yes/no
+// 0	     1                  2          3           4            5     	 6	7
 //
 // Detect network interface cards (hardware probe) and get status  
 //
