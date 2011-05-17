@@ -277,26 +277,29 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	if ( content == "" || content == nil )
 	{
 	    // remove '-fcoe' and try again
-	    y2milestone( "Reading %1", substring( file_name, 0, size(file_name)-5 ) );
-	    content = (string)SCR::Read(.target.string, substring( file_name, 0, size(file_name)-5 ) );
+	    file_name = substring( file_name, 0, size(file_name)-5 );
+	    y2milestone( "Reading %1", file_name );
+	    content = (string)SCR::Read(.target.string, file_name );
 	}
 	if ( content == "" || content == nil )
 	{
+	    string create_file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	    y2milestone( "Cannot read cfg-file creating %1 with default values from /etc/fcoe/cfg-ethx",
-			 file_name );
+			  create_file_name );
 	    string def_values = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
 
-	    if ( def_values != "" )
+	    if ( def_values != "" && def_values != nil )
 	    {
-		boolean ret = SCR::Write( .target.string, file_name, def_values );
+		boolean ret = SCR::Write( .target.string, create_file_name, def_values );
 		if ( ret == true )
 		{
 		    status_map = add( status_map, "FCOE_ENABLE", "yes");
 		    status_map = add( status_map, "DCB_REQUIRED", "yes");
+		    status_map = add( status_map, "Filename", create_file_name );
 		}
 		else
 		{
-		    y2error( "Cannot create %1", file_name );
+		    y2error( "Cannot create %1", create_file_name );
 		}
 	    }
 	    else
@@ -322,6 +325,7 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 		    status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
 		}
 	    });
+	status_map = add( status_map, "Filename", file_name );
     }
     else
     {
@@ -513,14 +517,15 @@ void DetectNetworkCards()
 	    
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
 	    
-	    info_list = add( info_list, card["dev_name"]:"");	// network card, e.g. eth3
-	    info_list = add( info_list, card["device"]:"");     // description
-	    info_list = add( info_list, fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
-	    info_list = add( info_list, dcb_capable );		// DCB capable
-	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");
-	    info_list = add( info_list, status_map["DCB_REQUIRED"]:"");
-	    info_list = add( info_list, vlan_interface );	// VLAN interface, e.g. 200
-	    info_list = add( info_list, "no" );		// data not modified
+	    info_list = add( info_list, card["dev_name"]:"");	// 0 network card, e.g. eth3
+	    info_list = add( info_list, card["device"]:"");     // 1 description
+	    info_list = add( info_list, fcoe_vlan_interface );	// 2 FCoE VLAN interface, e.g. eth3.200
+	    info_list = add( info_list, dcb_capable );		// 3 DCB capable
+	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");	// 4 FCOE_ENABLE
+	    info_list = add( info_list, status_map["DCB_REQUIRED"]:""); // 5 DCB_REQUIRED
+	    info_list = add( info_list, vlan_interface );	// 6 VLAN interface, e.g. 200
+	    info_list = add( info_list, "no" );			// 7 data not modified
+	    info_list = add( info_list, status_map["Filename"]:"" ); 	// 8 file name
 	    network_interfaces = add( network_interfaces, row, info_list );
 	    row = row + 1;
 	} );
@@ -616,6 +621,49 @@ boolean WriteFcoeConfig()
     SCR::Write(.fcoe, nil);
 
     return ret;
+}
+
+boolean WriteCfgFiles()
+{
+    map <integer, list> netcards = GetNetworkCards();
+    boolean success = true;
+    
+    foreach ( integer row, list card, (map<integer, list>)netcards, {
+	    if ( card[7]:"no" == "yes" )  // data modified
+	    {
+		string content = (string)SCR::Read( .target.string, card[8]:"" );
+		y2milestone( "Original content: %1", content );
+		
+		list <string> lines = (list<string>)splitstring( content, "\n" );
+		lines = maplist( string line, lines, {
+			if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+			{
+			    return sformat( "FCOE_ENABLE=\"%1\"", card[4]:"no" );
+			}
+			else if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+			{
+			    return sformat( "DCB_REQUIRED=\"%1\"", card[5]:"no" );
+			}
+			else
+			{
+			    return line;
+			}
+		    });
+		content = mergestring( lines, "\n" );
+		y2milestone( "Modified content: %1", content );
+
+		boolean ret = SCR::Write( .target.string, card[8]:"", content );
+		if ( !ret )
+		    y2error( "Cannot write %1", card[8]:"" );
+		else
+		    y2milestone( "%1 written", card[8]:"" );
+
+		if ( success )
+		    success = ret;
+	    }
+	} );
+    
+    return success;
 }
 
 /**
@@ -754,11 +802,14 @@ global boolean Write()
     Progress::NextStage();
 
     boolean success = WriteFcoeConfig();
-    
     /* Error message */
     if( !success ) Report::Error (_("Cannot write settings to /etc/fcoe/config."));
     sleep(sl);
 
+    success = WriteCfgFiles();
+    if( !success ) Report::Error (_("Cannot write settings for FCoE interfaces.
+For details see /var/log/YaST2/y2log") );
+    
     // run SuSEconfig
     if(Abort()) return false;
     Progress::NextStage ();

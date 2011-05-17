@@ -63,24 +63,27 @@ term EditDialogContents()
 {
     return `VBox(
 		 `VStretch(),
-		 `HBox(
-		       `HStretch(),
-		       `HSpacing (1),
-		       `VBox(
-			     `ComboBox( `id(`fcoe), _("FCoE Enable"),
-					[`item(`id("yes"), "yes" ),
-					 `item(`id("no"), "no", true ) ]
-					),
-			     `VSpacing (2),
-			     `ComboBox( `id(`dcb), _("DCB Required"),
-					[`item(`id("yes"), "yes" ),
-					 `item(`id("no"), "no", true ) ]
-					),
-			     `VSpacing (2)
-			     ),
-		       `HSpacing (1),
-		       `HStretch()
-		       ),
+		 // heading is replaced later (InitEditDialog)
+		 `Label( `id(`heading), ("Configuration of Interface ...................") ),
+		 `HBox (
+			`HStretch(),
+			`Frame( _(""),
+				`VBox(
+				      `VSpacing(2),
+				      `ComboBox( `id(`fcoe), _("FCoE Enable"),
+						 [`item(`id("yes"), "yes" ),
+						  `item(`id("no"), "no", true ) ]
+						 ),
+				      `VSpacing (2),
+				      `ComboBox( `id(`dcb), _("DCB Required"),
+						 [`item(`id("yes"), "yes" ),
+						  `item(`id("no"), "no", true ) ]
+						 ),
+				      `VSpacing (2)
+				      )
+				),
+			`HStretch()
+			),
 		 `VStretch()
 		 );
 }
