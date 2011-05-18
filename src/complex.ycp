@@ -51,7 +51,30 @@ boolean Modified() {
 }
 
 boolean ReallyAbort() {
-    return !FcoeClient::Modified() || Popup::ReallyAbort(true);
+    if ( !FcoeClient::Modified() )
+	return true;
+
+    boolean abort = Popup::ReallyAbort(true);
+
+    if ( abort )
+    {
+	// check redo list
+	list redo_list = FcoeClient::GetRedoCommands();
+	if ( redo_list == [] )
+	{
+	    y2milestone( "Nothing to redo");
+	}
+	else
+	{
+	    foreach ( string command, (list<string>)redo_list, {
+		    y2milestone( "Calling %1", command );
+		    map output = (map)SCR::Execute( .target.bash_output, command );
+		    y2milestone( "Output: %1", output );
+
+		} );
+	}
+    }
+    return abort;
 }
 
 boolean PollAbort() {
@@ -64,7 +87,8 @@ boolean PollAbort() {
  */
 symbol ReadDialog() {
     Wizard::RestoreHelp(HELPS["read"]:"");
-    // FcoeClient::SetAbortFunction(PollAbort);
+    // TODO - check this - doesn't help to set it here but call PollAbort in FcoeClient directly ???
+    //FcoeClient::SetAbortFunction(PollAbort);
     if (!Confirm::MustBeRoot()) return `abort;
     boolean ret = FcoeClient::Read();
     return ret ? `next : `abort;
@@ -274,6 +298,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		 card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
 		 card["cfg_file"] = status_map["Filename"]:"";
 		 card["modified"] = "yes";
+		 FcoeClient::SetModified( true );
 		 
 		 FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 		 y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
@@ -352,6 +377,8 @@ void StoreConfigurationDialog (string id, map event)
     string syslog_val = (string)UI::QueryWidget( `id("syslog"), `Value );
     FcoeClient::SetFcoeConfigValue( "DEBUG", debug_val );
     FcoeClient::SetFcoeConfigValue( "USE_SYSLOG", syslog_val );
+
+    FcoeClient::SetModified( true );
 }
 
 void StoreEditDialog (string id, map event)
@@ -365,6 +392,7 @@ void StoreEditDialog (string id, map event)
     {
 	card["fcoe_enable"] = fcoe_enabled;
 	card["modified"] = "yes";		// set modified to "yes"
+	FcoeClient::SetModified( true );
     }
 
     string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
@@ -372,6 +400,7 @@ void StoreEditDialog (string id, map event)
     {
 	card["dcb_required"] = dcb_required;
 	card["modified"] = "yes";		// set modified to "yes"
+	FcoeClient::SetModified( true );
     }
 
     FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
