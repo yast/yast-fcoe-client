@@ -118,7 +118,7 @@ term ServicesDialogContent () {
 term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
-			     `Table(`id(`interfaces), `opt(`notify, `immediate ),
+			     `Table(`id(`interfaces), `opt(`notify, `immediate, `keepSorting ),
 				    `header(_("Device Name"), _("Model"), _("FCoE VLAN Interface"), _("DCB capable"),
 					    _("FCoE Enable"), _("DCB Required")),
 				    []

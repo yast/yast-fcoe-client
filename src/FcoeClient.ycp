@@ -473,9 +473,8 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             FCoE VLAN  DCB capable FCoE enable  DCB required VLAN  	data modified
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   	yes/no
-// 0	     1                  2          3           4            5     	 6	7
+// dev_name  device             fcoe_vlan  dcb_capable fcoe_enable  dcb_required vlan_interface	modified cfg_file
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   		yes/no   /etc/fcoe/cfg-eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
 //
@@ -524,9 +523,12 @@ void DetectNetworkCards()
 	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
 	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
 	    info_map = add( info_map, "modified", "no" );			// data not modified
-	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name
+	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
+	    network_interfaces = sort( map a, map b, network_interfaces, {
+		    return ( a["dev_name"]:"" < b["dev_name"]:"" );
+		} );
 	} );
 }
 
