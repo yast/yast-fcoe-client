@@ -149,7 +149,7 @@ global string NOT_CONFIGURED = "not configured";
 global string NOT_AVAILABLE = "not available";
 
 // map containing information about networks cards and VLAN, FCoE and DCB status
-map <integer, list> network_interfaces = $[];
+list <map> network_interfaces = [];
 
 // map containing information about values in /etc/fcoe/config
 map <string, string> fcoe_general_config = $[ "DEBUG":"no",
@@ -487,10 +487,9 @@ void DetectNetworkCards()
     
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
     y2milestone( "Detected netcards: %1", netcards );
-    integer row = 0;
     
     foreach ( map card, netcards, {
-	    list info_list = [];
+	    map info_map = $[];
 	    map <string, string> status_map = $[];
 
 	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
@@ -517,17 +516,17 @@ void DetectNetworkCards()
 	    
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
 	    
-	    info_list = add( info_list, card["dev_name"]:"");	// 0 network card, e.g. eth3
-	    info_list = add( info_list, card["device"]:"");     // 1 description
-	    info_list = add( info_list, fcoe_vlan_interface );	// 2 FCoE VLAN interface, e.g. eth3.200
-	    info_list = add( info_list, dcb_capable );		// 3 DCB capable
-	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");	// 4 FCOE_ENABLE
-	    info_list = add( info_list, status_map["DCB_REQUIRED"]:""); // 5 DCB_REQUIRED
-	    info_list = add( info_list, vlan_interface );	// 6 VLAN interface, e.g. 200
-	    info_list = add( info_list, "no" );			// 7 data not modified
-	    info_list = add( info_list, status_map["Filename"]:"" ); 	// 8 file name
-	    network_interfaces = add( network_interfaces, row, info_list );
-	    row = row + 1;
+	    info_map = add( info_map, "dev_name", card["dev_name"]:"");		// network card, e.g. eth3
+	    info_map = add( info_map, "device", card["device"]:"");		// description
+	    info_map = add( info_map, "fcoe_vlan", fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
+	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
+	    info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"");	// FCOE_ENABLE
+	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
+	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
+	    info_map = add( info_map, "modified", "no" );			// data not modified
+	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name
+
+	    network_interfaces = add( network_interfaces, info_map );
 	} );
 }
 
@@ -535,17 +534,17 @@ void DetectNetworkCards()
 // Returns the map containing all detected interfaces including
 // configuration status of VLAN, FCoE and DCB
 //
-global map <integer, list> GetNetworkCards()
+global list <map> GetNetworkCards()
 {
     return network_interfaces;
 }
 
-global list <string> GetCurrentNetworkCard()
+global map GetCurrentNetworkCard()
 {
-    return (list <string>)network_interfaces[ current_card ]:[];
+    return network_interfaces[current_card]:$[];
 }
 
-global void SetNetworkCardsValue( integer row, list card )
+global void SetNetworkCardsValue( integer row, map card )
 {
     network_interfaces[row] = card;
 }
@@ -625,24 +624,24 @@ boolean WriteFcoeConfig()
 
 boolean WriteCfgFiles()
 {
-    map <integer, list> netcards = GetNetworkCards();
+    list <map> netcards = GetNetworkCards();
     boolean success = true;
     
-    foreach ( integer row, list card, (map<integer, list>)netcards, {
-	    if ( card[7]:"no" == "yes" )  // data modified
+    foreach ( map card, (list<map>)netcards, {
+	    if ( card["modified"]:"no" == "yes" )  // data modified
 	    {
-		string content = (string)SCR::Read( .target.string, card[8]:"" );
+		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
 		y2milestone( "Original content: %1", content );
 		
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
 			if ( regexpmatch( line, "^FCOE_ENABLE" ) )
 			{
-			    return sformat( "FCOE_ENABLE=\"%1\"", card[4]:"no" );
+			    return sformat( "FCOE_ENABLE=\"%1\"", card["fcoe_enable"]:"no" );
 			}
 			else if ( regexpmatch( line, "^DCB_REQUIRED" ) )
 			{
-			    return sformat( "DCB_REQUIRED=\"%1\"", card[5]:"no" );
+			    return sformat( "DCB_REQUIRED=\"%1\"", card["dcb_required"]:"no" );
 			}
 			else
 			{
@@ -652,14 +651,16 @@ boolean WriteCfgFiles()
 		content = mergestring( lines, "\n" );
 		y2milestone( "Modified content: %1", content );
 
-		boolean ret = SCR::Write( .target.string, card[8]:"", content );
+		boolean ret = SCR::Write( .target.string, card["cfg_file"]:"", content );
 		if ( !ret )
-		    y2error( "Cannot write %1", card[8]:"" );
-		else
-		    y2milestone( "%1 written", card[8]:"" );
-
-		if ( success )
+		{
 		    success = ret;
+		    y2error( "Cannot write %1", card["cfg_file"]:"" );
+		}
+		else
+		{
+		    y2milestone( "%1 written", card["cfg_file"]:"" );
+		}
 	    }
 	} );
     

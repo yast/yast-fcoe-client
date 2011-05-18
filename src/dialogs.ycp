@@ -67,7 +67,7 @@ term EditDialogContents()
 		 `Label( `id(`heading), ("Configuration of Interface ...................") ),
 		 `HBox (
 			`HStretch(),
-			`Frame( _(""),
+			`Frame( (""),
 				`VBox(
 				      `VSpacing(2),
 				      `ComboBox( `id(`fcoe), _("FCoE Enable"),

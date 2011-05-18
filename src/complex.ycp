@@ -116,34 +116,19 @@ void InitServicesDialog (string id) {
 }
 
 //
-// Get current network interface (netcard)
-//
-list GetCurrentNetcard()
-{
-    list card = [];
-    
-    map <integer, list> netcards = FcoeClient::GetNetworkCards();
-    integer row = (integer)UI::QueryWidget( `id(`interfaces), `CurrentItem );
-    card = netcards[row]:[];
-    y2milestone( "Current row: %1 card: %2", row, card );
-    
-    return card;
-}
-
-//
 // Adjust buttons, means set 'Change Settings' and 'Create VLAN' sensitive or insensitive
 //
 void AdjustButtons()
 {
-    list card = GetCurrentNetcard();
+    map card = FcoeClient::GetCurrentNetworkCard();
 
     // check VLAN status 
-    if ( card[2]:"" == FcoeClient::NOT_CONFIGURED )
+    if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_CONFIGURED )
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
 	UI::ChangeWidget( `id(`create), `Enabled, true );
     }
-    else if ( card[2]:"" == FcoeClient::NOT_AVAILABLE )
+    else if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_AVAILABLE )
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
 	UI::ChangeWidget( `id(`create), `Enabled, false );	
@@ -159,20 +144,23 @@ void AdjustButtons()
 void InitInterfacesDialog (string id) {
     y2milestone( "Init interfaces dialog" );
     string vlan_interface = "";
+    integer row = 0;
     
-    map <integer, list> netcards = FcoeClient::GetNetworkCards();
+    list <map> netcards = FcoeClient::GetNetworkCards();
     y2milestone( "Got netcards: %1", netcards );
     
     list <term> table_items = [];
     
-    foreach ( integer row, list card, netcards, {
+    foreach ( map card, (list<map>)netcards, {
 	    table_items = add( table_items,
-			       `item(`id(row), card[0]:"", card[1]:"", card[2]:"",
-				     card[3]:"", card[4]:"", card[5]:"" )
+			       `item(`id(row), card["dev_name"]:"", card["device"]:"", card["fcoe_vlan"]:"",
+				     card["dcb_capable"]:"", card["fcoe_enable"]:"", card["dcb_required"]:"" )
 			       );
+	    row = row + 1;
 	});
 	      
     UI::ChangeWidget( `id(`interfaces), `Items, table_items );
+    // set current item 
     UI::ChangeWidget( `id(`interfaces), `CurrentItem, `id(0) );
     FcoeClient::current_card = 0;
     
@@ -208,13 +196,13 @@ void InitConfigurationDialog (string id) {
 void InitEditDialog( string id )
 {
     y2milestone( "Init edit dialog" );
-    map <integer, list> cards = FcoeClient::GetNetworkCards();
-    list card = cards[ FcoeClient::current_card ]:[];
+    list <map> cards = FcoeClient::GetNetworkCards();
+    map card = cards[FcoeClient::current_card]:$[];
 
     // set values for 'FCoE Enabled' and 'DCB Required'
-    UI::ChangeWidget( `id(`fcoe), `Value, card[4]:"" );
-    UI::ChangeWidget( `id(`dcb), `Value, card[5]:"" );
-    UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card[2]:"" ) );
+    UI::ChangeWidget( `id(`fcoe), `Value, card["fcoe_enable"]:"" );
+    UI::ChangeWidget( `id(`dcb), `Value, card["dcb_required"]:"" );
+    UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
 }
 
 /**
@@ -244,12 +232,12 @@ symbol HandleInterfacesDialog( string id, map event )
      }
      else if ( action == `create )
      {
-	 list card = (list)GetCurrentNetcard();
-	 string dev_name = card[0]:"";
+	 map card = FcoeClient::GetCurrentNetworkCard();
+	 string dev_name = card["dev_name"]:"";
 	 boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
-					     sformat( _("Do you really want to create a network
-interface on %1 for discovered FCoE VLAN interface
-and start the FCoE initiator?"), dev_name ) );
+					     sformat( _("Do you really want to create a FCoE network
+interface for discovered FCoE VLAN interface
+on %1 and start the FCoE initiator?"), dev_name ) );
 	 if ( ret == true )
 	 {
 	     string vlan_interface = "";
@@ -265,14 +253,14 @@ and start the FCoE initiator?"), dev_name ) );
 	     if ( output["exit"]:255 == 0 )
 	     {
 		 // Get new status and exchange list (table) entry
-		 vlan_interface = FcoeClient::GetVlanInterface( card[0]:"" );
+		 vlan_interface = FcoeClient::GetVlanInterface( card["dev_name"]:"" );
 		 if ( vlan_interface == "" )
 		 {
 		     fcoe_vlan_interface = FcoeClient::NOT_AVAILABLE;
 		 }
 		 else
 		 {
-		     fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card[0]:"", vlan_interface );
+		     fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", vlan_interface );
 
 		     if ( fcoe_vlan_interface != "" )
 			 status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
@@ -281,9 +269,11 @@ and start the FCoE initiator?"), dev_name ) );
 		 }
 		 y2milestone( "FCoE VLAN interface: %1", fcoe_vlan_interface );     
 		 // set new value in global map network_interfaces
-		 card[2] = fcoe_vlan_interface;
-		 card[4] = status_map["FCOE_ENABLE"]:"";
-		 card[5] = status_map["DCB_REQUIRED"]:"";
+		 card["fcoe_vlan"] = fcoe_vlan_interface;
+		 card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
+		 card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
+		 card["cfg_file"] = status_map["Filename"]:"";
+		 
 		 FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 		 y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
 
@@ -367,20 +357,20 @@ void StoreEditDialog (string id, map event)
 {
     y2milestone( "Store edit dialog" );
     
-    list <string> card = FcoeClient::GetCurrentNetworkCard();
+    map card = FcoeClient::GetCurrentNetworkCard();
 
     string fcoe_enabled = (string)UI::QueryWidget( `id(`fcoe), `Value );
-    if ( card[4]:"" != fcoe_enabled )
+    if ( card["fcoe_enable"]:"" != fcoe_enabled )
     {
-	card[4] = fcoe_enabled;
-	card[7] = "yes";		// set modified to "yes"
+	card["fcoe_enable"] = fcoe_enabled;
+	card["modified"] = "yes";		// set modified to "yes"
     }
 
     string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
-    if ( card[5]:"" != dcb_required )
+    if ( card["dcb_required"]:"" != dcb_required )
     {
-	card[5] = dcb_required;
-	card[7] = "yes";		// set modified to "yes"
+	card["dcb_required"] = dcb_required;
+	card["modified"] = "yes";		// set modified to "yes"
     }
 
     FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
