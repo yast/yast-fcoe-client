@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed May 18 14:07:58 CEST 2011 - gs@suse.de
+
+- Main parts of the FCoE configuration available
+  (implementation of feature #311802)
+- V 2.21.1
+
+-------------------------------------------------------------------
 Tue Apr 19 12:42:00 2011 - gs@suse.de
 
 - initial version
