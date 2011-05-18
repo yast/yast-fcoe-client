@@ -273,6 +273,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		 card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 		 card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
 		 card["cfg_file"] = status_map["Filename"]:"";
+		 card["modified"] = "yes";
 		 
 		 FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 		 y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
