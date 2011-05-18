@@ -125,6 +125,23 @@ global void SetAbortFunction(boolean() function) {
     AbortFunction = function;
 }
 
+/**
+ * Checks whether an Abort button has been pressed.
+ * If so, calls function to confirm the abort call.
+ *
+ * @return boolean true if abort confirmed
+ */
+global boolean PollAbort() {
+    // Do not check UI when running in CommandLine mode
+    if (Mode::commandline())
+	return false;
+
+    if (UI::PollInput() == `abort)
+	return Abort();
+
+    return false;
+}
+
 /*
   from IscsiClientLib.ycp (line 53) - reading output
 
@@ -206,6 +223,10 @@ global string GetVlanInterface( string interface )
 {
     string vlan_interface = "";
 
+    // FOR TESTING !!!!
+    if ( interface != "eth3" )
+	return vlan_interface;
+    
     // check whether there is a VLAN interface which is configured for FCoE
     string cmd_fcoe = sformat( "LANG=POSIX fipvlan %1", interface );
     y2milestone( "Executing command: %1", cmd_fcoe );
@@ -722,7 +743,7 @@ global boolean Read()
     // TODO - is this check needed here (like in IsciClient.ycp)
     // if(!NetworkService::RunningNetworkPopup()) return false;
      
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // checking whether open-fcoe is installed (requires lldpad, ...)
@@ -733,7 +754,7 @@ global boolean Read()
     sleep(sl);
 
     // read current settings
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // check whether auto start of daemon fcoemon and lldpad is enabled or not
@@ -745,7 +766,7 @@ global boolean Read()
     if(!start_status) Report::Error(_("Starting of services failed."));
     sleep(sl);
 
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // detect netcards
@@ -756,7 +777,7 @@ global boolean Read()
     sleep(sl);
 
     // read general FCoE settings
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // check daemon fcoemon and lldpad
@@ -768,7 +789,7 @@ global boolean Read()
     
     Progress::Finish();
     
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     modified = false;
 
     return true;
@@ -814,7 +835,7 @@ global boolean Write()
     y2milestone( "**** Progress still running: %1", is_running );
 
     // write settings
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     boolean success = WriteFcoeConfig();
@@ -827,7 +848,7 @@ global boolean Write()
 For details see /var/log/YaST2/y2log") );
 
     // restart fcoe to enable changes 
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     success = RestartServiceFcoe();
@@ -836,7 +857,7 @@ For details see /var/log/YaST2/y2log") );
     sleep(sl);
     
     // adjust service start of lldpad and fcoe
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage ();
 
     // adjust start status of services lldpad and fcoe
@@ -847,7 +868,7 @@ For details see /var/log/YaST2/y2log") );
     if(false) Report::Error (Message::SuSEConfigFailed());
     sleep(sl);
 
-    if(Abort()) return false;
+    if(PollAbort()) return false;
 
     return true;
 }
