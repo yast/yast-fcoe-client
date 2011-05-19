@@ -132,8 +132,8 @@ any GlobalDialog() {
 				Label::FinishButton()
 				);
     Wizard::DisableBackButton ();
-    // TODO: provide icon
-    // Wizard::SetTitleIcon("yast-fcoe-client");
+    // TODO: rename icon to yast2-fcoe-client (yast2-theme package)
+    Wizard::SetTitleIcon("fcoe");
 
     return CWM::Run (w, $[`abort : ReallyAbort]);
 }

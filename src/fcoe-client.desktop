@@ -8,7 +8,7 @@ X-KDE-HasReadOnlyMode=true
 X-KDE-Library=yast2
 X-SuSE-YaST-Call=fcoe-client
 
-X-SuSE-YaST-Group=Misc
+X-SuSE-YaST-Group=Net_advanced
 X-SuSE-YaST-Argument=
 X-SuSE-YaST-RootOnly=true
 X-SuSE-YaST-AutoInst=
@@ -19,7 +19,7 @@ X-SuSE-YaST-AutoInstResource=fcoe-client
 Icon=yast-fcoe-client
 Exec=/sbin/yast2 fcoe-client 
 
-Name=FcoeClient
-GenericName=fcoe-client
+Name=FCoE Client Configuration
+GenericName=Fibre Channel over Ethernet Configuration
 X-KDE-SubstituteUID=true
 StartupNotify=true

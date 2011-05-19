@@ -125,6 +125,23 @@ global void SetAbortFunction(boolean() function) {
     AbortFunction = function;
 }
 
+/**
+ * Checks whether an Abort button has been pressed.
+ * If so, calls function to confirm the abort call.
+ *
+ * @return boolean true if abort confirmed
+ */
+global boolean PollAbort() {
+    // Do not check UI when running in CommandLine mode
+    if (Mode::commandline())
+	return false;
+
+    if (UI::PollInput() == `abort)
+	return Abort();
+
+    return false;
+}
+
 /*
   from IscsiClientLib.ycp (line 53) - reading output
 
@@ -149,7 +166,7 @@ global string NOT_CONFIGURED = "not configured";
 global string NOT_AVAILABLE = "not available";
 
 // map containing information about networks cards and VLAN, FCoE and DCB status
-map <integer, list> network_interfaces = $[];
+list <map> network_interfaces = [];
 
 // map containing information about values in /etc/fcoe/config
 map <string, string> fcoe_general_config = $[ "DEBUG":"no",
@@ -277,26 +294,29 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	if ( content == "" || content == nil )
 	{
 	    // remove '-fcoe' and try again
-	    y2milestone( "Reading %1", substring( file_name, 0, size(file_name)-5 ) );
-	    content = (string)SCR::Read(.target.string, substring( file_name, 0, size(file_name)-5 ) );
+	    file_name = substring( file_name, 0, size(file_name)-5 );
+	    y2milestone( "Reading %1", file_name );
+	    content = (string)SCR::Read(.target.string, file_name );
 	}
 	if ( content == "" || content == nil )
 	{
+	    string create_file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	    y2milestone( "Cannot read cfg-file creating %1 with default values from /etc/fcoe/cfg-ethx",
-			 file_name );
+			  create_file_name );
 	    string def_values = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
 
-	    if ( def_values != "" )
+	    if ( def_values != "" && def_values != nil )
 	    {
-		boolean ret = SCR::Write( .target.string, file_name, def_values );
+		boolean ret = SCR::Write( .target.string, create_file_name, def_values );
 		if ( ret == true )
 		{
 		    status_map = add( status_map, "FCOE_ENABLE", "yes");
 		    status_map = add( status_map, "DCB_REQUIRED", "yes");
+		    status_map = add( status_map, "Filename", create_file_name );
 		}
 		else
 		{
-		    y2error( "Cannot create %1", file_name );
+		    y2error( "Cannot create %1", create_file_name );
 		}
 	    }
 	    else
@@ -322,6 +342,7 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 		    status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
 		}
 	    });
+	status_map = add( status_map, "Filename", file_name );
     }
     else
     {
@@ -424,6 +445,7 @@ global boolean ServiceStatus()
 {
     // TODO - check whether loading any modules in Stage::initial() is required
     // (like in IsciClientLib.ycp, line 469 )
+    // probably NOT -> see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
     boolean ret = true;
 			 
     if ( Service::Status( "fcoe" ) != 0 ) 
@@ -469,13 +491,12 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             FCoE VLAN  DCB capable FCoE enable  DCB required VLAN  	data modified
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   	yes/no
-// 0	     1                  2          3           4            5     	 6	7
+// dev_name  device             fcoe_vlan  dcb_capable fcoe_enable  dcb_required vlan_interface	modified cfg_file
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   		yes/no   /etc/fcoe/cfg-eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
 //
-void DetectNetworkCards()
+boolean DetectNetworkCards()
 {
     string vlan_interface = "";
     string fcoe_vlan_interface = "";
@@ -483,10 +504,12 @@ void DetectNetworkCards()
     
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
     y2milestone( "Detected netcards: %1", netcards );
-    integer row = 0;
+
+    if ( netcards == [] || netcards == nil )
+	return false;
     
     foreach ( map card, netcards, {
-	    list info_list = [];
+	    map info_map = $[];
 	    map <string, string> status_map = $[];
 
 	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
@@ -510,37 +533,42 @@ void DetectNetworkCards()
 		    fcoe_vlan_interface = NOT_CONFIGURED;
 		}
 	    }
-	    
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
 	    
-	    info_list = add( info_list, card["dev_name"]:"");	// network card, e.g. eth3
-	    info_list = add( info_list, card["device"]:"");     // description
-	    info_list = add( info_list, fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
-	    info_list = add( info_list, dcb_capable );		// DCB capable
-	    info_list = add( info_list, status_map["FCOE_ENABLE"]:"");
-	    info_list = add( info_list, status_map["DCB_REQUIRED"]:"");
-	    info_list = add( info_list, vlan_interface );	// VLAN interface, e.g. 200
-	    info_list = add( info_list, "no" );		// data not modified
-	    network_interfaces = add( network_interfaces, row, info_list );
-	    row = row + 1;
+	    info_map = add( info_map, "dev_name", card["dev_name"]:"");		// network card, e.g. eth3
+	    info_map = add( info_map, "device", card["device"]:"");		// description
+	    info_map = add( info_map, "fcoe_vlan", fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
+	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
+	    info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"");	// FCOE_ENABLE
+	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
+	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
+	    info_map = add( info_map, "modified", "no" );			// data not modified
+	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
+
+	    network_interfaces = add( network_interfaces, info_map );
 	} );
+    // sort the list of interfaces (eth0, eth1, eth2...)
+    network_interfaces = sort( map a, map b, network_interfaces, {
+		    return ( a["dev_name"]:"" < b["dev_name"]:"" );
+		} );
+    return true;
 }
 
 //
 // Returns the map containing all detected interfaces including
 // configuration status of VLAN, FCoE and DCB
 //
-global map <integer, list> GetNetworkCards()
+global list <map> GetNetworkCards()
 {
     return network_interfaces;
 }
 
-global list <string> GetCurrentNetworkCard()
+global map GetCurrentNetworkCard()
 {
-    return (list <string>)network_interfaces[ current_card ]:[];
+    return network_interfaces[current_card]:$[];
 }
 
-global void SetNetworkCardsValue( integer row, list card )
+global void SetNetworkCardsValue( integer row, map card )
 {
     network_interfaces[row] = card;
 }
@@ -548,23 +576,21 @@ global void SetNetworkCardsValue( integer row, list card )
 //
 // Read /etc/fcoe/config
 //
-void ReadFcoeConfig()
+boolean ReadFcoeConfig()
 {
     list <string> options = (list<string>) SCR::Dir(.fcoe);
     y2milestone( "List of options: %1", options );
-    // TODO take values from list
-    if ( options != [] )
-    {	
-	string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
-	fcoe_general_config = add( fcoe_general_config, "DEBUG", debug_val );
+
+    if ( options == [] || options == nil )
+	return false;
+    
+    string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
+    fcoe_general_config = add( fcoe_general_config, "DEBUG", debug_val );
 	
-	string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
-	fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
-    }
-    else
-    {
-	y2error( "Cannot read /etc/fcoe/config" ); 
-    }
+    string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
+    fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
+
+    return true;
 }
 
 //
@@ -618,6 +644,57 @@ boolean WriteFcoeConfig()
     return ret;
 }
 
+boolean WriteCfgFiles()
+{
+    list <map> netcards = GetNetworkCards();
+    boolean success = true;
+    
+    foreach ( map card, (list<map>)netcards, {
+	    if ( card["modified"]:"no" == "yes" )  // data modified
+	    {
+		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
+		y2milestone( "Original content: %1", content );
+		
+		list <string> lines = (list<string>)splitstring( content, "\n" );
+		lines = maplist( string line, lines, {
+			if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+			{
+			    return sformat( "FCOE_ENABLE=\"%1\"", card["fcoe_enable"]:"no" );
+			}
+			else if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+			{
+			    return sformat( "DCB_REQUIRED=\"%1\"", card["dcb_required"]:"no" );
+			}
+			else
+			{
+			    return line;
+			}
+		    });
+		content = mergestring( lines, "\n" );
+		y2milestone( "Modified content: %1", content );
+
+		boolean ret = SCR::Write( .target.string, card["cfg_file"]:"", content );
+		if ( !ret )
+		{
+		    success = ret;
+		    y2error( "Cannot write %1", card["cfg_file"]:"" );
+		}
+		else
+		{
+		    y2milestone( "%1 written", card["cfg_file"]:"" );
+		}
+	    }
+	} );
+    
+    return success;
+}
+
+boolean RestartServiceFcoe()
+{
+    y2milestone( "Restarting fcoe");
+    return Service::Restart("fcoe");
+}
+
 /**
  * Read all fcoe-client settings
  * @return true on success
@@ -662,7 +739,7 @@ global boolean Read()
     // TODO - is this check needed here (like in IsciClient.ycp)
     // if(!NetworkService::RunningNetworkPopup()) return false;
      
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // checking whether open-fcoe is installed (requires lldpad, ...)
@@ -673,7 +750,7 @@ global boolean Read()
     sleep(sl);
 
     // read current settings
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // check whether auto start of daemon fcoemon and lldpad is enabled or not
@@ -682,33 +759,33 @@ global boolean Read()
     boolean start_status = ServiceStatus();
     
     /* Error message */
-    if(!start_status) Report::Error(_("Starting of services failed"));
+    if(!start_status) Report::Error(_("Starting of services failed."));
     sleep(sl);
 
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
-    // detect netcards - TODO return value
-    DetectNetworkCards();
+    // detect netcards
+    boolean success = DetectNetworkCards();
     
     /* Error message */
-    if(false) Report::Warning(_("Cannot detect devices."));
+    if( !success ) Report::Warning(_("Cannot detect devices."));
     sleep(sl);
 
     // read general FCoE settings
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     // check daemon fcoemon and lldpad
-    ReadFcoeConfig();
+    success = ReadFcoeConfig();
     
     /* Error message */
-    if(false) Report::Error(_("Checking for services failed"));
+    if( !success ) Report::Error(_("Cannot read /etc/fcoe/config."));
     sleep(sl);
     
     Progress::Finish();
     
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     modified = false;
 
     return true;
@@ -726,7 +803,7 @@ global boolean Write()
     y2milestone( "Saving fcoe-client Configuration" );
     
     // Set the number of stages
-    integer steps = 2;
+    integer steps = 3;
 
     integer sl = 500;
     
@@ -734,12 +811,16 @@ global boolean Write()
     Progress::New(caption, " ", steps, [
 					/* Progress stage 1/2 */
 					_("Write the settings"),
-					/* Progress stage 2/2 */
+					/* Progress stage 2/3 */
+					_("Restart FCoE service"),
+					/* Progress stage 3/3 */
 					_("Adjust start of services")
 					], [
 					    /* Progress step 1/2 */
 					    _("Writing the settings..."),
-					    /* Progress step 2/2 */
+					    /* Progress step 2/3 */
+					    _("Restarting FCoE service..."),
+					    /* Progress sstep 3/3 */
 					    _("Adjusting start of services..."),
 					    /* Progress finished */
 					    _("Finished")
@@ -750,26 +831,40 @@ global boolean Write()
     y2milestone( "**** Progress still running: %1", is_running );
 
     // write settings
-    if(Abort()) return false;
+    if(PollAbort()) return false;
     Progress::NextStage();
 
     boolean success = WriteFcoeConfig();
-    
     /* Error message */
     if( !success ) Report::Error (_("Cannot write settings to /etc/fcoe/config."));
     sleep(sl);
 
-    // run SuSEconfig
-    if(Abort()) return false;
+    success = WriteCfgFiles();
+    if( !success ) Report::Error (_("Cannot write settings for FCoE interfaces.
+For details see /var/log/YaST2/y2log") );
+
+    // restart fcoe to enable changes 
+    if(PollAbort()) return false;
+    Progress::NextStage();
+
+    success = RestartServiceFcoe();
+     /* Error message */
+    if( !success ) Report::Error (_("/etc/init.d/fcoe restart failed."));
+    sleep(sl);
+    
+    // adjust service start of lldpad and fcoe
+    if(PollAbort()) return false;
     Progress::NextStage ();
 
+    // adjust start status of services lldpad and fcoe
     AdjustStartStatus();
     
     /* Error message */
+    /* TODO - SuSEConfig required ???? */
     if(false) Report::Error (Message::SuSEConfigFailed());
     sleep(sl);
 
-    if(Abort()) return false;
+    if(PollAbort()) return false;
 
     return true;
 }
