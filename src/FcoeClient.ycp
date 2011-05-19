@@ -223,10 +223,6 @@ global string GetVlanInterface( string interface )
 {
     string vlan_interface = "";
 
-    // FOR TESTING !!!!
-    if ( interface != "eth3" )
-	return vlan_interface;
-    
     // check whether there is a VLAN interface which is configured for FCoE
     string cmd_fcoe = sformat( "LANG=POSIX fipvlan %1", interface );
     y2milestone( "Executing command: %1", cmd_fcoe );
