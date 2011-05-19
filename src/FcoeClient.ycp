@@ -331,7 +331,7 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	}
 	
 	list <string> lines = splitstring( content, "\n" );
-	// TODO: better/more elegant way of reading values (use SysConfig agent?)
+
 	foreach( string line, (list<string>)lines, {
 		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
 		{
@@ -427,13 +427,12 @@ void DetectStartStatus()
     boolean status = false;
     
     status = Service::Enabled( "fcoe" );
-    y2milestone( "Status of fcoe: %1", status );
+    y2milestone( "Start status of fcoe: %1", status );
     service_start = add( service_start, "fcoe", status );
 
     status = Service::Enabled( "lldpad" );
-    y2milestone( "Status of lldpad: %1", status );
+    y2milestone( "Start status of lldpad: %1", status );
     service_start = add( service_start, "lldpad", status );
-
 }
 
 global map<string, boolean> GetStartStatus()
@@ -691,8 +690,13 @@ boolean WriteCfgFiles()
 
 boolean RestartServiceFcoe()
 {
-    y2milestone( "Restarting fcoe");
-    return Service::Restart("fcoe");
+    boolean ret = true;
+    if ( FcoeClient::Modified() )
+    {
+	y2milestone( "Restarting fcoe");
+	ret = Service::Restart("fcoe");
+    }
+    return ret;
 }
 
 /**
@@ -859,9 +863,6 @@ For details see /var/log/YaST2/y2log") );
     // adjust start status of services lldpad and fcoe
     AdjustStartStatus();
     
-    /* Error message */
-    /* TODO - SuSEConfig required ???? */
-    if(false) Report::Error (Message::SuSEConfigFailed());
     sleep(sl);
 
     if(PollAbort()) return false;

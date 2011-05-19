@@ -43,13 +43,10 @@ include "fcoe-client/helps.ycp";
 include "fcoe-client/dialogs.ycp";
 
 /**
- * Return a modification status
- * @return true if data was modified
+ * Show a popup on abort if data are modified and
+ * check redo list/execute redo commands.
+ * @return true if users aborts installation
  */
-boolean Modified() {
-    return FcoeClient::Modified();
-}
-
 boolean ReallyAbort() {
     if ( !FcoeClient::Modified() )
 	return true;
@@ -77,18 +74,13 @@ boolean ReallyAbort() {
     return abort;
 }
 
-boolean PollAbort() {
-    return UI::PollInput() == `abort;
-}
-
 /**
  * Read settings dialog
  * @return `abort if aborted and `next otherwise
  */
 symbol ReadDialog() {
     Wizard::RestoreHelp(HELPS["read"]:"");
-    // TODO - check this - doesn't help to set it here but call PollAbort in FcoeClient directly ???
-    //FcoeClient::SetAbortFunction(PollAbort);
+
     if (!Confirm::MustBeRoot()) return `abort;
     boolean ret = FcoeClient::Read();
     return ret ? `next : `abort;
@@ -101,7 +93,7 @@ symbol ReadDialog() {
 symbol WriteDialog() {
     Wizard::RestoreHelp(HELPS["write"]:"");
     y2milestone( "Writing configuration" );
-    // FcoeClient::SetAbortFunction(PollAbort);
+
     boolean ret = FcoeClient::Write();
     return ret ? `next : `abort;
 }
@@ -373,12 +365,22 @@ void StoreInterfacesDialog (string id, map event)
 void StoreConfigurationDialog (string id, map event)
 {
     y2milestone( "Store configuration dialog" );
-    string debug_val = (string)UI::QueryWidget( `id("debug"), `Value );
-    string syslog_val = (string)UI::QueryWidget( `id("syslog"), `Value );
-    FcoeClient::SetFcoeConfigValue( "DEBUG", debug_val );
-    FcoeClient::SetFcoeConfigValue( "USE_SYSLOG", syslog_val );
 
-    FcoeClient::SetModified( true );
+    map config = FcoeClient::GetFcoeConfig();
+    
+    string debug_val = (string)UI::QueryWidget( `id("debug"), `Value );
+    if ( config["DEBUG"]:"" != debug_val)
+    {
+	FcoeClient::SetFcoeConfigValue( "DEBUG", debug_val );
+	FcoeClient::SetModified( true );
+    }
+    string syslog_val = (string)UI::QueryWidget( `id("syslog"), `Value );
+
+    if ( config["USE_SYSLOG"]:"" != syslog_val )
+    {
+	FcoeClient::SetFcoeConfigValue( "USE_SYSLOG", syslog_val );
+	FcoeClient::SetModified( true );
+    }
 }
 
 void StoreEditDialog (string id, map event)
