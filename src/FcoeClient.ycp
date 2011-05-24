@@ -287,36 +287,30 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
     
     if ( vlan_device_name != "")
     {
+	// fcoemon reads values from /etc/fcoe/cfg-<vlan-interface>
 	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
 	content = (string)SCR::Read(.target.string, file_name);
 
 	if ( content == "" || content == nil )
 	{
-	    // remove '-fcoe' and try again
-	    file_name = substring( file_name, 0, size(file_name)-5 );
-	    y2milestone( "Reading %1", file_name );
-	    content = (string)SCR::Read(.target.string, file_name );
-	}
-	if ( content == "" || content == nil )
-	{
-	    string create_file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	    y2milestone( "Cannot read cfg-file creating %1 with default values from /etc/fcoe/cfg-ethx",
-			  create_file_name );
+			  file_name );
 	    string def_values = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
 
 	    if ( def_values != "" && def_values != nil )
 	    {
-		boolean ret = SCR::Write( .target.string, create_file_name, def_values );
+		boolean ret = SCR::Write( .target.string, file_name, def_values );
 		if ( ret == true )
 		{
 		    status_map = add( status_map, "FCOE_ENABLE", "yes");
 		    status_map = add( status_map, "DCB_REQUIRED", "yes");
-		    status_map = add( status_map, "Filename", create_file_name );
+		    status_map = add( status_map, "Filename", file_name );
+		    status_map = add( status_map, "Created", "yes" );
 		}
 		else
 		{
-		    y2error( "Cannot create %1", create_file_name );
+		    y2error( "Cannot create %1", file_name );
 		}
 	    }
 	    else
@@ -516,6 +510,8 @@ boolean DetectNetworkCards()
 	    if ( vlan_interface == "" )
 	    {
 		// FCoE isn't enabled on the switch - we can't do anything here
+		// TODO - check link map from .probe.network
+		//        and distinguish between no cable attached and interface not up
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -541,7 +537,7 @@ boolean DetectNetworkCards()
 	    info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"");	// FCOE_ENABLE
 	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
 	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
-	    info_map = add( info_map, "modified", "no" );			// data not modified
+	    info_map = add( info_map, "modified", status_map["Created"]:"no" );		// data not modified
 	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
