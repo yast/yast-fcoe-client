@@ -437,7 +437,7 @@ global map<string, boolean> GetStartStatus()
 global boolean ServiceStatus()
 {
     // TODO - check whether loading any modules in Stage::initial() is required
-    // (like in IsciClientLib.ycp, line 469 )
+    // (like in IsciClientLib.ycp, line 523 )
     // probably NOT -> see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
     boolean ret = true;
 			 
@@ -827,6 +827,10 @@ global boolean Write()
 					    ],
 		  ""
 		  );
+    // TODO  things to do in case of Mode::autoinst()/autoupgrade() ???
+    // see IscsiClient.ycp, line 236, 241
+
+    // TODO  is_running - used or obsolete ???
     boolean is_running = Progress::IsRunning();
     y2milestone( "**** Progress still running: %1", is_running );
 
@@ -858,7 +862,8 @@ For details see /var/log/YaST2/y2log") );
 
     // adjust start status of services lldpad and fcoe
     AdjustStartStatus();
-    
+
+    // TODO - add additional package ??? like in IscsiClient.ycp, line 257
     sleep(sl);
 
     if(PollAbort()) return false;
