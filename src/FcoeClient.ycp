@@ -272,8 +272,11 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
     y2milestone( "Output: %1", output );
     // read stdout (remove \n and white spaces)
     vlan_device_name = deletechars( output["stdout"]:"", " \n\t" );
-    
-    y2milestone( "Returning: %1", vlan_device_name );
+
+    if ( vlan_device_name != "" )
+    {
+	y2milestone( "Returning: %1", vlan_device_name );
+    }
     return vlan_device_name;
 }
 
