@@ -119,8 +119,8 @@ term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate, `keepSorting ),
-				    `header(_("Device Name"), _("Model"), _("FCoE VLAN Interface"), _("DCB capable"),
-					    _("FCoE Enable"), _("DCB Required")),
+				    `header(_("Device Name"), _("Model"), _("FCoE VLAN Interface"),
+					    _("FCoE Enable"), _("DCB Required"), _("DCB capable") ),
 				    []
 				    ),
 			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings") ),

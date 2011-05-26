@@ -487,7 +487,7 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             fcoe_vlan  dcb_capable fcoe_enable  dcb_required vlan_interface	modified cfg_file
+// dev_name  device             fcoe_vlan  fcoe_enable dcb_required dcb_capable vlan_interface	modified cfg_file
 // eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   		yes/no   /etc/fcoe/cfg-eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
@@ -513,8 +513,9 @@ boolean DetectNetworkCards()
 	    if ( vlan_interface == "" )
 	    {
 		// FCoE isn't enabled on the switch - we can't do anything here
-		// TODO - check link map from .probe.network
-		//        and distinguish between no cable attached and interface not up
+		// TODO - check link map from .probe.network and distinguish between
+		// no cable attached and interface not up, Steffen: cannot be used, "no"
+		// can stand for 'noe cable' or 'not up'
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -536,9 +537,9 @@ boolean DetectNetworkCards()
 	    info_map = add( info_map, "dev_name", card["dev_name"]:"");		// network card, e.g. eth3
 	    info_map = add( info_map, "device", card["device"]:"");		// description
 	    info_map = add( info_map, "fcoe_vlan", fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
-	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
 	    info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"");	// FCOE_ENABLE
 	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
+	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
 	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
 	    info_map = add( info_map, "modified", status_map["Created"]:"no" );		// data not modified
 	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
