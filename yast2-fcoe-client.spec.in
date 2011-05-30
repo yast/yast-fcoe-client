@@ -26,6 +26,7 @@ Ethernet (FCoE) configuration.
 @yncludedir@/fcoe-client/*
 @clientdir@/fcoe-client.ycp
 @clientdir@/fcoe-client_*.ycp
+@clientdir@/inst_fcoe-client.ycp
 @moduledir@/FcoeClient.*
 @desktopdir@/fcoe-client.desktop
 %dir @scrconfdir@
