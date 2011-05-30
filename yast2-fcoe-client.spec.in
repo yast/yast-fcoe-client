@@ -9,7 +9,8 @@ BuildArchitectures:	noarch
 Summary:	Configuration of fcoe-client
 
 %description
--
+This package contains the YaST2 component for the Fibre Channel over
+Ethernet (FCoE) configuration.
 
 @PREP@
 
