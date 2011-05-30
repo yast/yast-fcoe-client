@@ -38,7 +38,7 @@ import "Confirm";
 import "FcoeClient";
 import "Service";
 import "Stage";
-
+import "FileUtils";
 
 include "fcoe-client/helps.ycp";
 include "fcoe-client/dialogs.ycp";
@@ -251,15 +251,20 @@ symbol HandleInterfacesDialog( string id, map event )
     {
 	map card = FcoeClient::GetCurrentNetworkCard();
 	string dev_name = card["dev_name"]:"";
+
 	string command = "";
 	map output = $[];	 
 	string vlan_interface = "";
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
-		 
+	boolean create_ifcfg = false;
+	string ifcfg_file = "";
+	
 	if ( Stage::initial() )		// first stage - create and start FCoE VLAN interface
-	{   
+	{
+	    // headline of a popup: creating and starting Fibre Channel over Ethernet
 	    boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
+						// question to the user: really create and start FCoE
 						sformat( _("Do you really want to create a FCoE network
 interface for discovered FCoE VLAN interface
 on %1 and start the FCoE initiator?"), dev_name ) );
@@ -274,6 +279,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	 
 		if ( output["exit"]:255 != 0 )
 		{
+		    // text of an error popup
 		    Popup::Error( sformat( _("Cannot create and start FCoE on %1"), dev_name ) ); 
 		    return nil;
 		}
@@ -286,27 +292,39 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	}
 	else	// installed system - if VLAN already exists only start FCoE
 	{
+	    // headline of a popup: starting Fibre Channel over Ethernet
 	    boolean ret = Popup::YesNoHeadline( _("Starting FCoE on detected VLAN device"),
+						// question to the user: really start FCoE
 						sformat( _("Do you really want to start FCoE initiator
 on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    if ( ret == true )
 	    {
-		// call 'ifup' for vlan interface - creates /proc/net/vlan/<vlan-interface>
+		ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
+		
 		// if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
-		command = sformat( "ifup %1\.%2", dev_name, card["vlan_interface"]:"" );
-		y2milestone( "Executing command: %1", command );
-		output = (map)SCR::Execute( .target.bash_output, command );
-		y2milestone( "Output: %1", output );
+		// call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
+		if ( FileUtils::Exists( ifcfg_file ) ) 
+		{						 
+		    command = sformat( "ifup %1\.%2", dev_name, card["vlan_interface"]:"" );
+		    y2milestone( "Executing command: %1", command );
+		    output = (map)SCR::Execute( .target.bash_output, command );
+		    y2milestone( "Output: %1", output );
 
-		if ( output["exit"]:255 == 0 )
-		{
-		    // start FCoE
-		    command = sformat( "fipvlan -s %1", dev_name );
+		    if ( output["exit"]:255 == 0 )
+		    {
+			// start FCoE
+			command = sformat( "fipvlan -s %1", dev_name );
+		    }
+		    else
+		    {
+			command = sformat( "fipvlan -c -s %1", dev_name ); // create and start FCoE
+			create_ifcfg = true;
+		    }
 		}
 		else
 		{
-		    // create and start FCoE
 		    command = sformat( "fipvlan -c -s %1", dev_name );
+		    create_ifcfg = true;
 		}
 
 		y2milestone( "Executing command: %1", command );
@@ -314,6 +332,7 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		y2milestone( "Output: %1", output );
 		if ( output["exit"]:255 != 0 )
 		{
+		    // text of an error popup: command failed on the network interface 
 		    Popup::Error( sformat( _("Command \"%1\" on %2 failed."), command, dev_name ) ); 
 		    return nil;
 		}
@@ -340,11 +359,18 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
 		status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
 
-		// store command to be able to redo the creation of FCoE VLAN interface
-		// in case of abort - TODO: is this also OK if only 'fipvlan -s <interface>' is called?
+		// store command to be able to redo the creation of FCoE VLAN interface in case of abort
+		// TODO: is this also OK if only 'fipvlan -s <interface>' is called?
 		FcoeClient::AddRedoCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
-		card["modified"] = "yes";
-		FcoeClient::SetModified( true );
+		if ( create_ifcfg )
+		{
+		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"onboot\"
+ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
+		    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
+		    SCR::Write(.target.string, ifcfg_file, config);
+		    y2milestone( "Writing config: %1 to %2", config, ifcfg_file );
+		    FcoeClient::AddRedoCommand( sformat( "rm %1", ifcfg_file ) );
+		}
 	    }
 	    else
 	    {
@@ -357,7 +383,9 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 	card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
 	card["cfg_file"] = status_map["Filename"]:"";
-		 
+	card["modified"] = "yes";
+	FcoeClient::SetModified( true );
+		
 	FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 	y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
 	    
