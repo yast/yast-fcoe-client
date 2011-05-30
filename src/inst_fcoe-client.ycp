@@ -1,0 +1,61 @@
+/**
+ * File:	clients/inst_fcoe-client.ycp
+ * Package:	Configuration of fcoe-client
+ * Summary:	Main file
+ * Authors:	Gabriele Mohr <gs@suse.de> 
+ *
+ *
+ * File called in installation workflow for fcoe-client configuration.
+ */
+
+{
+
+/***
+ * <h3>Configuration of fcoe-client</h3>
+ */
+
+textdomain "fcoe-client";
+
+/* The main () */
+y2milestone ("----------------------------------------");
+y2milestone ("FCoEClient module started");
+
+import "Progress";
+import "Report";
+import "Summary";
+import "ModuleLoading";
+import "Packages";
+import "Installation";
+import "String";
+include "fcoe-client/wizards.ycp";
+
+/* main ui function */
+any ret = nil;
+
+y2milestone("fcoe-client module started during installation");
+
+// TODO: check what is needed here
+//       - create directories (included in open-fcoe?)
+//       - load any modules ?
+//       - start fcoemon (started in FcoeClient::ServiceStatus())
+
+//SCR::Execute(.target.bash, "mkdir -p /etc/iscsi; touch /etc/iscsi/initiatorname.iscsi; ln -s /etc/iscsi/initiatorname.iscsi /etc/initiatorname.iscsi");
+// ModuleLoading::Load("iscsi_tcp", "", "", "", false, true);
+// start iscsid daemon
+// IscsiClientLib::startIScsid();
+// IscsiClientLib::autoLogOn();
+
+// run dialog
+ret = MainSequence();
+y2debug("MainSequence ret=%1", ret);
+// add package open-iscsi to installed system
+Packages::addAdditionalPackage("open-fcoe");
+
+/* Finish */
+y2milestone("fcoe-client module finished");
+y2milestone("----------------------------------------");
+
+return ret;
+
+/* EOF */
+}
