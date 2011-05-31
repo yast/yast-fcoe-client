@@ -5,7 +5,9 @@ yncludedir = @yncludedir@/fcoe-client
 client_DATA =			\
 	fcoe-client.ycp		\
 	fcoe-client_auto.ycp	\
-	fcoe-client_proposal.ycp
+	fcoe-client_proposal.ycp        \
+        fcoe-client_finish.ycp          \
+        inst_fcoe-client.ycp
 
 ynclude_DATA =			\
 	helps.ycp		\
