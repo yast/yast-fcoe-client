@@ -27,29 +27,73 @@ import "ModuleLoading";
 import "Packages";
 import "Installation";
 import "String";
+import "FcoeClient";
+import "NetworkService";
+
 include "fcoe-client/wizards.ycp";
 
 /* main ui function */
 any ret = nil;
+boolean success = false;
 
 y2milestone("fcoe-client module started during installation");
 
-// TODO: check what is needed here
-//       - create directories (included in open-fcoe?)
-//       - load any modules ?
-//       - start fcoemon (started in FcoeClient::ServiceStatus())
+// create /etc/fcoe
+SCR::Execute(.target.bash, "mkdir -p /etc/fcoe" );
 
-//SCR::Execute(.target.bash, "mkdir -p /etc/iscsi; touch /etc/iscsi/initiatorname.iscsi; ln -s /etc/iscsi/initiatorname.iscsi /etc/initiatorname.iscsi");
-// ModuleLoading::Load("iscsi_tcp", "", "", "", false, true);
-// start iscsid daemon
-// IscsiClientLib::startIScsid();
-// IscsiClientLib::autoLogOn();
+
+// TODO: check what is additional needed 
+//       - load any modules ?
+//	  
+// FcoeClient::CheckInstalledPackages() not needed in inst-sys
+// FcoeClient::DetectStartStatus()	doesn't make sense in inst-sys
+
+// TODO: check for running network - makes sense here ???
+if( !NetworkService::RunningNetworkPopup() )
+{
+    y2error( "Network NOT set up" );
+    return nil;
+}
+
+// start services fcoe and lldpad
+success = FcoeClient::ServiceStatus();
+if ( !success )
+{
+    y2error( "Starting of services FAILED" );
+    return nil;
+}
+
+// detect netcards
+success = FcoeClient::DetectNetworkCards(); 
+if ( !success )
+{
+    y2error( "Detecting netcards FAILED" );
+    return nil;
+}
+
+// read general FCoE settings
+success = FcoeClient::ReadFcoeConfig();
+if ( !success )
+{
+    y2error( "Reading /etc/fcoe/config FAILED" );
+    return nil;
+}
 
 // run dialog
 ret = MainSequence();
-y2debug("MainSequence ret=%1", ret);
-// add package open-iscsi to installed system
+y2milestone("MainSequence ret=%1", ret);
+
+// add package open-fcoe to installed system
 Packages::addAdditionalPackage("open-fcoe");
+
+// workflow not aborted
+if ( ret == `next )
+{
+    // write changes to config files
+    FcoeClient::WriteFcoeConfig();
+    FcoeClient::WriteCfgFiles();
+    FcoeClient::RestartServiceFcoe();
+}
 
 /* Finish */
 y2milestone("fcoe-client module finished");

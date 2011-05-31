@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Tue May 31 12:21:30 CEST 2011 - gs@suse.de
+
+- Create VLAN interface and start FCoE during installation, only
+  start FCoE in installed system (if VLAN interface exists)
+- 'DCB capable' is last column in table of interfaces
+- inst_fcoe-client.ycp and fcoe-client_finish.ycp added (needed
+  for installation workflow)
+- V 2.17.2 
+
+-------------------------------------------------------------------
 Thu May 19 10:42:41 CEST 2011 - gs@suse.de
 
 - Main parts of the FCoE configuration are available
