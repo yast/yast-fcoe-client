@@ -492,7 +492,7 @@ global boolean ServiceStatus()
 //
 // Detect network interface cards (hardware probe) and get status  
 //
-boolean DetectNetworkCards()
+global boolean DetectNetworkCards()
 {
     string vlan_interface = "";
     string fcoe_vlan_interface = "";
@@ -575,7 +575,7 @@ global void SetNetworkCardsValue( integer row, map card )
 //
 // Read /etc/fcoe/config
 //
-boolean ReadFcoeConfig()
+global boolean ReadFcoeConfig()
 {
     list <string> options = (list<string>) SCR::Dir(.fcoe);
     y2milestone( "List of options: %1", options );
@@ -625,7 +625,7 @@ global list GetRedoCommands()
     return redo_list;
 }
 
-boolean WriteFcoeConfig()
+global boolean WriteFcoeConfig()
 {
     boolean ret = true;
     
@@ -643,7 +643,7 @@ boolean WriteFcoeConfig()
     return ret;
 }
 
-boolean WriteCfgFiles()
+global boolean WriteCfgFiles()
 {
     list <map> netcards = GetNetworkCards();
     boolean success = true;
@@ -688,7 +688,7 @@ boolean WriteCfgFiles()
     return success;
 }
 
-boolean RestartServiceFcoe()
+global boolean RestartServiceFcoe()
 {
     boolean ret = true;
     if ( FcoeClient::Modified() )
@@ -776,11 +776,10 @@ global boolean Read()
     if( !success ) Report::Warning(_("Cannot detect devices."));
     sleep(sl);
 
-    // read general FCoE settings
     if(PollAbort()) return false;
     Progress::NextStage();
 
-    // check daemon fcoemon and lldpad
+    // read general FCoE settings
     success = ReadFcoeConfig();
     
     /* Error message */

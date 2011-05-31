@@ -194,7 +194,7 @@ any MainSequence() {
 	Wizard::CreateDialog();
 
 	any ret = Sequencer::Run(aliases, sequence);
-
+	y2milestone( "**** RETURN of MainSequence ****: %1", ret );
 	UI::CloseDialog();
 	return ret;
     }
