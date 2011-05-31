@@ -24,7 +24,7 @@ import "Progress";
 import "Report";
 import "Summary";
 import "ModuleLoading";
-import "Packages";
+import "PackagesProposal";
 import "Installation";
 import "String";
 import "FcoeClient";
@@ -84,7 +84,7 @@ ret = MainSequence();
 y2milestone("MainSequence ret=%1", ret);
 
 // add package open-fcoe to installed system
-Packages::addAdditionalPackage("open-fcoe");
+PackagesProposal::AddResolvables( "open-fcoe");
 
 // workflow not aborted
 if ( ret == `next )
