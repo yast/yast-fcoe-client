@@ -572,6 +572,11 @@ global void SetNetworkCardsValue( integer row, map card )
     network_interfaces[row] = card;
 }
 
+global void ResetNetworkCards()
+{
+    network_interfaces = [];
+}
+
 //
 // Read /etc/fcoe/config
 //
