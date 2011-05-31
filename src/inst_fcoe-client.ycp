@@ -41,19 +41,21 @@ y2milestone("fcoe-client module started during installation");
 // create /etc/fcoe
 SCR::Execute(.target.bash, "mkdir -p /etc/fcoe" );
 
-
 // TODO: check what is additional needed 
 //       - load any modules ?
 //	  
 // FcoeClient::CheckInstalledPackages() not needed in inst-sys
 // FcoeClient::DetectStartStatus()	doesn't make sense in inst-sys
 
-// TODO: check for running network - makes sense here ???
+// check for running network
 if( !NetworkService::RunningNetworkPopup() )
 {
     y2error( "Network NOT set up" );
     return nil;
 }
+
+// reset global values
+FcoeClient::ResetNetworkCards();
 
 // start services fcoe and lldpad
 success = FcoeClient::ServiceStatus();
