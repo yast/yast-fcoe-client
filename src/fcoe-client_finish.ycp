@@ -1,0 +1,69 @@
+/**
+ * File:
+ *  fcoe-client_finish.ycp
+ *
+ * Module:
+ *  Step of base installation finish
+ *
+ * Authors:
+ *  Gabriele Mohr <gs@suse.de>
+ *
+ */
+
+{
+
+textdomain "fcoe-client";
+
+import "Directory";
+import "String";
+import "FcoeClient";
+import "Service";
+include "installation/misc.ycp";
+
+any ret = nil;
+string func = "";
+map param = $[];
+
+/* Check arguments */
+if(size(WFM::Args()) > 0 && is(WFM::Args(0), string)) {
+    func = (string)WFM::Args(0);
+    if(size(WFM::Args()) > 1 && is(WFM::Args(1), map))
+	param = (map)WFM::Args(1);
+}
+
+y2milestone ("starting fcoe-client_finish");
+y2debug("func=%1", func);
+y2debug("param=%1", param);
+
+if (func == "Info")
+{
+    return (any)$[
+	"steps" : 1,
+	// progress step title
+	"title" : _("Saving fcoe configuration..."),
+	"when" : [ `installation, `update, `autoinst ],
+    ];
+}
+else if (func == "Write")
+{
+  // copy fcoe config files to destdir
+  WFM::Execute (.local.bash,"test -d /etc/fcoe/ && mkdir -p '" + String::Quote(Installation::destdir) + "/etc/fcoe' && cp -a /etc/fcoe/* '" + String::Quote(Installation::destdir) + "/etc/fcoe/'");
+
+  // TODO: only enable if any FCoE VLAN interface was enabled
+  Service::Enable("fcoe");
+  Service::Enable("lldpad");
+  y2milestone("fcoe and lldpad services enabled");
+
+}
+else
+{
+    y2error ("unknown function: %1", func);
+    ret = nil;
+}
+
+y2debug("ret=%1", ret);
+y2milestone("fcoe-client_finish finished");
+return ret;
+
+
+} /* EOF */
