@@ -83,8 +83,9 @@ if ( !success )
 ret = MainSequence();
 y2milestone("MainSequence ret=%1", ret);
 
-// add package open-fcoe to installed system
-PackagesProposal::AddResolvables( "open-fcoe");
+// add package open-fcoe to pool that is then used by software proposal
+// to propose a selection
+PackagesProposal::AddResolvables( "fcoe", `package, ["open-fcoe"] );
 
 // workflow not aborted
 if ( ret == `next )
