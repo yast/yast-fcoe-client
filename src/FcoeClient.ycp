@@ -630,6 +630,11 @@ global list GetRedoCommands()
     return redo_list;
 }
 
+global void ResetRedoCommands()
+{
+    redo_list = [];
+}
+
 global boolean WriteFcoeConfig()
 {
     boolean ret = true;
@@ -845,7 +850,7 @@ global boolean Write()
     // write settings
     if(PollAbort()) return false;
     Progress::NextStage();
-
+    
     boolean success = WriteFcoeConfig();
     /* Error message */
     if( !success ) Report::Error (_("Cannot write settings to /etc/fcoe/config."));

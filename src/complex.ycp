@@ -46,6 +46,9 @@ include "fcoe-client/dialogs.ycp";
 /**
  * Show a popup on abort if data are modified and
  * check redo list/execute redo commands.
+ * This function is also called during installation if user aborts
+ * the 'FCoE client configuration', i.e. commands from redo list
+ * are executed and list is reset.
  * @return true if users aborts installation
  */
 boolean ReallyAbort() {
@@ -70,6 +73,7 @@ boolean ReallyAbort() {
 		    y2milestone( "Output: %1", output );
 
 		} );
+	    FcoeClient::ResetRedoCommands(); // important during installation
 	}
     }
     return abort;
