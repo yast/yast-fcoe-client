@@ -95,7 +95,7 @@ global boolean Modified() {
  * Mark as modified, for Autoyast.
  */
 global void SetModified(boolean value) {
-      modified = true;
+      modified = value;
   }
 
 global boolean ProposalValid() {
