@@ -87,7 +87,7 @@ global define boolean Abort() ``{
  * @return true if modified
  */
 global boolean Modified() {
-    y2debug("modified=%1",modified);
+    y2debug( "get modified = %1", modified );
     return modified;
 }
 
@@ -95,8 +95,9 @@ global boolean Modified() {
  * Mark as modified, for Autoyast.
  */
 global void SetModified(boolean value) {
-      modified = true;
-  }
+    y2debug( "set modified to %1", value );
+    modified = value;
+}
 
 global boolean ProposalValid() {
     return proposal_valid;
@@ -119,7 +120,6 @@ global boolean WriteOnly() {
 global void SetWriteOnly(boolean value) {
     write_only = value;
 }
-
 
 global void SetAbortFunction(boolean() function) {
     AbortFunction = function;
@@ -155,9 +155,6 @@ global boolean PollAbort() {
  */
 
 
-
-// Settings: Define all variables needed for configuration of fcoe-client
-
 // Define all the variables necessary to hold
 
 global integer current_card = 0;  // currently selected card, means row in list of cards
@@ -165,19 +162,80 @@ global integer current_card = 0;  // currently selected card, means row in list 
 global string NOT_CONFIGURED = "not configured";
 global string NOT_AVAILABLE = "not available";
 
-// map containing information about networks cards and VLAN, FCoE and DCB status
-list <map> network_interfaces = [];
+global boolean lldpad_started = false;	// service fcoe was started
+global boolean fcoe_started = false;	// service lldpad was started
+
+
+// Settings: Define all variables needed for configuration of fcoe-client
 
 // map containing information about values in /etc/fcoe/config
 map <string, string> fcoe_general_config = $[ "DEBUG":"no",
 					      "USE_SYSLOG":"yes" ];
 
-// list containing information about 'redo' commands
-list <string> redo_list = [];
+// Set value in fcoe_general_config
+global void SetFcoeConfigValue( string param, string value )
+{
+    fcoe_general_config[ param ] = value; 
+}
 
-// map containing information about start of services
+// Returns the map containing general FCoE configuration
+global map <string, string> GetFcoeConfig()
+{
+    return fcoe_general_config;
+}
+
+// list containing information about commands to revert changes
+list <string> revert_list = [];
+
+// Add a command to the list of revert commands
+global void AddRevertCommand( string command )
+{
+    revert_list = add( revert_list, command );
+    y2milestone( "Adding revert command: %1", command );
+}
+
+// Get the list of revert commands
+global list GetRevertCommands()
+{
+    return revert_list;
+}
+
+// Reset list of revert commands
+global void ResetRevertCommands()
+{
+    revert_list = [];
+}
+
+// map containing information about start of services at boot
 map <string, boolean> service_start = $[ "fcoe":false,
 					 "lldpad":false ];
+
+// map containing information about networks cards and VLAN, FCoE and DCB status
+list <map> network_interfaces = [];
+
+// Returns the map containing all detected interfaces including
+global list <map> GetNetworkCards()
+{
+    return network_interfaces;
+}
+
+// Get currently selected network card
+global map GetCurrentNetworkCard()
+{
+    return network_interfaces[current_card]:$[];
+}
+
+// Set network card values for given row
+global void SetNetworkCardsValue( integer row, map card )
+{
+    network_interfaces[row] = card;
+}
+
+// Reset list of detected cards
+global void ResetNetworkCards()
+{
+    network_interfaces = [];
+}
 
 //
 // Check whether open-fcoe is installed and do installation if user agrees
@@ -437,6 +495,9 @@ global map<string, boolean> GetStartStatus()
     return service_start;
 }
 
+//
+// Check status of services 'fcoe' and 'lldpad' and start them if required
+// 
 global boolean ServiceStatus()
 {
     // TODO - check whether loading any modules in Stage::initial() is required
@@ -450,6 +511,7 @@ global boolean ServiceStatus()
 	if ( success )
 	{
 	    y2milestone( "FCoE started (/etc/init.d/fcoe start)");
+	    fcoe_started = true;;
 	}
 	else
 	{
@@ -470,6 +532,7 @@ global boolean ServiceStatus()
 	if ( success )
 	{
 	    y2milestone( "Lldpad started (/etc/init.d/lldpad start)");
+	    lldpad_started = true;
 	}
 	else
 	{
@@ -515,7 +578,7 @@ global boolean DetectNetworkCards()
 		// FCoE isn't enabled on the switch - we can't do anything here
 		// TODO - check link map from .probe.network and distinguish between
 		// no cable attached and interface not up, Steffen: cannot be used, "no"
-		// can stand for 'noe cable' or 'not up'
+		// can stand for 'no cable connected' or 'interface not up'
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -554,30 +617,6 @@ global boolean DetectNetworkCards()
 }
 
 //
-// Returns the map containing all detected interfaces including
-// configuration status of VLAN, FCoE and DCB
-//
-global list <map> GetNetworkCards()
-{
-    return network_interfaces;
-}
-
-global map GetCurrentNetworkCard()
-{
-    return network_interfaces[current_card]:$[];
-}
-
-global void SetNetworkCardsValue( integer row, map card )
-{
-    network_interfaces[row] = card;
-}
-
-global void ResetNetworkCards()
-{
-    network_interfaces = [];
-}
-
-//
 // Read /etc/fcoe/config
 //
 global boolean ReadFcoeConfig()
@@ -598,38 +637,8 @@ global boolean ReadFcoeConfig()
 }
 
 //
-// Set value in fcoe_general_config
+// Write /etc/fcoe/config using SCR agent
 //
-global void SetFcoeConfigValue( string param, string value )
-{
-    fcoe_general_config[ param ] = value; 
-}
-
-//
-// Returns the map containing general FCoE configuration
-//
-global map <string, string> GetFcoeConfig()
-{
-    return fcoe_general_config;
-}
-
-//
-// Add a command to the list of redo commands
-//
-global void AddRedoCommand( string command )
-{
-    redo_list = add( redo_list, command );
-    y2milestone( "Adding redo command: %1", command );
-}
-
-//
-// Get the list of redo commands
-//
-global list GetRedoCommands()
-{
-    return redo_list;
-}
-
 global boolean WriteFcoeConfig()
 {
     boolean ret = true;
@@ -648,6 +657,9 @@ global boolean WriteFcoeConfig()
     return ret;
 }
 
+//
+// Write /etc/fcoe/cfg-ethx files
+//
 global boolean WriteCfgFiles()
 {
     list <map> netcards = GetNetworkCards();
@@ -794,6 +806,7 @@ global boolean Read()
     Progress::Finish();
     
     if(PollAbort()) return false;
+    // modified = false is from CWM template
     modified = false;
 
     return true;
@@ -845,7 +858,7 @@ global boolean Write()
     // write settings
     if(PollAbort()) return false;
     Progress::NextStage();
-
+    
     boolean success = WriteFcoeConfig();
     /* Error message */
     if( !success ) Report::Error (_("Cannot write settings to /etc/fcoe/config."));

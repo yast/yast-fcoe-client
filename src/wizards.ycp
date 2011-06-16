@@ -74,42 +74,65 @@ any GlobalDialog() {
 		       "store"		: StoreConfigurationDialog,
 		       ],
 	  ];
-    map <string, any> tabs =
-	$[
-	  "services" : $[
-			 // Header of tab in tab widget
-			 "header" : _("&Services"),
-			 "widget_names" : ["serv"],
-			 "contents" : ServicesDialogContent(),
-			 ],
-	  "interfaces" : $[
-			   // Header of tab in tab widget		 
-			   "header" : _("&Interfaces"),
-			   "widget_names" : ["inter"],
-			   "contents" : InterfacesDialogContent(),
-			   ],
-	  "configuration" : $[
-			      // Header of tab in tab widget		 
-			      "header" : _("&Configuration"),
-			      "widget_names" : ["config"],
-			      "contents" : ConfigurationDialogContent(),
-			      ],
-	  ];
-
+    map <string, any> tabs = $[];
+    list tab_order = [];
     string ini_tab = "";
 
-    map <string, boolean> status_map = FcoeClient::GetStartStatus();
-
-    if ( status_map["fcoe"]:false == true || status_map["lldpad"]:false == true )
+    if ( Stage::initial() )
+    {
+	tabs = $[
+		 "interfaces" : $[
+				  // Header of tab in tab widget		 
+				  "header" : _("&Interfaces"),
+				  "widget_names" : ["inter"],
+				  "contents" : InterfacesDialogContent(),
+				  ],
+		 "configuration" : $[
+				     // Header of tab in tab widget		 
+				     "header" : _("&Configuration"),
+				     "widget_names" : ["config"],
+				     "contents" : ConfigurationDialogContent(),
+				     ],
+		 ];
 	ini_tab = "interfaces";
+	tab_order = [ "interfaces", "configuration"];
+    }
     else
-	ini_tab = "services";
+    {
+	tabs = $[
+		 "services" : $[
+				// Header of tab in tab widget
+				"header" : _("&Services"),
+				"widget_names" : ["serv"],
+				"contents" : ServicesDialogContent(),
+				],
+		 "interfaces" : $[
+				  // Header of tab in tab widget		 
+				  "header" : _("&Interfaces"),
+				  "widget_names" : ["inter"],
+				  "contents" : InterfacesDialogContent(),
+				  ],
+		 "configuration" : $[
+				     // Header of tab in tab widget		 
+				     "header" : _("&Configuration"),
+				     "widget_names" : ["config"],
+				     "contents" : ConfigurationDialogContent(),
+				     ],
+		 ];
+
+	map <string, boolean> status_map = FcoeClient::GetStartStatus();
+	if ( status_map["fcoe"]:false == true || status_map["lldpad"]:false == true )
+	    ini_tab = "interfaces";
+	else
+	    ini_tab = "services";
+	tab_order = ["services", "interfaces", "configuration"];	
+    }
     
     map <string, any> wd =
 	$[
 	  "tab" : CWMTab::CreateWidget (
 					$[
-					  "tab_order" : ["services", "interfaces", "configuration"],
+					  "tab_order" : tab_order,
 					  "tabs" : tabs,
 					  "widget_descr" : widgets,
 					  "initial_tab" : ini_tab,

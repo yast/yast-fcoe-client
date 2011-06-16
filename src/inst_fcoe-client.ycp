@@ -85,17 +85,21 @@ if ( !success )
 ret = MainSequence();
 y2milestone("MainSequence ret=%1", ret);
 
-// add package open-fcoe to pool that is then used by software proposal
-// to propose a selection
-PackagesProposal::AddResolvables( "fcoe", `package, ["open-fcoe"] );
-
 // workflow not aborted
 if ( ret == `next )
 {
+    // add package open-fcoe to the pool that is used by software proposal
+    y2milestone( "Adding package open-fcoe to pool" );
+    PackagesProposal::AddResolvables( "fcoe", `package, ["open-fcoe"] ); 
     // write changes to config files
+    y2milestone( "Writing config files");
     FcoeClient::WriteFcoeConfig();
     FcoeClient::WriteCfgFiles();
+    // restart fcoemon
+    y2milestone( "Restarting FCoE" );
     FcoeClient::RestartServiceFcoe();
+    // reset modified flag
+    FcoeClient::SetModified( false );
 }
 
 /* Finish */

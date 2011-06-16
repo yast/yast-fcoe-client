@@ -45,10 +45,23 @@ include "fcoe-client/dialogs.ycp";
 
 /**
  * Show a popup on abort if data are modified and
- * check redo list/execute redo commands.
+ * check list of commands to revert changes done to the system.
+ * This function is also called during installation if user aborts
+ * the 'FCoE client configuration', i.e. commands from revert list
+ * are executed and list is reset.
  * @return true if users aborts installation
  */
 boolean ReallyAbort() {
+    // revert start of 'fcoe' or 'lldpad' 
+    if ( FcoeClient::fcoe_started )
+    {
+	Service::Stop( "fcoe" );
+    }
+    if ( FcoeClient::lldpad_started )
+    {
+	Service::Stop( "lldpad" );
+    }
+    
     if ( !FcoeClient::Modified() )
 	return true;
 
@@ -56,20 +69,21 @@ boolean ReallyAbort() {
 
     if ( abort )
     {
-	// check redo list
-	list redo_list = FcoeClient::GetRedoCommands();
-	if ( redo_list == [] )
+	// check revert list
+	list revert_list = FcoeClient::GetRevertCommands();
+	if ( revert_list == [] )
 	{
-	    y2milestone( "Nothing to redo");
+	    y2milestone( "Nothing to revert");
 	}
 	else
 	{
-	    foreach ( string command, (list<string>)redo_list, {
+	    foreach ( string command, (list<string>)revert_list, {
 		    y2milestone( "Calling %1", command );
 		    map output = (map)SCR::Execute( .target.bash_output, command );
 		    y2milestone( "Output: %1", output );
 
 		} );
+	    FcoeClient::ResetRevertCommands(); // important during installation
 	}
     }
     return abort;
@@ -106,7 +120,7 @@ symbol WriteDialog() {
  **/
 void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
-    
+    y2milestone( "Modified: %1", FcoeClient::Modified() );
     map status_map = FcoeClient::GetStartStatus();
 
     if ( status_map["fcoe"]:false == true )
@@ -359,9 +373,9 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
 		status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
 
-		// store command to be able to redo the creation of FCoE VLAN interface in case of abort
+		// store command to be able to revert the creation of FCoE VLAN interface in case of abort
 		// TODO: is this also OK if only 'fipvlan -s <interface>' is called?
-		FcoeClient::AddRedoCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
+		FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 		if ( create_ifcfg )
 		{
 		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"onboot\"
@@ -369,7 +383,7 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 		    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
 		    SCR::Write(.target.string, ifcfg_file, config);
 		    y2milestone( "Writing config: %1 to %2", config, ifcfg_file );
-		    FcoeClient::AddRedoCommand( sformat( "rm %1", ifcfg_file ) );
+		    FcoeClient::AddRevertCommand( sformat( "rm %1", ifcfg_file ) );
 		}
 	    }
 	    else

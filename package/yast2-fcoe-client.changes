@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Jun 16 12:09:57 CEST 2011 - gs@suse.de
+
+- Bug-fixes for installation workflow (reset network cards, only
+  show tabs 'interfaces' and 'configuration', reset modified flag),
+  stop services fcoe or lldpad on 'Abort' (if started here)
+- V 2.17.3 
+
+-------------------------------------------------------------------
 Tue May 31 12:21:30 CEST 2011 - gs@suse.de
 
 - Create VLAN interface and start FCoE during installation, only
