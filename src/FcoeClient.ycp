@@ -184,26 +184,26 @@ global map <string, string> GetFcoeConfig()
     return fcoe_general_config;
 }
 
-// list containing information about 'redo' commands
-list <string> redo_list = [];
+// list containing information about commands to revert changes
+list <string> revert_list = [];
 
-// Add a command to the list of redo commands
-global void AddRedoCommand( string command )
+// Add a command to the list of revert commands
+global void AddRevertCommand( string command )
 {
-    redo_list = add( redo_list, command );
-    y2milestone( "Adding redo command: %1", command );
+    revert_list = add( revert_list, command );
+    y2milestone( "Adding revert command: %1", command );
 }
 
-// Get the list of redo commands
-global list GetRedoCommands()
+// Get the list of revert commands
+global list GetRevertCommands()
 {
-    return redo_list;
+    return revert_list;
 }
 
-// Reset list of redo commands
-global void ResetRedoCommands()
+// Reset list of revert commands
+global void ResetRevertCommands()
 {
-    redo_list = [];
+    revert_list = [];
 }
 
 // map containing information about start of services at boot
