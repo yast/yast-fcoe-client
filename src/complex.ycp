@@ -45,13 +45,23 @@ include "fcoe-client/dialogs.ycp";
 
 /**
  * Show a popup on abort if data are modified and
- * check redo list/execute redo commands.
+ * check list of commands to revert changes done to the system.
  * This function is also called during installation if user aborts
- * the 'FCoE client configuration', i.e. commands from redo list
+ * the 'FCoE client configuration', i.e. commands from revert list
  * are executed and list is reset.
  * @return true if users aborts installation
  */
 boolean ReallyAbort() {
+    // revert start of 'fcoe' or 'lldpad' 
+    if ( FcoeClient::fcoe_started )
+    {
+	Service::Stop( "fcoe" );
+    }
+    if ( FcoeClient::lldpad_started )
+    {
+	Service::Stop( "lldpad" );
+    }
+    
     if ( !FcoeClient::Modified() )
 	return true;
 
@@ -110,7 +120,7 @@ symbol WriteDialog() {
  **/
 void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
-    
+    y2milestone( "Modified: %1", FcoeClient::Modified() );
     map status_map = FcoeClient::GetStartStatus();
 
     if ( status_map["fcoe"]:false == true )
