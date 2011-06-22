@@ -900,7 +900,13 @@ For details see /var/log/YaST2/y2log") );
  */
 global boolean Import (map settings)
 {
-    // TODO FIXME: your code here (fill the above mentioned variables)...
+    // fill variables
+    fcoe_general_config = (map <string, string>)settings["fcoe_cfg"]:$[ "DEBUG":"no", "USE_SYSLOG":"yes" ];
+    network_interfaces = (list <map>)settings["interfaces"]:[];
+
+    SetModified( true );
+    y2milestone ("Configuration has been imported");
+
     return true;
 }
 
@@ -911,8 +917,11 @@ global boolean Import (map settings)
  */
 global map Export ()
 {
-    // TODO FIXME: your code here (return the above mentioned variables)...
-    return $[];
+    // return map containing current settings 
+    return $[
+             "fcoe_cfg" : fcoe_general_config,
+             "interfaces" : network_interfaces 
+             ];
 }
 
 /**
@@ -943,8 +952,8 @@ global list Overview() {
  */
 global map AutoPackages()
 {
-    // TODO FIXME: your code here...
-    return $[ "install":[], "remove":[] ];
+    // installation of open-fcoe required
+    return $[ "install":["open-fcoe"], "remove":[] ];
 }
 
 /* EOF */
