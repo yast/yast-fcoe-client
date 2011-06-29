@@ -96,6 +96,7 @@ else if (func == "Read") {
 /* Write givven settings */
 else if (func == "Write") {
     import "Progress";
+    boolean write = true;
     boolean progress_orig = Progress::set (false);
     FcoeClient::SetWriteOnly (true);
     // prepare for AutoYaST
@@ -104,18 +105,19 @@ else if (func == "Write") {
         string vlan_interface = "";
         string fcoe_vlan_interface = "";
         string command = "";
-        string output = "";
+        map output = $[];
 
         if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
              card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
         {
-            // create and start FcoE - TODO: what to do in case of error??? 
+            // create and start FcoE 
             command = sformat( "fipvlan -c -s %1", card["dev_name"]:"" );
             output = (map)SCR::Execute( .target.bash_output, command );
             y2milestone( "Output: %1", output );
             if ( output["exit"]:255 != 0 )
             {
-                y2error( "Cannot create and start FCoE on %1", card["dev_name"]:"" ); 
+                y2error( "Cannot create and start FCoE on %1", card["dev_name"]:"" );
+		write = false;	// don't write configuration
             }
             else
             {
@@ -126,12 +128,20 @@ else if (func == "Write") {
                 if ( fcoe_vlan_interface != card["fcoe_vlan"]:"" )
                 {
                     y2error( "FCoE VLAN interface not correct - created: %1, imported: %2",
-                              fcoe_vlan_interface, card["fcoe_vlan"]:"" ); 
+                              fcoe_vlan_interface, card["fcoe_vlan"]:"" );
+		    write = false;	// don't write configuration
                 }
             }
         }
     });
-    ret = FcoeClient::Write();
+    if ( write )
+    {
+	ret = FcoeClient::Write();
+    }
+    else	// don't continue in case of error
+    {
+	ret = false;
+    }
     Progress::set (progress_orig);
 }
 /**
