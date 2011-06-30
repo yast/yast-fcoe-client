@@ -94,8 +94,8 @@ _("<p>The interfaces dialog shows all detected netcards including the status of 
     /* Interfaces dialog help 3/4 */
     _("<p>The values for 'FCoE VLAN interface' in detail:<br>
 <i>not available</i> means, FCoE isn't possible (must be enabled on the switch first)<br>
-<i>not configered</i>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN Interface</b> to do this.<br>
- If the FCoE VLAN interface is already created the name shown in the column, e.g. eth3.200.</p>") +
+<i>not configured</i>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN Interface</b> to do this.<br>
+ If the FCoE VLAN interface is already created the name is shown in the column, e.g. eth3.200.</p>") +
 
     /* Interfaces dialog help 3/4 */
     _("<p>To change the configuration of an existing FCoE VLAN interface press button <b>Change Settings</b>.</p>" ),
