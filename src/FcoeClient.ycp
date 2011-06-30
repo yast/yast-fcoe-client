@@ -940,23 +940,26 @@ global list Summary()
     /* Configuration summary text for autoyast */
     summary = Summary::AddLine( summary, _("<b>General FCoE configuration</b>") );
     fcoe_config = FcoeClient::GetFcoeConfig();
-    summary = Summary::AddLine( summary, sformat( "DEBUG: 	%1", fcoe_config["DEBUG"]:"" ) );
-    summary = Summary::AddLine( summary, sformat( "USE SYSLOG: 	%1", fcoe_config["USE_SYSLOG"]:"" ) );
+    // options from logfile, not meant for translation 
+    summary = Summary::AddLine( summary, sformat( "DEBUG: %1", fcoe_config["DEBUG"]:"" ) );
+    summary = Summary::AddLine( summary, sformat( "USE_SYSLOG: %1", fcoe_config["USE_SYSLOG"]:"" ) );
     summary = Summary::AddLine( summary, _("<b>Interfaces</b>") );
     netcards = FcoeClient::GetNetworkCards();
     foreach ( map card, netcards, {
-	    summary = Summary::AddLine( summary, sformat( "%1: %2   %3: %4",
+	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4",
 							  // network card, e.g. eth0
 							  _("<i>Netcard</i>:"), card["dev_name"]:"",
 							  // nothing to translate here
-							  "<i>FcoE VLAN</i>", card["fcoe_vlan"]:"") );
+							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"") );
 				
 	} );
     service_start = FcoeClient::GetStartStatus();
     summary = Summary::AddLine( summary, _("<b>Starting of services</b>") );
-    summary = Summary::AddLine( summary, sformat( "fcoe:	%1", (service_start["fcoe"]:false)?"true":"false" ) );
-    summary = Summary::AddLine( summary, sformat( "lldpad: 	%1", (service_start["lldpad"]:false)?"true":"false" ) );
     
+    // starting of service "fcoe" at boot time is enabled or disabled
+    summary = Summary::AddLine( summary, sformat( "fcoe:	%1", (service_start["fcoe"]:false)?_("enabled"):_("disabled") ));
+    // starting of service "lldpad" at boot time is enabled or disabled 
+    summary = Summary::AddLine( summary, sformat( "lldpad: 	%1", (service_start["lldpad"]:false)?_("enabled"):_("disabled") ) );
     
     return [ summary, [] ];
 }
