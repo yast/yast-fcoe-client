@@ -957,9 +957,9 @@ global list Summary()
     summary = Summary::AddLine( summary, _("<b>Starting of services</b>") );
     
     // starting of service "fcoe" at boot time is enabled or disabled
-    summary = Summary::AddLine( summary, sformat( "fcoe:	%1", (service_start["fcoe"]:false)?_("enabled"):_("disabled") ));
+    summary = Summary::AddLine( summary, sformat( "fcoe: %1", (service_start["fcoe"]:false)?_("enabled"):_("disabled") ));
     // starting of service "lldpad" at boot time is enabled or disabled 
-    summary = Summary::AddLine( summary, sformat( "lldpad: 	%1", (service_start["lldpad"]:false)?_("enabled"):_("disabled") ) );
+    summary = Summary::AddLine( summary, sformat( "lldpad: %1", (service_start["lldpad"]:false)?_("enabled"):_("disabled") ) );
     
     return [ summary, [] ];
 }
