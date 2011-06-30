@@ -470,7 +470,7 @@ global void AdjustStartStatus( )
 
 global void SetStartStatus( string service, boolean status )
 {
-    y2milestone( "Setting status of %1 to %2", service, status );
+    y2milestone( "Starting service %1 on boot: %2", service, status );
     service_start[ service ] = status;
 }
 
