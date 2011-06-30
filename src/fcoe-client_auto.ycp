@@ -138,10 +138,6 @@ else if (func == "Write") {
     });
     if ( write )
     {
-	// set service start 'true' (start status is adjusted in FcoeClient::Write)
-	FcoeClient::SetStartService( "fcoe", true );
-	FcoeClient::SetStartService( "lldpad", true );
-
 	ret = FcoeClient::Write();
     }
     else	// don't continue in case of error
