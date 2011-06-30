@@ -93,13 +93,15 @@ else if (func == "Read") {
     ret = FcoeClient::Read();
     Progress::set (progress_orig);
 }
-/* Write givven settings */
+/* Write given settings */
 else if (func == "Write") {
     import "Progress";
     boolean write = true;
     boolean progress_orig = Progress::set (false);
-    FcoeClient::SetWriteOnly (true);
-    // prepare for AutoYaST
+
+    // prepare for AutoYaST: check imported data and if required create the
+    // FCoE VLAN interfaces before calling FCoEClient::Write()
+
     list<map> netcards = FcoeClient::GetNetworkCards();
     foreach ( map card, netcards, {
         string vlan_interface = "";
@@ -127,7 +129,7 @@ else if (func == "Write") {
                                                                         vlan_interface );
                 if ( fcoe_vlan_interface != card["fcoe_vlan"]:"" )
                 {
-                    y2error( "FCoE VLAN interface not correct - created: %1, imported: %2",
+                    y2error( "FCoE VLAN interfaces differ. Created: %1, imported: %2",
                               fcoe_vlan_interface, card["fcoe_vlan"]:"" );
 		    write = false;	// don't write configuration
                 }
@@ -136,6 +138,10 @@ else if (func == "Write") {
     });
     if ( write )
     {
+	// set service start 'true' (start status is adjusted in FcoeClient::Write)
+	FcoeClient::SetStartService( "fcoe", true );
+	FcoeClient::SetStartService( "lldpad", true );
+
 	ret = FcoeClient::Write();
     }
     else	// don't continue in case of error
