@@ -207,8 +207,8 @@ global void ResetRevertCommands()
 }
 
 // map containing information about start of services at boot
-map <string, boolean> service_start = $[ "fcoe":false,
-					 "lldpad":false ];
+map <string, boolean> service_start = $[ "fcoe":true,
+					 "lldpad":true ];
 
 // map containing information about networks cards and VLAN, FCoE and DCB status
 list <map> network_interfaces = [];
@@ -470,7 +470,7 @@ global void AdjustStartStatus( )
 
 global void SetStartStatus( string service, boolean status )
 {
-    y2milestone( "Setting status of %1 to %2", service, status );
+    y2milestone( "Starting service %1 on boot: %2", service, status );
     service_start[ service ] = status;
 }
 
@@ -900,7 +900,14 @@ For details see /var/log/YaST2/y2log") );
  */
 global boolean Import (map settings)
 {
-    // TODO FIXME: your code here (fill the above mentioned variables)...
+    // fill variables
+    fcoe_general_config = (map <string, string>)settings["fcoe_cfg"]:$[ ];
+    network_interfaces = (list <map>)settings["interfaces"]:[];
+    service_start = (map <string, boolean>)settings["service_start"]:$[ ];
+    
+    SetModified( true );
+    y2milestone ("Configuration has been imported");
+
     return true;
 }
 
@@ -911,8 +918,12 @@ global boolean Import (map settings)
  */
 global map Export ()
 {
-    // TODO FIXME: your code here (return the above mentioned variables)...
-    return $[];
+    // return map containing current settings 
+    return $[
+             "fcoe_cfg" : fcoe_general_config,
+             "interfaces" : network_interfaces,
+	     "service_start" : service_start
+             ];
 }
 
 /**
@@ -921,9 +932,36 @@ global map Export ()
  */
 global list Summary()
 {
-    // TODO FIXME: your code here...
+    string summary = "";
+    map fcoe_config = $[];
+    list <map> netcards = [];
+    map service_start = $[];
+    
     /* Configuration summary text for autoyast */
-    return [ _("Configuration summary..."), [] ];
+    summary = Summary::AddLine( summary, _("<b>General FCoE configuration</b>") );
+    fcoe_config = FcoeClient::GetFcoeConfig();
+    // options from logfile, not meant for translation 
+    summary = Summary::AddLine( summary, sformat( "DEBUG: %1", fcoe_config["DEBUG"]:"" ) );
+    summary = Summary::AddLine( summary, sformat( "USE_SYSLOG: %1", fcoe_config["USE_SYSLOG"]:"" ) );
+    summary = Summary::AddLine( summary, _("<b>Interfaces</b>") );
+    netcards = FcoeClient::GetNetworkCards();
+    foreach ( map card, netcards, {
+	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4",
+							  // network card, e.g. eth0
+							  _("<i>Netcard</i>:"), card["dev_name"]:"",
+							  // nothing to translate here
+							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"") );
+				
+	} );
+    service_start = FcoeClient::GetStartStatus();
+    summary = Summary::AddLine( summary, _("<b>Starting of services</b>") );
+    
+    // starting of service "fcoe" at boot time is enabled or disabled
+    summary = Summary::AddLine( summary, sformat( "fcoe: %1", (service_start["fcoe"]:false)?_("enabled"):_("disabled") ));
+    // starting of service "lldpad" at boot time is enabled or disabled 
+    summary = Summary::AddLine( summary, sformat( "lldpad: %1", (service_start["lldpad"]:false)?_("enabled"):_("disabled") ) );
+    
+    return [ summary, [] ];
 }
 
 /**
@@ -943,8 +981,8 @@ global list Overview() {
  */
 global map AutoPackages()
 {
-    // TODO FIXME: your code here...
-    return $[ "install":[], "remove":[] ];
+    // installation of open-fcoe required
+    return $[ "install":["open-fcoe"], "remove":[] ];
 }
 
 /* EOF */

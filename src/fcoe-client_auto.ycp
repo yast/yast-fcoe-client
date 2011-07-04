@@ -93,12 +93,57 @@ else if (func == "Read") {
     ret = FcoeClient::Read();
     Progress::set (progress_orig);
 }
-/* Write givven settings */
+/* Write given settings */
 else if (func == "Write") {
     import "Progress";
+    boolean write = true;
     boolean progress_orig = Progress::set (false);
-    FcoeClient::SetWriteOnly (true);
-    ret = FcoeClient::Write();
+
+    // prepare for AutoYaST: check imported data and if required create the
+    // FCoE VLAN interfaces before calling FCoEClient::Write()
+
+    list<map> netcards = FcoeClient::GetNetworkCards();
+    foreach ( map card, netcards, {
+        string vlan_interface = "";
+        string fcoe_vlan_interface = "";
+        string command = "";
+        map output = $[];
+
+        if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
+             card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
+        {
+            // create and start FcoE 
+            command = sformat( "fipvlan -c -s %1", card["dev_name"]:"" );
+            output = (map)SCR::Execute( .target.bash_output, command );
+            y2milestone( "Output: %1", output );
+            if ( output["exit"]:255 != 0 )
+            {
+                y2error( "Cannot create and start FCoE on %1", card["dev_name"]:"" );
+		write = false;	// don't write configuration
+            }
+            else
+            {
+                // check FCoE VLAN interface
+                vlan_interface = FcoeClient::GetVlanInterface( card["dev_name"]:"" );
+                fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", 
+                                                                        vlan_interface );
+                if ( fcoe_vlan_interface != card["fcoe_vlan"]:"" )
+                {
+                    y2error( "FCoE VLAN interfaces differ. Created: %1, imported: %2",
+                              fcoe_vlan_interface, card["fcoe_vlan"]:"" );
+		    write = false;	// don't write configuration
+                }
+            }
+        }
+    });
+    if ( write )
+    {
+	ret = FcoeClient::Write();
+    }
+    else	// don't continue in case of error
+    {
+	ret = false;
+    }
     Progress::set (progress_orig);
 }
 /**
