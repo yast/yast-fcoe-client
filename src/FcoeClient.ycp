@@ -231,6 +231,11 @@ global void SetNetworkCardsValue( integer row, map card )
     network_interfaces[row] = card;
 }
 
+global void SetNetworkCards( list<map> netcards )
+{
+    network_interfaces = netcards;
+}
+
 // Reset list of detected cards
 global void ResetNetworkCards()
 {
@@ -355,7 +360,7 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 
 	if ( content == "" || content == nil )
 	{
-	    y2milestone( "Cannot read cfg-file creating %1 with default values from /etc/fcoe/cfg-ethx",
+	    y2milestone( "Cannot read cfg-file - creating %1 with default values from /etc/fcoe/cfg-ethx",
 			  file_name );
 	    string def_values = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
 
@@ -500,9 +505,8 @@ global map<string, boolean> GetStartStatus()
 // 
 global boolean ServiceStatus()
 {
-    // TODO - check whether loading any modules in Stage::initial() is required
-    // (like in IsciClientLib.ycp, line 523 )
-    // probably NOT -> see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
+    // Loading of modules in Stage::initial() is not required (like in IsciClientLib.ycp, line 523 )
+    // see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
     boolean ret = true;
 			 
     if ( Service::Status( "fcoe" ) != 0 ) 
@@ -575,10 +579,10 @@ global boolean DetectNetworkCards()
 
 	    if ( vlan_interface == "" )
 	    {
-		// FCoE isn't enabled on the switch - we can't do anything here
-		// TODO - check link map from .probe.network and distinguish between
-		// no cable attached and interface not up, Steffen: cannot be used, "no"
-		// can stand for 'no cable connected' or 'interface not up'
+		// FCoE isn't enabled on the switch - we can't do anything here.
+		// It's not possible to distinguish between no cable attached
+		// and interface not up in 'link' map got from .probe.network
+		// (according to snwint)
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -604,7 +608,7 @@ global boolean DetectNetworkCards()
 	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
 	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
 	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
-	    info_map = add( info_map, "modified", status_map["Created"]:"no" );		// data not modified
+	    info_map = add( info_map, "modified", status_map["Created"]:"no" );		// data modified?
 	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
@@ -664,12 +668,13 @@ global boolean WriteCfgFiles()
 {
     list <map> netcards = GetNetworkCards();
     boolean success = true;
+    y2milestone( "Writing /etc/fcoe/cfg-ethx files" );
     
     foreach ( map card, (list<map>)netcards, {
 	    if ( card["modified"]:"no" == "yes" )  // data modified
 	    {
 		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
-		y2milestone( "Original content: %1", content );
+		y2milestone( "Original content of %1: %2", card["cfg_file"]:"", content );
 		
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
@@ -699,6 +704,10 @@ global boolean WriteCfgFiles()
 		{
 		    y2milestone( "%1 written", card["cfg_file"]:"" );
 		}
+	    }
+	    else
+	    {
+		y2milestone( "%1 not modified", card["dev_name"]:"" );
 	    }
 	} );
     
@@ -940,17 +949,21 @@ global list Summary()
     /* Configuration summary text for autoyast */
     summary = Summary::AddLine( summary, _("<b>General FCoE configuration</b>") );
     fcoe_config = FcoeClient::GetFcoeConfig();
-    // options from logfile, not meant for translation 
+    // options from config file, not meant for translation 
     summary = Summary::AddLine( summary, sformat( "DEBUG: %1", fcoe_config["DEBUG"]:"" ) );
     summary = Summary::AddLine( summary, sformat( "USE_SYSLOG: %1", fcoe_config["USE_SYSLOG"]:"" ) );
     summary = Summary::AddLine( summary, _("<b>Interfaces</b>") );
     netcards = FcoeClient::GetNetworkCards();
     foreach ( map card, netcards, {
-	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4",
+	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4 %5: %6 %7: %8",
 							  // network card, e.g. eth0
 							  _("<i>Netcard</i>:"), card["dev_name"]:"",
-							  // nothing to translate here
-							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"") );
+							  // nothing to translate here (abbreviation for
+							  // Fibre Channel over Ethernet Virtual LAN interface)
+							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"",
+							  // nothing to translate, options from config file
+							  "FCOE_ENABLE", card["fcoe_enable"]:"",
+							  "DCB_REQUIRED", card["dcb_required"]:"" ) );
 				
 	} );
     service_start = FcoeClient::GetStartStatus();
