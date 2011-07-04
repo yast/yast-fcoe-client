@@ -98,6 +98,11 @@ if ( ret == `next )
     // restart fcoemon
     y2milestone( "Restarting FCoE" );
     FcoeClient::RestartServiceFcoe();
+    // enable start of services
+    y2milestone( "Enabling service start of fcoe and lldpad" );
+    FcoeClient::SetStartStatus( "fcoe", true );
+    FcoeClient::SetStartStatus( "lldpad", true );
+    FcoeClient::AdjustStartStatus();
     // reset modified flag
     FcoeClient::SetModified( false );
 }
