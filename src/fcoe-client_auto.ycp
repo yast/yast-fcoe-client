@@ -103,20 +103,45 @@ else if (func == "Write") {
     // FCoE VLAN interfaces before calling FCoEClient::Write()
 
     list<map> netcards = FcoeClient::GetNetworkCards();
+    y2milestone( "Netcards: %1", netcards );
+    integer index = 0;
+    
     foreach ( map card, netcards, {
         string vlan_interface = "";
         string fcoe_vlan_interface = "";
         string command = "";
         map output = $[];
-
+	string ifcfg_file = "";
+	
         if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
              card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
         {
-            // create and start FcoE 
-            command = sformat( "fipvlan -c -s %1", card["dev_name"]:"" );
-            output = (map)SCR::Execute( .target.bash_output, command );
-            y2milestone( "Output: %1", output );
-            if ( output["exit"]:255 != 0 )
+	    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", card["dev_name"]:"", card["vlan_interface"]:"" );
+		
+	    // if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
+	    // call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
+	    if ( FileUtils::Exists( ifcfg_file ) ) 
+	    {						 
+		command = sformat( "ifup %1\.%2", card["dev_name"]:"", card["vlan_interface"]:"" );
+		y2milestone( "Executing command: %1", command );
+		output = (map)SCR::Execute( .target.bash_output, command );
+		y2milestone( "Output: %1", output );
+
+		if ( output["exit"]:255 == 0 )
+		{
+		    // start FCoE
+		    command = sformat( "fipvlan -s %1", card["dev_name"]:"" );
+		}
+	    }
+	    else  // create VLAN interface and start FCoE
+	    {
+		command = sformat( "fipvlan -c -s %1", card["dev_name"]:"" );
+		y2milestone( "Executing command: %1", command );
+		output = (map)SCR::Execute( .target.bash_output, command );
+		y2milestone( "Output: %1", output );
+	    }
+
+	    if ( output["exit"]:255 != 0 )
             {
                 y2error( "Cannot create and start FCoE on %1", card["dev_name"]:"" );
 		write = false;	// don't write configuration
@@ -130,14 +155,23 @@ else if (func == "Write") {
                 if ( fcoe_vlan_interface != card["fcoe_vlan"]:"" )
                 {
                     y2error( "FCoE VLAN interfaces differ. Created: %1, imported: %2",
-                              fcoe_vlan_interface, card["fcoe_vlan"]:"" );
+			     fcoe_vlan_interface, card["fcoe_vlan"]:"" );
 		    write = false;	// don't write configuration
                 }
+		else
+		{
+		    // read or create /etc/fcoe/ethx file
+		    FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
+		    netcards[index, "modified"] = "yes";
+		}
             }
         }
+	index = index + 1;
     });
+
     if ( write )
     {
+	FcoeClient::SetNetworkCards( netcards );
 	ret = FcoeClient::Write();
     }
     else	// don't continue in case of error
