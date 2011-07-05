@@ -332,13 +332,13 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		    else
 		    {
 			command = sformat( "fipvlan -c -s %1", dev_name ); // create and start FCoE
-			create_ifcfg = true;
+			// create_ifcfg = true;
 		    }
 		}
 		else
 		{
 		    command = sformat( "fipvlan -c -s %1", dev_name );
-		    create_ifcfg = true;
+		    // create_ifcfg = true;
 		}
 
 		y2milestone( "Executing command: %1", command );
