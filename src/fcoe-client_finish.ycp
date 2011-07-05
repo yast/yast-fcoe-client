@@ -54,7 +54,7 @@ else if (func == "Write")
     // only enable services if any FCoE VLAN interface is enabled
     list <map> netcards = FcoeClient::GetNetworkCards();
 
-    foreach ( map card, netcards {
+    foreach ( map card, netcards, {
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
