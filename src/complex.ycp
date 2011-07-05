@@ -397,7 +397,6 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 	card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
 	card["cfg_file"] = status_map["Filename"]:"";
-	card["modified"] = "yes";
 	FcoeClient::SetModified( true );
 		
 	FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
@@ -485,7 +484,6 @@ void StoreEditDialog (string id, map event)
     if ( card["fcoe_enable"]:"" != fcoe_enabled )
     {
 	card["fcoe_enable"] = fcoe_enabled;
-	card["modified"] = "yes";		// set modified to "yes"
 	FcoeClient::SetModified( true );
     }
 
@@ -493,7 +491,6 @@ void StoreEditDialog (string id, map event)
     if ( card["dcb_required"]:"" != dcb_required )
     {
 	card["dcb_required"] = dcb_required;
-	card["modified"] = "yes";		// set modified to "yes"
 	FcoeClient::SetModified( true );
     }
 
