@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jul  4 10:20:00 CEST 2011 - gs@suse.de
+
+- Support for AutoYaST (initial version), improve help text
+- V 2.17.4 
+
+-------------------------------------------------------------------
 Thu Jun 16 12:09:57 CEST 2011 - gs@suse.de
 
 - Bug-fixes for installation workflow (reset network cards, only
