@@ -89,10 +89,10 @@ boot time click on 'When booting' in 'FcoE' frame.</p>"),
     "interfaces" : _("<p><b><big>Network interface overview</big></b><br></p>") +
 
     /* Interfaces dialog help 2/4 */
-_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FcoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column 'FCoE VLAN interface'.</p>") +
+_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column 'FCoE VLAN interface'.</p>") +
     
     /* Interfaces dialog help 3/4 */
-    _("<p>The values for 'FCoE VLAN interface' in detail:<br>
+    _("<p>The values for <i>FCoE VLAN Interface</i> in detail:<br>
 <i>not available</i> means, FCoE isn't possible (must be enabled on the switch first)<br>
 <i>not configured</i>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN Interface</b> to do this.<br>
  If the FCoE VLAN interface is already created the name is shown in the column, e.g. eth3.200.</p>") +
