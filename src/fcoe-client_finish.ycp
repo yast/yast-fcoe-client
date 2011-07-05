@@ -46,13 +46,28 @@ if (func == "Info")
 }
 else if (func == "Write")
 {
-  // copy fcoe config files to destdir
-  WFM::Execute (.local.bash,"test -d /etc/fcoe/ && mkdir -p '" + String::Quote(Installation::destdir) + "/etc/fcoe' && cp -a /etc/fcoe/* '" + String::Quote(Installation::destdir) + "/etc/fcoe/'");
+    boolean start_services = false;
+    
+    // copy fcoe config files to destdir
+    WFM::Execute (.local.bash,"test -d /etc/fcoe/ && mkdir -p '" + String::Quote(Installation::destdir) + "/etc/fcoe' && cp -a /etc/fcoe/* '" + String::Quote(Installation::destdir) + "/etc/fcoe/'");
 
-  // TODO: only enable if any FCoE VLAN interface was enabled
-  Service::Enable("fcoe");
-  Service::Enable("lldpad");
-  y2milestone("fcoe and lldpad services enabled");
+    // only enable services if any FCoE VLAN interface is enabled
+    list <map> netcards = FcoeClient::GetNetworkCards();
+
+    foreach ( map card, netcards {
+	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
+	    {
+		// FCoE VLAN interface is configured
+		start_services = true;
+	    }
+	} );
+    if ( start_services )
+    {
+	Service::Enable("fcoe");
+	Service::Enable("lldpad");
+    }
+    y2milestone("fcoe and lldpad services enabled");
 
 }
 else
