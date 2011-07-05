@@ -369,9 +369,19 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 		boolean ret = SCR::Write( .target.string, file_name, def_values );
 		if ( ret == true )
 		{
-		    status_map = add( status_map, "FCOE_ENABLE", "yes");
-		    status_map = add( status_map, "DCB_REQUIRED", "yes");
+		    list <string> lines = splitstring( def_values, "\n" );
+		    foreach( string line, (list<string>)lines, {
+			    if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+			    {
+				status_map = add( status_map, "FCOE_ENABLE", deletechars( substring(line, 12), "\"") );
+			    }
+			    if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+			    {
+				status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
+			    }
+			});
 		    status_map = add( status_map, "Filename", file_name );
+		    AddRevertCommand( sformat( "rm %1", file_name ) );
 		}
 		else
 		{
@@ -390,7 +400,6 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	}
 	
 	list <string> lines = splitstring( content, "\n" );
-
 	foreach( string line, (list<string>)lines, {
 		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
 		{
