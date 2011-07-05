@@ -104,7 +104,6 @@ else if (func == "Write") {
 
     list<map> netcards = FcoeClient::GetNetworkCards();
     y2milestone( "Netcards: %1", netcards );
-    integer index = 0;
     
     foreach ( map card, netcards, {
         string vlan_interface = "";
@@ -162,16 +161,15 @@ else if (func == "Write") {
 		{
 		    // read or create /etc/fcoe/ethx file
 		    FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
-		    netcards[index, "modified"] = "yes";
 		}
             }
         }
-	index = index + 1;
     });
 
     if ( write )
     {
-	FcoeClient::SetNetworkCards( netcards );
+	// FcoeClient::SetModified(true) is called in FcoeClient::Import(),
+	// i.e. modified is set before calling FcoeClient::Write()
 	ret = FcoeClient::Write();
     }
     else	// don't continue in case of error

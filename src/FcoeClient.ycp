@@ -327,7 +327,7 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 {
     string vlan_device_name = "";
 
-    string command = sformat( "sed -n 's/\\([^ ]*\\) |.*%1*.*%2/\\1/p' /proc/net/vlan/config",
+    string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1*.*%2/\\1/p' /proc/net/vlan/config",
 			       vlan_interface, interface );
     y2milestone( "Executing command: %1", command );
 
@@ -372,7 +372,6 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 		    status_map = add( status_map, "FCOE_ENABLE", "yes");
 		    status_map = add( status_map, "DCB_REQUIRED", "yes");
 		    status_map = add( status_map, "Filename", file_name );
-		    status_map = add( status_map, "Created", "yes" );
 		}
 		else
 		{
@@ -554,8 +553,8 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             fcoe_vlan  fcoe_enable dcb_required dcb_capable vlan_interface	modified cfg_file
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   		yes/no   /etc/fcoe/cfg-eth3.200
+// dev_name  device             fcoe_vlan  fcoe_enable dcb_required dcb_capable vlan_interface	cfg_file
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   		/etc/fcoe/cfg-eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
 //
@@ -575,14 +574,15 @@ global boolean DetectNetworkCards()
 	    map info_map = $[];
 	    map <string, string> status_map = $[];
 
+            // It's not possible to distinguish between no cable attached
+	    // and interface not up in 'link' map got from .probe.network
+	    // (according to snwint), so we have to check every interface.
+	    // This may take a while!
 	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
 
 	    if ( vlan_interface == "" )
 	    {
 		// FCoE isn't enabled on the switch - we can't do anything here.
-		// It's not possible to distinguish between no cable attached
-		// and interface not up in 'link' map got from .probe.network
-		// (according to snwint)
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -608,7 +608,6 @@ global boolean DetectNetworkCards()
 	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
 	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
 	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
-	    info_map = add( info_map, "modified", status_map["Created"]:"no" );		// data modified?
 	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
@@ -671,7 +670,8 @@ global boolean WriteCfgFiles()
     y2milestone( "Writing /etc/fcoe/cfg-ethx files" );
     
     foreach ( map card, (list<map>)netcards, {
-	    if ( card["modified"]:"no" == "yes" )  // data modified
+	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED && Modified() )  	// and data are modified 
 	    {
 		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
 		y2milestone( "Original content of %1: %2", card["cfg_file"]:"", content );
@@ -707,7 +707,7 @@ global boolean WriteCfgFiles()
 	    }
 	    else
 	    {
-		y2milestone( "%1 not modified", card["dev_name"]:"" );
+		y2milestone( "%1 not configured for FCoE", card["dev_name"]:"" );
 	    }
 	} );
     
