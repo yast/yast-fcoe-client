@@ -96,86 +96,139 @@ else if (func == "Read") {
 /* Write given settings */
 else if (func == "Write") {
     import "Progress";
-    boolean write = true;
     boolean progress_orig = Progress::set (false);
 
-    // prepare for AutoYaST: check imported data and if required create the
-    // FCoE VLAN interfaces before calling FCoEClient::Write()
-
-    list<map> netcards = FcoeClient::GetNetworkCards();
-    y2milestone( "Netcards: %1", netcards );
+    boolean success = true;
+    boolean start_fcoe = false;
+    list<map> detected_netcards = [];
+    integer index = 0;
     
-    foreach ( map card, netcards, {
-        string vlan_interface = "";
-        string fcoe_vlan_interface = "";
-        string command = "";
-        map output = $[];
-	string ifcfg_file = "";
-	
-        if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
-             card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
-        {
-	    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", card["dev_name"]:"", card["vlan_interface"]:"" );
-		
-	    // if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
-	    // call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
-	    if ( FileUtils::Exists( ifcfg_file ) ) 
-	    {						 
-		command = sformat( "ifup %1\.%2", card["dev_name"]:"", card["vlan_interface"]:"" );
-		y2milestone( "Executing command: %1", command );
-		output = (map)SCR::Execute( .target.bash_output, command );
-		y2milestone( "Output: %1", output );
+    // prepare for AutoYaST
+    list<map> imported_netcards = FcoeClient::GetNetworkCards();
+    y2milestone( "Imported information about netcards: %1", imported_netcards );
+    
+    // AutoYaST will install package 'open-fcoe' ( checks AutoPackages() ) 
 
-		if ( output["exit"]:255 == 0 )
-		{
-		    // start FCoE
-		    command = sformat( "fipvlan -s %1", card["dev_name"]:"" );
-		}
-	    }
-	    else  // create VLAN interface and start FCoE
+    // Start services 'fcoe' and 'lldpad'
+    success = FcoeClient::ServiceStatus();
+    if ( success )
+    {
+	y2milestone( "Services fcoe and lldpad started" );
+    }
+    else
+    {
+	y2error( "Cannot start services - stopping auto installation" );
+	return false;
+    }
+    // Reset info about netcards and get current values
+    FcoeClient::ResetNetworkCards();
+    success = FcoeClient::DetectNetworkCards();
+    if ( success )
+    {
+	detected_netcards = FcoeClient::GetNetworkCards();
+	y2milestone( "Information about detected netcards: %1", detected_netcards );
+    }
+    else
+    {
+	y2error( "Cannot detect network cards - stopping auto installation" );
+	return false;
+    }
+
+    // Check imported data
+    foreach ( map card, imported_netcards, {
+	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
-		command = sformat( "fipvlan -c -s %1", card["dev_name"]:"" );
-		y2milestone( "Executing command: %1", command );
-		output = (map)SCR::Execute( .target.bash_output, command );
-		y2milestone( "Output: %1", output );
+		// any FCoE VLAN interface is configured
+		start_fcoe = true;
 	    }
-
-	    if ( output["exit"]:255 != 0 )
-            {
-                y2error( "Cannot create and start FCoE on %1", card["dev_name"]:"" );
-		write = false;	// don't write configuration
-            }
-            else
-            {
-                // check FCoE VLAN interface
-                vlan_interface = FcoeClient::GetVlanInterface( card["dev_name"]:"" );
-                fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", 
-                                                                        vlan_interface );
-                if ( fcoe_vlan_interface != card["fcoe_vlan"]:"" )
-                {
-                    y2error( "FCoE VLAN interfaces differ. Created: %1, imported: %2",
-			     fcoe_vlan_interface, card["fcoe_vlan"]:"" );
-		    write = false;	// don't write configuration
-                }
-		else
+	} );
+    
+    // If any FcoE interface is found in imported data we try to start FCoE
+    // for all interfaces which are not yet configured, i.e. where starting of
+    // FCoE is possible. We can not start exactly the interface from imported
+    // data because the numeration of interfaces (eth0, eth1...) may differ.
+    if ( start_fcoe )
+    {
+	foreach ( map card, detected_netcards, {
+		string vlan_interface = "";
+		string fcoe_vlan_interface = "";
+		string command = "";
+		map output = $[];
+		string ifcfg_file = "";
+		map status_map = $[];
+		
+		if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_CONFIGURED )
 		{
-		    // read or create /etc/fcoe/ethx file
-		    FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
-		}
-            }
-        }
-    });
+		    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", card["dev_name"]:"",
+					  card["vlan_interface"]:"" );
+		    // if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
+		    // call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
+		    if ( FileUtils::Exists( ifcfg_file ) ) 
+		    {						 
+			command = sformat( "ifup %1\.%2", card["dev_name"]:"", card["vlan_interface"]:"" );
+			y2milestone( "Executing command: %1", command );
+			output = (map)SCR::Execute( .target.bash_output, command );
+			y2milestone( "Output: %1", output );
 
-    if ( write )
-    {
-	// FcoeClient::SetModified(true) is called in FcoeClient::Import(),
-	// i.e. modified is set before calling FcoeClient::Write()
-	ret = FcoeClient::Write();
+			if ( output["exit"]:255 == 0 )
+			{
+			    // start FCoE
+			    command = sformat( "fipvlan -s %1", card["dev_name"]:"" );
+			}
+		    }
+		    else  // create VLAN interface and start FCoE
+		    {
+			command = sformat( "fipvlan -c -s %1", card["dev_name"]:"" );
+			y2milestone( "Executing command: %1", command );
+			output = (map)SCR::Execute( .target.bash_output, command );
+			y2milestone( "Output: %1", output );
+		    }
+
+		    if ( output["exit"]:255 != 0 )
+		    {
+			y2error( "Cannot create and start FCoE on %1", card["dev_name"]:"" );
+		    }
+		    else // get FCoE VLAN interface
+		    {
+			vlan_interface = FcoeClient::GetVlanInterface( card["dev_name"]:"" );
+			if ( vlan_interface == "" )
+			{
+			    y2error( "VLAN interface not available for %1.", card["dev_name"]:"" );
+			}
+			else
+			{    
+			    fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", 
+										    vlan_interface );
+			    if ( fcoe_vlan_interface != "" )
+			    {
+				y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
+				// read or create /etc/fcoe/ethx file
+				status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
+				// apply modified data
+				detected_netcards[ index, "fcoe_vlan"] = fcoe_vlan_interface;
+				detected_netcards[ index, "cfg_file"] = status_map["Filename"]:"";
+				detected_netcards[ index, "fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
+				detected_netcards[ index, "dcb_required"] = status_map["DCB_REQUIRED"]:"";
+			    }
+			    else
+			    {
+				y2error( "FCoE VLAN interface not configured for %1", card["dev_name"]:"" );
+			    }
+			}
+		    }
+		}
+		index = index + 1;
+	    });
     }
-    else	// don't continue in case of error
-    {
-	ret = false;
-    }
+    y2milestone( "Set NEW information about network cards: %1", detected_netcards );
+    // Set new information about netcards
+    FcoeClient::SetNetworkCards( detected_netcards );
+
+    // FcoeClient::SetModified(true) is called in FcoeClient::Import(),
+    // i.e. modified is set before calling FcoeClient::Write()
+    ret = FcoeClient::Write();
+
     Progress::set (progress_orig);
 }
 /**

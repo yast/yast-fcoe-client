@@ -634,7 +634,7 @@ global boolean DetectNetworkCards()
 global boolean ReadFcoeConfig()
 {
     list <string> options = (list<string>) SCR::Dir(.fcoe);
-    y2milestone( "List of options: %1", options );
+    y2debug( "List of options: %1", options );
 
     if ( options == [] || options == nil )
 	return false;
@@ -645,6 +645,8 @@ global boolean ReadFcoeConfig()
     string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
     fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
 
+    y2milestone( "/etc/fcoe/config read - DEBUG: %1, USE_SYSLOG: %2", debug_val, syslog_val );
+    
     return true;
 }
 
@@ -683,7 +685,7 @@ global boolean WriteCfgFiles()
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED && Modified() )  	// and data are modified 
 	    {
 		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
-		y2milestone( "Original content of %1: %2", card["cfg_file"]:"", content );
+		y2debug( "Original content of %1: %2", card["cfg_file"]:"", content );
 		
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
@@ -701,7 +703,7 @@ global boolean WriteCfgFiles()
 			}
 		    });
 		content = mergestring( lines, "\n" );
-		y2milestone( "Modified content: %1", content );
+		y2milestone( "Writing content: %1", content );
 
 		boolean ret = SCR::Write( .target.string, card["cfg_file"]:"", content );
 		if ( !ret )
@@ -713,10 +715,6 @@ global boolean WriteCfgFiles()
 		{
 		    y2milestone( "%1 written", card["cfg_file"]:"" );
 		}
-	    }
-	    else
-	    {
-		y2milestone( "%1 not configured for FCoE", card["dev_name"]:"" );
 	    }
 	} );
     
@@ -964,16 +962,12 @@ global list Summary()
     summary = Summary::AddLine( summary, _("<b>Interfaces</b>") );
     netcards = FcoeClient::GetNetworkCards();
     foreach ( map card, netcards, {
-	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4 %5: %6 %7: %8",
+	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4",
 							  // network card, e.g. eth0
 							  _("<i>Netcard</i>:"), card["dev_name"]:"",
 							  // nothing to translate here (abbreviation for
 							  // Fibre Channel over Ethernet Virtual LAN interface)
-							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"",
-							  // nothing to translate, options from config file
-							  "FCOE_ENABLE", card["fcoe_enable"]:"",
-							  "DCB_REQUIRED", card["dcb_required"]:"" ) );
-				
+							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"" ) );
 	} );
     service_start = FcoeClient::GetStartStatus();
     summary = Summary::AddLine( summary, _("<b>Starting of services</b>") );
