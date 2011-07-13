@@ -58,17 +58,17 @@ else if (func == "Write")
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
-		// FCoE VLAN interface is configured
+		// FCoE VLAN interface is configured -> start services
 		start_services = true;
 	    }
 	} );
+
     if ( start_services )
     {
+	y2milestone( "Enabling service start of fcoe and lldpad" ); 
 	Service::Enable("fcoe");
 	Service::Enable("lldpad");
     }
-    y2milestone("fcoe and lldpad services enabled");
-
 }
 else
 {
