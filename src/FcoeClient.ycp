@@ -43,6 +43,7 @@ import "Mode";
 import "Package";
 import "Popup";
 import "Service";
+import "NetworkService";
 
 /**
  * Prototypes
@@ -773,8 +774,8 @@ global boolean Read()
 		   ""
 		   );
 
-    // TODO - is this check needed here (like in IsciClient.ycp)
-    // if(!NetworkService::RunningNetworkPopup()) return false;
+    // check if network services are running
+    if(!NetworkService::RunningNetworkPopup()) return false;
      
     if(PollAbort()) return false;
     Progress::NextStage();
