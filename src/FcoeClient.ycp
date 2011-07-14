@@ -635,7 +635,7 @@ global boolean DetectNetworkCards()
 global boolean ReadFcoeConfig()
 {
     list <string> options = (list<string>) SCR::Dir(.fcoe);
-    y2debug( "List of options: %1", options );
+    y2milestone( "List of options: %1", options );
 
     if ( options == [] || options == nil )
 	return false;
@@ -865,12 +865,13 @@ global boolean Write()
 					    ],
 		  ""
 		  );
-    // TODO  things to do in case of Mode::autoinst()/autoupgrade() ???
-    // see IscsiClient.ycp, line 236, 241
 
-    // TODO  is_running - used or obsolete ???
+    // iscsi-client prepares for AutoYaST in Mode::autoinst()/autoupgrade()
+    // (see IscsiClient.ycp, line 236, 241)
+    // These things are done in fcoe-client_auto.ycp (should be sufficient there)
+    
     boolean is_running = Progress::IsRunning();
-    y2milestone( "**** Progress still running: %1", is_running );
+    y2debug( "**** Progress still running: %1", is_running );
 
     // write settings
     if(PollAbort()) return false;
@@ -901,7 +902,8 @@ For details see /var/log/YaST2/y2log") );
     // adjust start status of services lldpad and fcoe
     AdjustStartStatus();
 
-    // TODO - add additional package ??? like in IscsiClient.ycp, line 257
+    // Adding additional package (like in IscsiClient.ycp, line 257)
+    // is done in inst_fcoe-client.ycp (PackagesProposal::AddResolvables)
     sleep(sl);
 
     if(PollAbort()) return false;
