@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Jul 13 14:13:18 CEST 2011 - gs@suse.de
+
+- Bug-fix for AutoYaST support (start FCoE on all capable 
+  interfaces, because numeration of interfaces may differ)
+- V 2.17.5 
+
+-------------------------------------------------------------------
 Mon Jul  4 10:20:00 CEST 2011 - gs@suse.de
 
 - Support for AutoYaST (initial version), improve help text
