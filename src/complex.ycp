@@ -274,7 +274,7 @@ symbol HandleInterfacesDialog( string id, map event )
 	boolean create_ifcfg = false;
 	string ifcfg_file = "";
 	
-	if ( Stage::initial() )		// first stage - create and start FCoE VLAN interface
+	if ( Stage::initial() ) 	// first stage of installation - create and start FCoE VLAN interface
 	{
 	    // headline of a popup: creating and starting Fibre Channel over Ethernet
 	    boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
@@ -332,13 +332,13 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		    else
 		    {
 			command = sformat( "fipvlan -c -s %1", dev_name ); // create and start FCoE
-			// create_ifcfg = true;
+			create_ifcfg = true;
 		    }
 		}
 		else
 		{
 		    command = sformat( "fipvlan -c -s %1", dev_name );
-		    // create_ifcfg = true;
+		    create_ifcfg = true;
 		}
 
 		y2milestone( "Executing command: %1", command );
