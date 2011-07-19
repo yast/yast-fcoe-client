@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jul 19 14:08:23 CEST 2011 - gs@suse.de
+
+- AutoYaST support added
+- V 2.21.4 
+
+-------------------------------------------------------------------
 Tue Jun  7 13:39:51 CEST 2011 - gs@suse.de
 
 - Bug-fixes for installation workflow (reset network cards, only
