@@ -43,6 +43,7 @@ import "Mode";
 import "Package";
 import "Popup";
 import "Service";
+import "NetworkService";
 
 /**
  * Prototypes
@@ -645,6 +646,8 @@ global boolean ReadFcoeConfig()
     string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
     fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
 
+    y2milestone( "/etc/fcoe/config read - DEBUG: %1, USE_SYSLOG: %2", debug_val, syslog_val );
+    
     return true;
 }
 
@@ -683,7 +686,7 @@ global boolean WriteCfgFiles()
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED && Modified() )  	// and data are modified 
 	    {
 		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
-		y2milestone( "Original content of %1: %2", card["cfg_file"]:"", content );
+		y2debug( "Original content of %1: %2", card["cfg_file"]:"", content );
 		
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
@@ -701,7 +704,7 @@ global boolean WriteCfgFiles()
 			}
 		    });
 		content = mergestring( lines, "\n" );
-		y2milestone( "Modified content: %1", content );
+		y2milestone( "Writing content: %1", content );
 
 		boolean ret = SCR::Write( .target.string, card["cfg_file"]:"", content );
 		if ( !ret )
@@ -713,10 +716,6 @@ global boolean WriteCfgFiles()
 		{
 		    y2milestone( "%1 written", card["cfg_file"]:"" );
 		}
-	    }
-	    else
-	    {
-		y2milestone( "%1 not configured for FCoE", card["dev_name"]:"" );
 	    }
 	} );
     
@@ -775,8 +774,8 @@ global boolean Read()
 		   ""
 		   );
 
-    // TODO - is this check needed here (like in IsciClient.ycp)
-    // if(!NetworkService::RunningNetworkPopup()) return false;
+    // check if network services are running
+    if(!NetworkService::RunningNetworkPopup()) return false;
      
     if(PollAbort()) return false;
     Progress::NextStage();
@@ -866,12 +865,13 @@ global boolean Write()
 					    ],
 		  ""
 		  );
-    // TODO  things to do in case of Mode::autoinst()/autoupgrade() ???
-    // see IscsiClient.ycp, line 236, 241
 
-    // TODO  is_running - used or obsolete ???
+    // iscsi-client prepares for AutoYaST in Mode::autoinst()/autoupgrade()
+    // (see IscsiClient.ycp, line 236, 241)
+    // These things are done in fcoe-client_auto.ycp (should be sufficient there)
+    
     boolean is_running = Progress::IsRunning();
-    y2milestone( "**** Progress still running: %1", is_running );
+    y2debug( "**** Progress still running: %1", is_running );
 
     // write settings
     if(PollAbort()) return false;
@@ -902,7 +902,8 @@ For details see /var/log/YaST2/y2log") );
     // adjust start status of services lldpad and fcoe
     AdjustStartStatus();
 
-    // TODO - add additional package ??? like in IscsiClient.ycp, line 257
+    // Adding additional package (like in IscsiClient.ycp, line 257)
+    // is done in inst_fcoe-client.ycp (PackagesProposal::AddResolvables)
     sleep(sl);
 
     if(PollAbort()) return false;
@@ -964,16 +965,12 @@ global list Summary()
     summary = Summary::AddLine( summary, _("<b>Interfaces</b>") );
     netcards = FcoeClient::GetNetworkCards();
     foreach ( map card, netcards, {
-	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4 %5: %6 %7: %8",
+	    summary = Summary::AddLine( summary, sformat( "%1: %2 %3: %4",
 							  // network card, e.g. eth0
 							  _("<i>Netcard</i>:"), card["dev_name"]:"",
 							  // nothing to translate here (abbreviation for
 							  // Fibre Channel over Ethernet Virtual LAN interface)
-							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"",
-							  // nothing to translate, options from config file
-							  "FCOE_ENABLE", card["fcoe_enable"]:"",
-							  "DCB_REQUIRED", card["dcb_required"]:"" ) );
-				
+							  "<i>FCoE VLAN</i>", card["fcoe_vlan"]:"" ) );
 	} );
     service_start = FcoeClient::GetStartStatus();
     summary = Summary::AddLine( summary, _("<b>Starting of services</b>") );
