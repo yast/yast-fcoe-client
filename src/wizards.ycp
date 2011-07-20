@@ -121,7 +121,7 @@ any GlobalDialog() {
 		 ];
 
 	map <string, boolean> status_map = FcoeClient::GetStartStatus();
-	if ( status_map["fcoe"]:false == true || status_map["lldpad"]:false == true )
+	if ( status_map["fcoe"]:false == true && status_map["lldpad"]:false == true )
 	    ini_tab = "interfaces";
 	else
 	    ini_tab = "services";
