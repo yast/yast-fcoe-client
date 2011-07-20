@@ -274,7 +274,7 @@ symbol HandleInterfacesDialog( string id, map event )
 	boolean create_ifcfg = false;
 	string ifcfg_file = "";
 	
-	if ( Stage::initial() ) 	// first stage of installation - create and start FCoE VLAN interface
+	if ( Stage::initial() )	// first stage of installation - create and start FCoE VLAN interface
 	{
 	    // headline of a popup: creating and starting Fibre Channel over Ethernet
 	    boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
@@ -431,21 +431,16 @@ symbol HandleEditDialog( string id, map event )
 void StoreServicesDialog (string id, map event)
 {
     y2milestone( "Store services dialog" );
+
     boolean fcoe_auto = (boolean)UI::QueryWidget( `id ("fcoe_startup_auto"), `Value );
+    FcoeClient::SetStartStatus( "fcoe", fcoe_auto );
 
-    if ( fcoe_auto )
-    {
-	FcoeClient::SetStartStatus( "fcoe", true );
-	y2milestone( "Setting auto start of FCoE to true");
-    }
-
+    y2milestone ("Setting auto start of service 'fcoe' to: %1", (fcoe_auto?"true":"false") );
+    
     boolean lldpad_auto = (boolean)UI::QueryWidget( `id ("lldpad_startup_auto"), `Value );
 
-    if ( lldpad_auto )
-    {
-	FcoeClient::SetStartStatus( "lldpad", true );
-	y2milestone( "Setting auto start of lldpad to true");
-    }
+    FcoeClient::SetStartStatus( "lldpad", lldpad_auto );
+    y2milestone( "Setting auto start of service 'lldpad' to: %1", (lldpad_auto?"true":"false"));
 }
 
 void StoreInterfacesDialog (string id, map event)
