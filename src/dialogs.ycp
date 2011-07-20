@@ -64,7 +64,7 @@ term EditDialogContents()
     return `VBox(
 		 `VStretch(),
 		 // heading is replaced later (InitEditDialog)
-		 `Label( `id(`heading), ("Configuration of Interface ...................") ),
+		 `Label( `id(`heading), ("Configuration of Interface ................................") ),
 		 `HBox (
 			`HStretch(),
 			`Frame( (""),
