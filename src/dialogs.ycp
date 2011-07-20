@@ -64,23 +64,26 @@ term EditDialogContents()
     return `VBox(
 		 `VStretch(),
 		 // heading is replaced later (InitEditDialog)
-		 `Label( `id(`heading), ("Configuration of Interface ................................") ),
+		 `Label( `id(`heading), ("Configuration of Interface .......................") ),
+		 `VSpacing(2),
 		 `HBox (
 			`HStretch(),
 			`Frame( (""),
-				`VBox(
-				      `VSpacing(2),
-				      `ComboBox( `id(`fcoe), _("FCoE Enable"),
-						 [`item(`id("yes"), "yes" ),
-						  `item(`id("no"), "no", true ) ]
-						 ),
-				      `VSpacing (2),
-				      `ComboBox( `id(`dcb), _("DCB Required"),
-						 [`item(`id("yes"), "yes" ),
-						  `item(`id("no"), "no", true ) ]
-						 ),
-				      `VSpacing (2)
-				      )
+				`MarginBox( 10, 2, 
+					    `VBox(
+						  `VSpacing(2),
+						  `ComboBox( `id(`fcoe), _("FCoE Enable"),
+							     [`item(`id("yes"), "yes" ),
+							      `item(`id("no"), "no", true ) ]
+							     ),
+						  `VSpacing (2),
+						  `ComboBox( `id(`dcb), _("DCB Required"),
+							     [`item(`id("yes"), "yes" ),
+							      `item(`id("no"), "no", true ) ]
+							     ),
+						  `VSpacing (2)
+						  )
+					    )
 				),
 			`HStretch()
 			),

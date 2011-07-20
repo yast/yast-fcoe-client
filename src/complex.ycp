@@ -233,6 +233,7 @@ void InitEditDialog( string id )
     // set values for 'FCoE Enabled' and 'DCB Required'
     UI::ChangeWidget( `id(`fcoe), `Value, card["fcoe_enable"]:"" );
     UI::ChangeWidget( `id(`dcb), `Value, card["dcb_required"]:"" );
+    // headline of the edit dialog - configuration of values for a certain network interface
     UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
 }
 
