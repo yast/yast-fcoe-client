@@ -78,26 +78,26 @@ the configuration opens.</p>
     /* Services dialog help 1/3 */
     "services" : _("<p><b><big>Starting of services</big><br></b><br>
 There is the possibility to enable or disable the start of the services
-<b>fcoe</b> and <b>lldpad</b> at boot time.<br></p>
+<b>fcoe</b> and <b>lldpad</b> at boot time.</p>
 ") +
      /* Services dialog help 2/3 */
-    _("<p>Starting the service <b>fcoe</b> means starting the <b>Fibre Channel over
-Ethernet</b> service daemon 'fcoemon' which controls the FCoE interfaces and
-establishes a connection with the daemon 'lldpad'.</p>" ) +
+    _("<p>Starting the service <b>fcoe</b> means starting the <i>Fibre Channel over
+Ethernet</i> service daemon <i>fcoemon</i> which controls the FCoE interfaces and
+establishes a connection with the daemon <i>lldpad</i>.</p>" ) +
 
     /* Services dialog help 3/3 */
-    _("<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent daemon 'lldpad' which informs 'fcoemon' about DCB (Data Center Bridging) features and configuration of the interfaces.</p>"),
+    _("<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent daemon <i>lldpad</i> which informs <i>fcoemon</i> about DCB (Data Center Bridging) features and configuration of the interfaces.</p>"),
     
     /* Interfaces dialog help 1/4 */
     "interfaces" : _("<p><b><big>Network interface overview</big></b><br></p>") +
 
     /* Interfaces dialog help 2/4 */
-_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column 'FCoE VLAN interface'.</p>") +
+_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column <i>FCoE VLAN interface</i>.</p>") +
     
     /* Interfaces dialog help 3/4 */
     _("<p>The values for <i>FCoE VLAN Interface</i> in detail:<br>
-<i>not available</i> means, FCoE isn't possible (must be enabled on the switch first)<br>
-<i>not configured</i>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN Interface</b> to do this.<br>
+<b>not available</b>: Fibre Channel over Ethernet isn't possible (must be enabled on the switch first)<br>
+<b>not configured</b>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN Interface</b> to do this.<br>
  If the FCoE VLAN interface is already created the name is shown in the column, e.g. eth3.200.</p>") +
 
     /* Interfaces dialog help 3/4 */
@@ -111,20 +111,20 @@ _("<p>The interfaces dialog shows all detected netcards including the status of 
 
     /*  Configuration dialog help 3/3 */
     _("<p>The values are:<br>
-<b>Debug</b>: <i>yes</i> or <i>no</i> is used to enable debugging messages from the fcoe service script and 'fcoemon'<br>
-<b>Use syslog</b>: <i>yes</i> or <i>no</i> sends messages to the system log if set to <i>yes</i> (see /var/log/messages).</p>"),
+<b>Debug</b>: <i>yes</i> or <i>no</i> is used to enable debugging messages from the fcoe service script and <i>fcoemon</i><br>
+<b>Use syslog</b>: <i>yes</i> or <i>no</i> sends messages to the system log if set to <i>yes</i> (data are logged to /var/log/messages).</p>"),
 
     /* edit dialog help 1/3 */
     "change" : _("<p>Edit settings in /etc/fcoe/ethx</p>" ) +
     
     /* Edit dialog help 2/3 */
-    _( "<p>The daemon 'fcoemon' reads these configuration files on initialization.
+    _( "<p>The daemon <i>fcoemon</i> reads these configuration files on initialization.
            There is a file for every interface and the values indicate whether FCoE instances
            should be created and if DCB is required.</p>" )     +
     /* Edit dialog help 3/3 */
     _( "<p>The values are:<br>       
-           FCoE enable: <i>yes</i> or <i>no</i> Enable or disable creation of FCoE. <br>
-           DCB required: <i>yes</i> or <i>no</i> The default is <i>yes</i>, DCB is usually
+           <b>FCoE enable</b>: <i>yes</i> or <i>no</i> Enable or disable creation of FCoE. <br>
+           <b>DCB required</b>: <i>yes</i> or <i>no</i> The default is <i>yes</i>, DCB is usually
            required.</p>" ),
 
 ];
