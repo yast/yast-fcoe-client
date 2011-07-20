@@ -123,8 +123,8 @@ _("<p>The interfaces dialog shows all detected netcards including the status of 
            should be created and if DCB is required.</p>" )     +
     /* Edit dialog help 3/3 */
     _( "<p>The values are:<br>       
-           <b>FCoE enable</b>: <i>yes</i> or <i>no</i> Enable or disable creation of FCoE. <br>
-           <b>DCB required</b>: <i>yes</i> or <i>no</i> The default is <i>yes</i>, DCB is usually
+           <b>FCoE Enable</b>: <i>yes</i> or <i>no</i> Enable or disable creation of FCoE. <br>
+           <b>DCB Required</b>: <i>yes</i> or <i>no</i> The default is <i>yes</i>, DCB is usually
            required.</p>" ),
 
 ];
