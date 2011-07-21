@@ -635,7 +635,7 @@ global boolean DetectNetworkCards()
 global boolean ReadFcoeConfig()
 {
     list <string> options = (list<string>) SCR::Dir(.fcoe);
-    y2milestone( "List of options: %1", options );
+    y2milestone( "List of options in /etc/fcoe/config: %1", options );
 
     if ( options == [] || options == nil )
 	return false;
