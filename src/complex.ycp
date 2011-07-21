@@ -52,6 +52,8 @@ include "fcoe-client/dialogs.ycp";
  * @return true if users aborts installation
  */
 boolean ReallyAbort() {
+    y2milestone( "Aborting FCoE configuration" );
+
     // revert start of 'fcoe' or 'lldpad' 
     if ( FcoeClient::fcoe_started )
     {
@@ -113,14 +115,12 @@ symbol WriteDialog() {
     return ret ? `next : `abort;
 }
 
-// TODO - check whether a 'validate' is required
-
 /**
  * Init
  **/
 void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
-    y2milestone( "Modified: %1", FcoeClient::Modified() );
+    y2milestone( "Data modified: %1", FcoeClient::Modified() );
     map status_map = FcoeClient::GetStartStatus();
 
     if ( status_map["fcoe"]:false == true )
@@ -158,16 +158,19 @@ void AdjustButtons()
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
 	UI::ChangeWidget( `id(`create), `Enabled, true );
+	UI::ChangeWidget( `id(`remove), `Enabled, false );
     }
     else if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_AVAILABLE )
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
-	UI::ChangeWidget( `id(`create), `Enabled, false );	
+	UI::ChangeWidget( `id(`create), `Enabled, false );
+	UI::ChangeWidget( `id(`remove), `Enabled, false );
     }
     else
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, true );
 	UI::ChangeWidget( `id(`create), `Enabled, false );
+	UI::ChangeWidget( `id(`remove), `Enabled, true );
     }
 }
 
@@ -409,6 +412,47 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["DCB_REQUIRED"]:"" );
 	AdjustButtons();
     }
+    else if ( action == `remove )
+    {
+	map card = FcoeClient::GetCurrentNetworkCard();
+	map output = $[];
+	
+	// headline of a popup
+	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN device"),
+					    // question to the user: really remove FCoE VLAN interface
+					    sformat( _("Do you really want to remove the VLAN device %1?
+Please note: The device is not enabled again on 'Abort'."), card["fcoe_vlan"]:"" ) );
+	if ( ret == true )
+	{
+	    y2milestone( "Removing %1",  card["fcoe_vlan"]:"" );
+	
+	    string rm_interface = sformat( "vconfig rem %1", card["fcoe_vlan"]:"") ;
+	    y2milestone( "Calling %1", rm_interface );
+	    output = (map)SCR::Execute( .target.bash_output, rm_interface );
+	    y2milestone( "Output: %1", output );
+	
+	    string rm_cfg = sformat( "rm %1", card["cfg_file"]:"" );
+	    y2milestone( "Calling %1", rm_cfg );
+	    output = (map)SCR::Execute( .target.bash_output, rm_cfg );
+	    y2milestone( "Output: %1", output );
+
+	    // set new values in global map network_interfaces
+	    card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
+	    card["fcoe_enable"] = "";
+	    card["dcb_required"] = "";
+	    card["cfg_file"] = "";
+	    FcoeClient::SetModified( true );
+
+	    FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
+	    y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
+	    
+	    // replace values in table 
+	    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), card["fcoe_vlan"]:"" );
+	    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), card["fcoe_enable"]:"" );
+	    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), card["dcb_required"]:"" );
+	    AdjustButtons();
+	}
+    }
 
     return nil;
 }
@@ -436,12 +480,12 @@ void StoreServicesDialog (string id, map event)
     boolean fcoe_auto = (boolean)UI::QueryWidget( `id ("fcoe_startup_auto"), `Value );
     FcoeClient::SetStartStatus( "fcoe", fcoe_auto );
 
-    y2milestone ("Setting auto start of service 'fcoe' to: %1", (fcoe_auto?"true":"false") );
+    y2milestone ("Setting auto start of service 'fcoe' to: %1", fcoe_auto );
     
     boolean lldpad_auto = (boolean)UI::QueryWidget( `id ("lldpad_startup_auto"), `Value );
 
     FcoeClient::SetStartStatus( "lldpad", lldpad_auto );
-    y2milestone( "Setting auto start of service 'lldpad' to: %1", (lldpad_auto?"true":"false"));
+    y2milestone( "Setting auto start of service 'lldpad' to: %1", lldpad_auto );
 }
 
 void StoreInterfacesDialog (string id, map event)

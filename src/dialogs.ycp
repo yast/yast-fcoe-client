@@ -126,8 +126,9 @@ term InterfacesDialogContent () {
 					    _("FCoE Enable"), _("DCB Required"), _("DCB capable") ),
 				    []
 				    ),
-			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings") ),
-					  `PushButton(`id(`create), _("Create FCoE &VLAN Interface")) )
+			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings")),
+					  `PushButton(`id(`create), _("Create FCoE &VLAN Interface")),
+					  `PushButton(`id(`remove), _("&Remove Interface")) )
 				   )
 			     )
 		       );
