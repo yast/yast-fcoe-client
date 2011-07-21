@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Jul 21 14:09:17 CEST 2011 - gs@suse.de
+
+- Write configuration for FCoE interfaces to /etc/sysconfig/network 
+  (effective for installed system), bug-fix for starting services
+  at boot, add possibility to remove devices
+- V 2.17.6
+
+-------------------------------------------------------------------
 Wed Jul 13 14:13:18 CEST 2011 - gs@suse.de
 
 - Bug-fix for AutoYaST support (start FCoE on all capable 
