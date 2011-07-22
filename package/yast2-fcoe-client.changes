@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Jul 22 15:44:55 CEST 2011 - locilka@suse.cz
+
+- Obsoleted X-KDE-SubstituteUID replaced with xdg-su in Exec in
+  desktop files (bnc#540627)
+
+-------------------------------------------------------------------
 Tue Jul 19 14:08:23 CEST 2011 - gs@suse.de
 
 - AutoYaST support added

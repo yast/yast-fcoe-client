@@ -18,9 +18,8 @@ X-SuSE-YaST-AutoInstResource=fcoe-client
 X-SuSE-YaST-AutoInstClonable=true
 
 Icon=fcoe
-Exec=/sbin/yast2 fcoe-client 
+Exec=/usr/bin/xdg-su -c '/sbin/yast2 fcoe-client'
 
 Name=FCoE Client Configuration
 GenericName=Fibre Channel over Ethernet Configuration
-X-KDE-SubstituteUID=true
 StartupNotify=true
