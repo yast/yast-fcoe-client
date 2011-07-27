@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Wed Jul 27 14:46:09 CEST 2011 - gs@suse.de
+
+- Configure the interfaces during installation (bnc #705171) 
+
+-------------------------------------------------------------------
 Thu Jul 21 14:09:17 CEST 2011 - gs@suse.de
 
 - Write configuration for FCoE interfaces to /etc/sysconfig/network 
