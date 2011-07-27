@@ -111,8 +111,10 @@ _("<p>The interfaces dialog shows all detected netcards including the status of 
 
     /*  Configuration dialog help 3/3 */
     _("<p>The values are:<br>
-<b>Debug</b>: <i>yes</i> or <i>no</i> is used to enable debugging messages from the fcoe service script and <i>fcoemon</i><br>
-<b>Use syslog</b>: <i>yes</i> or <i>no</i> sends messages to the system log if set to <i>yes</i> (data are logged to /var/log/messages).</p>"),
+<b>Debug</b>: <i>yes</i> or <i>no</i><br>
+This is used to enable or disable debugging messages from the fcoe service script and <i>fcoemon</i>.<br>
+<b>Use syslog</b>: <i>yes</i> or <i>no</i><br>
+Messages are sent to the system log if set to <i>yes</i> (data are logged to /var/log/messages).</p>"),
 
     /* edit dialog help 1/3 */
     "change" : _("<p>Edit settings in /etc/fcoe/ethx</p>" ) +
