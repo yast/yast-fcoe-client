@@ -1,7 +1,8 @@
 -------------------------------------------------------------------
 Wed Jul 27 14:46:09 CEST 2011 - gs@suse.de
 
-- Configure the interfaces during installation (bnc #705171) 
+- Set up network interfaces during installation (bnc #705171) 
+- V 2.17.7
 
 -------------------------------------------------------------------
 Thu Jul 21 14:09:17 CEST 2011 - gs@suse.de
