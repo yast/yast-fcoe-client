@@ -92,7 +92,7 @@ establishes a connection with the daemon <i>lldpad</i>.</p>" ) +
     "interfaces" : _("<p><b><big>Network interface overview</big></b><br></p>") +
 
     /* Interfaces dialog help 2/4 */
-_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column <i>FCoE VLAN interface</i>.</p>") +
+_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column <i>FCoE VLAN Interface</i>.</p>") +
     
     /* Interfaces dialog help 3/4 */
     _("<p>The values for <i>FCoE VLAN Interface</i> in detail:<br>
@@ -125,9 +125,10 @@ Messages are sent to the system log if set to <i>yes</i> (data are logged to /va
            should be created and if DCB is required.</p>" )     +
     /* Edit dialog help 3/3 */
     _( "<p>The values are:<br>       
-           <b>FCoE Enable</b>: <i>yes</i> or <i>no</i> Enable or disable creation of FCoE. <br>
-           <b>DCB Required</b>: <i>yes</i> or <i>no</i> The default is <i>yes</i>, DCB is usually
-           required.</p>" ),
+<b>FCoE Enable</b>: <i>yes</i> or <i>no</i><br>
+Enable or disable the creation of FCoE instances.<br>
+<b>DCB Required</b>: <i>yes</i> or <i>no</i><br>
+The default is <i>yes</i>, DCB is usually required.</p>" ),
 
 ];
 
