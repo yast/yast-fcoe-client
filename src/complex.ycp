@@ -382,7 +382,7 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 		if ( create_ifcfg )
 		{
-		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"onboot\"
+		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"nfsroot\"
 ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 		    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
 		    SCR::Write(.target.string, ifcfg_file, config);
