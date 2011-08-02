@@ -288,19 +288,18 @@ global string GetVlanInterface( string interface )
     string vlan_interface = "";
     map output = $[];
     
-    if ( Stage::initial() )
+
+    // call 'ifconfig <interface> up' here because it's not yet clear who configures
+    // the interfaces (fipvlan command itself?) -> see bnc #705171
+    // (this applies also to installed system)
+    string cmd_ifup = sformat( "ifconfig %1 up", interface );
+    y2milestone( "Executing command: %1", cmd_ifup );
+    output = (map)SCR::Execute( .target.bash_output, cmd_ifup );
+    y2milestone( "Output: %1", output );
+    if ( output["exit"]:255 != 0 )
     {
-	// call 'ifconfig <interface> up' in first stage of installation because it's not yet
-	// clear who configures the interfaces here, (fipvlan command itself?) -> see bnc #705171
-	string cmd_ifup = sformat( "ifconfig %1 up", interface );
-	y2milestone( "Executing command: %1", cmd_ifup );
-	output = (map)SCR::Execute( .target.bash_output, cmd_ifup );
-	y2milestone( "Output: %1", output );
-	if ( output["exit"]:255 != 0 )
-	{
-	    Popup::Error( sformat( _("Interface %1 not up"), interface ) );
-	    y2error( "Interface %1 not up", interface );
-	}
+	Popup::Error( sformat( _("Interface %1 not up"), interface ) );
+	y2error( "Interface %1 not up", interface );
     }
     
     // check whether there is a VLAN interface which is configured for FCoE
@@ -790,8 +789,8 @@ global boolean Read()
 		   ""
 		   );
 
-    // check if network services are running
-    if(!NetworkService::RunningNetworkPopup()) return false;
+    // a check for running network services doesn't make sense (is not needed), the
+    // interfaces are set up in FcoeClient::GetVlanInterfaces()
      
     if(PollAbort()) return false;
     Progress::NextStage();
