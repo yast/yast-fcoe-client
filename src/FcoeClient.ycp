@@ -366,37 +366,44 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 {
     map <string, string> status_map = $[];
     string content = "";
+    boolean file_exists = true;
     
     if ( vlan_device_name != "")
     {
-	// fcoemon reads values from /etc/fcoe/cfg-<vlan-interface>
+	// fcoemon reads values from /etc/fcoe/cfg-<vlan-interface>, e.g. /etc/fcoe/cfg-eth3.200
 	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 	y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
+
 	content = (string)SCR::Read(.target.string, file_name);
 
 	if ( content == "" || content == nil )
 	{
-	    y2milestone( "Cannot read cfg-file - creating %1 with default values from /etc/fcoe/cfg-ethx",
+	    y2milestone( "Cannot read cfg-file - create %1 (using /etc/fcoe/cfg-ethx) and set AUTO_VLAN to 'no'",
 			  file_name );
-	    string def_values = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
+	    content = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
 
-	    if ( def_values != "" && def_values != nil )
+	    if ( content != "" && content != nil )
 	    {
-		boolean ret = SCR::Write( .target.string, file_name, def_values );
-		if ( ret == true )
+		// bnc #692403: if file name is created with vlan interface in the name
+		// (e.g. eth3.200) then set AUTO_VLAN to "no"
+		list <string> lines = (list<string>)splitstring( content, "\n" );
+		lines = maplist( string line, lines, {
+			if ( regexpmatch( line, "^AUTO_VLAN" ) )
+			{
+			    return sformat( "AUTO_VLAN=\"%1\"", "no" );
+			}
+			else
+			{
+			    return line;
+			}
+		    });
+		content = mergestring( lines, "\n" );
+		y2milestone( "Writing content: %1", content );
+		
+		file_exists = SCR::Write( .target.string, file_name, content );
+
+		if ( file_exists )
 		{
-		    list <string> lines = splitstring( def_values, "\n" );
-		    foreach( string line, (list<string>)lines, {
-			    if ( regexpmatch( line, "^FCOE_ENABLE" ) )
-			    {
-				status_map = add( status_map, "FCOE_ENABLE", deletechars( substring(line, 12), "\"") );
-			    }
-			    if ( regexpmatch( line, "^DCB_REQUIRED" ) )
-			    {
-				status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
-			    }
-			});
-		    status_map = add( status_map, "Filename", file_name );
 		    AddRevertCommand( sformat( "rm %1", file_name ) );
 		}
 		else
@@ -408,31 +415,39 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	    {
 		y2error( "Cannot read /etc/fcoe/cfg-ethx" );
 	    }
-	    return status_map;
 	}
 	else
 	{
+	    file_exists = true;
 	    y2milestone( "Content: %1", content );
 	}
 	
-	list <string> lines = splitstring( content, "\n" );
-	foreach( string line, (list<string>)lines, {
-		if ( regexpmatch( line, "^FCOE_ENABLE" ) )
-		{
-		    status_map = add( status_map, "FCOE_ENABLE", deletechars( substring(line, 12), "\"") );
-		}
-		if ( regexpmatch( line, "^DCB_REQUIRED" ) )
-		{
-		    status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
-		}
-	    });
-	status_map = add( status_map, "Filename", file_name );
+	if ( file_exists )
+	{
+	    list <string> lines = splitstring( content, "\n" );
+	    foreach( string line, (list<string>)lines, {
+		    if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+		    {
+			status_map = add( status_map, "FCOE_ENABLE", deletechars( substring(line, 12), "\"") );
+		    }
+		    if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+		    {
+			status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
+		    }
+		    if ( regexpmatch( line, "^AUTO_VLAN" ) )
+		    {
+			status_map = add( status_map, "AUTO_VLAN", deletechars( substring( line, 10 ),"\"") );
+		    }	
+		});
+	    status_map = add( status_map, "Filename", file_name );
+	}
     }
     else
     {
 	y2error( "Interface not valid" );
     }
-
+    y2milestone( "Returning: %1", status_map );
+    
     return status_map;
 }
 
@@ -631,6 +646,7 @@ global boolean DetectNetworkCards()
 	    info_map = add( info_map, "fcoe_vlan", fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
 	    info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"");	// FCOE_ENABLE
 	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
+	    info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"");	// AUTO_VLAN
 	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
 	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
 	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
@@ -712,6 +728,10 @@ global boolean WriteCfgFiles()
 			else if ( regexpmatch( line, "^DCB_REQUIRED" ) )
 			{
 			    return sformat( "DCB_REQUIRED=\"%1\"", card["dcb_required"]:"no" );
+			}
+			else if ( regexpmatch( line, "^AUTO_VLAN" ) )
+			{
+			    return sformat( "AUTO_VLAN=\"%1\"", card["auto_vlan"]:"no" );
 			}
 			else
 			{

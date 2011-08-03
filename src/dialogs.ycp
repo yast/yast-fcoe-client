@@ -71,17 +71,20 @@ term EditDialogContents()
 			`Frame( (""),
 				`MarginBox( 10, 2, 
 					    `VBox(
-						  `VSpacing(2),
 						  `ComboBox( `id(`fcoe), _("FCoE Enable"),
 							     [`item(`id("yes"), "yes" ),
 							      `item(`id("no"), "no", true ) ]
 							     ),
-						  `VSpacing (2),
+						  `VSpacing (1),
 						  `ComboBox( `id(`dcb), _("DCB Required"),
 							     [`item(`id("yes"), "yes" ),
 							      `item(`id("no"), "no", true ) ]
 							     ),
-						  `VSpacing (2)
+						  `VSpacing (1),
+						  `ComboBox( `id(`auto), _("AUTO_VLAN"),
+							     [`item(`id("yes"), "yes" ),
+							      `item(`id("no"), "no", true ) ]
+							     )
 						  )
 					    )
 				),

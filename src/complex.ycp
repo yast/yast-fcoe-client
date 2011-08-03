@@ -236,6 +236,7 @@ void InitEditDialog( string id )
     // set values for 'FCoE Enabled' and 'DCB Required'
     UI::ChangeWidget( `id(`fcoe), `Value, card["fcoe_enable"]:"" );
     UI::ChangeWidget( `id(`dcb), `Value, card["dcb_required"]:"" );
+    UI::ChangeWidget( `id(`auto), `Value, card["auto_vlan"]:"" );
     // headline of the edit dialog - configuration of values for a certain network interface
     UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
 }
@@ -400,6 +401,7 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	card["fcoe_vlan"] = fcoe_vlan_interface;
 	card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 	card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
+	card["auto_vlan"] = status_map["AUTO_VLAN"]:"";
 	card["cfg_file"] = status_map["Filename"]:"";
 	FcoeClient::SetModified( true );
 		
@@ -443,6 +445,7 @@ Please note: The device won't be restored on 'Abort'."), card["fcoe_vlan"]:"" ) 
 		card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
 		card["fcoe_enable"] = "";
 		card["dcb_required"] = "";
+		card["auto_vlan"] = "";
 		card["cfg_file"] = "";
 		FcoeClient::SetModified( true );
 
@@ -543,6 +546,13 @@ void StoreEditDialog (string id, map event)
 	FcoeClient::SetModified( true );
     }
 
+    string auto_vlan = (string)UI::QueryWidget( `id(`auto), `Value );
+    if ( card["auto_vlan"]:"" != auto_vlan )
+    {
+	card["auto_vlan"] = auto_vlan;
+	FcoeClient::SetModified( true );
+    }
+    
     FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 
     y2milestone( "Current data: %1", FcoeClient::GetNetworkCards() );
