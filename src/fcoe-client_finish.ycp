@@ -47,6 +47,8 @@ if (func == "Info")
 else if (func == "Write")
 {
     boolean start_services = false;
+
+    y2milestone( "Copying files /etc/fcoe/* to destination" );
     
     // copy fcoe config files to destdir
     WFM::Execute (.local.bash,"test -d /etc/fcoe/ && mkdir -p '" + String::Quote(Installation::destdir) + "/etc/fcoe' && cp -a /etc/fcoe/* '" + String::Quote(Installation::destdir) + "/etc/fcoe/'");
@@ -67,7 +69,7 @@ else if (func == "Write")
     {
 	y2milestone( "Enabling service start of fcoe and lldpad" ); 
 	Service::Enable("fcoe");
-	Service::Enable("lldpad");
+	Service::Enable("lldpad"); 
     }
 }
 else
