@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Thu Aug  4 14:34:30 CEST 2011 - gs@suse.de
+
+- Do not check for running network services (related to
+  bnc #705610), set up network interfaces also in installed
+  system, set start mode to "nfsroot" in ifcfg-file, 
+  set AUTO_VLAN to "no" when creating /etc/fcoe/cfg-ethx 
+- V 2.17.8
+
+-------------------------------------------------------------------
 Wed Jul 27 14:46:09 CEST 2011 - gs@suse.de
 
 - Set up network interfaces during installation (bnc #705171) 
