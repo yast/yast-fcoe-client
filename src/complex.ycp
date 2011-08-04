@@ -188,7 +188,7 @@ void InitInterfacesDialog (string id) {
     foreach ( map card, (list<map>)netcards, {
 	    table_items = add( table_items,
 			       `item(`id(row), card["dev_name"]:"", card["device"]:"", card["fcoe_vlan"]:"",
-				     card["fcoe_enable"]:"", card["dcb_required"]:"", card["dcb_capable"]:"" )
+				     card["fcoe_enable"]:"", card["dcb_required"]:"", card["auto_vlan"]:"", card["dcb_capable"]:"" )
 			       );
 	    row = row + 1;
 	});
@@ -412,6 +412,7 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), fcoe_vlan_interface );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), status_map["FCOE_ENABLE"]:"" );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["DCB_REQUIRED"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["AUTO_VLAN"]:"" );
 	AdjustButtons();
     }
     else if ( action == `remove )
@@ -456,6 +457,7 @@ Please note: The device won't be restored on 'Abort'."), card["fcoe_vlan"]:"" ) 
 		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), card["fcoe_vlan"]:"" );
 		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), card["fcoe_enable"]:"" );
 		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), card["dcb_required"]:"" );
+		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), card["auto_vlan"]:"" );
 		AdjustButtons();
 	    }
 	    else

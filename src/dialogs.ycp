@@ -104,11 +104,12 @@ term ServicesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox (
 			      `VSpacing(2.0),
-			      // frame
+			      // frame containing radio buttons for fcoe service start 
 			      `Frame (_("FCoE Service Start"),
 				      `VBox (`RadioButtonGroup (`id ("fcoe_service_startup"), items_fcoe))
 				      ),
 			      `VStretch(),
+			      // frame containing radio buttons for lldpad service start 
 			      `Frame (_("Lldpad Service Start"),
 				      `VBox (`RadioButtonGroup (`id ("lldpad_service_startup"), items_lldpad))
 				      ),
@@ -125,10 +126,13 @@ term InterfacesDialogContent () {
     return `MarginBox( mbox_x, mbox_y,
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate, `keepSorting ),
+				    // column headers of a table with network interfaces (keep them short)
 				    `header(_("Device Name"), _("Model"), _("FCoE VLAN Interface"),
-					    _("FCoE Enable"), _("DCB Required"), _("DCB capable") ),
+					    // continue column headers 
+					    _("FCoE Enable"), _("DCB Required"), _("AUTO VLAN"), _("DCB capable") ),
 				    []
 				    ),
+			     // button labels
 			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings")),
 					  `PushButton(`id(`create), _("Create FCoE &VLAN Interface")),
 					  `PushButton(`id(`remove), _("&Remove Interface")) )
@@ -155,6 +159,7 @@ term ConfigurationDialogContent() {
 							     `item(`id("no"), "no", true )
 							     ])
 						  ),
+					     // ComboBox label
 					    `Left(`ComboBox(`id("syslog"), _("&Use syslog"),
 							    [`item(`id("yes"), "yes", true ),
 							     `item(`id("no"), "no" )

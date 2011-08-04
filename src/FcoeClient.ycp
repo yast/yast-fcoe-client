@@ -44,6 +44,7 @@ import "Package";
 import "Popup";
 import "Service";
 import "NetworkService";
+import "String";
 
 /**
  * Prototypes
@@ -313,9 +314,9 @@ global string GetVlanInterface( string interface )
 	    // check whether there is a line for the given interface, e.g.
 	    // eth3            | 200  | 00:0d:ec:a2:ef:00\n
 	    // and extract name/number of VLAN channel.
-	    if ( regexpmatch( line, sformat( "^%1", interface) ) )
+	    if ( String::StartsWith( line, interface ) )
 	    {
-		line = deletechars( line, " " );
+		line = deletechars( line, " \t" );
 		vlan_interface = substring( line, findfirstof( line, "|" )+1,
 					    findlastof( line, "|" )-findfirstof( line, "|")-1 );
 		y2milestone( "VLAN: %1", vlan_interface );
@@ -388,9 +389,9 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 		// (e.g. eth3.200) then set AUTO_VLAN to "no"
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
-			if ( regexpmatch( line, "^AUTO_VLAN" ) )
+			if ( String::StartsWith( line, "AUTO_VLAN" ) )
 			{
-			    return sformat( "AUTO_VLAN=\"%1\"", "no" );
+			    return "AUTO_VLAN=\"no\"";
 			}
 			else
 			{
@@ -426,18 +427,15 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 	{
 	    list <string> lines = splitstring( content, "\n" );
 	    foreach( string line, (list<string>)lines, {
-		    if ( regexpmatch( line, "^FCOE_ENABLE" ) )
-		    {
-			status_map = add( status_map, "FCOE_ENABLE", deletechars( substring(line, 12), "\"") );
-		    }
-		    if ( regexpmatch( line, "^DCB_REQUIRED" ) )
-		    {
-			status_map = add( status_map, "DCB_REQUIRED", deletechars( substring( line, 13 ),"\"") );
-		    }
-		    if ( regexpmatch( line, "^AUTO_VLAN" ) )
-		    {
-			status_map = add( status_map, "AUTO_VLAN", deletechars( substring( line, 10 ),"\"") );
-		    }	
+		    line = deletechars( line, " \t" );
+		    foreach( string var, ["FCOE_ENABLE", "DCB_REQUIRED", "AUTO_VLAN"], {
+			    if ( String::StartsWith(line, var) )
+			    {
+				status_map = add( status_map, var,
+						  deletechars( substring(line, size(var) + 1), "\"") );
+			    }
+			});
+
 		});
 	    status_map = add( status_map, "Filename", file_name );
 	}
@@ -471,7 +469,7 @@ string DCBCapable( string netcard )
     {
 	list <string> lines = splitstring( output["stdout"]:"", "\n" );
 	foreach( string line, (list<string>)lines, {
-		if ( regexpmatch( line, "^Status" ) )
+		if ( String::StartsWith( line, "Status" ) )
 		{
 		    // Status:         Failed		interface not DCB capable
 		    // Status:         Successful
@@ -593,8 +591,8 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             fcoe_vlan  fcoe_enable dcb_required dcb_capable vlan_interface	cfg_file
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no       200   		/etc/fcoe/cfg-eth3.200
+// dev_name  device             fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface	cfg_file
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no    yes/no       200   		/etc/fcoe/cfg-eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
 //
@@ -721,15 +719,16 @@ global boolean WriteCfgFiles()
 		
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
-			if ( regexpmatch( line, "^FCOE_ENABLE" ) )
+			line = deletechars( line, " \t" );
+			if ( String::StartsWith( line, "FCOE_ENABLE" ) )
 			{
 			    return sformat( "FCOE_ENABLE=\"%1\"", card["fcoe_enable"]:"no" );
 			}
-			else if ( regexpmatch( line, "^DCB_REQUIRED" ) )
+			else if ( String::StartsWith( line, "DCB_REQUIRED" ) )
 			{
 			    return sformat( "DCB_REQUIRED=\"%1\"", card["dcb_required"]:"no" );
 			}
-			else if ( regexpmatch( line, "^AUTO_VLAN" ) )
+			else if ( String::StartsWith( line, "AUTO_VLAN" ) )
 			{
 			    return sformat( "AUTO_VLAN=\"%1\"", card["auto_vlan"]:"no" );
 			}
