@@ -367,7 +367,7 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 {
     map <string, string> status_map = $[];
     string content = "";
-    boolean file_exists = true;
+    boolean file_exists = false;
     
     if ( vlan_device_name != "")
     {
@@ -389,6 +389,8 @@ global map <string, string> GetFCoEStatus( string vlan_device_name )
 		// (e.g. eth3.200) then set AUTO_VLAN to "no"
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
+			if ( !String::StartsWith( line, "#" ) )	line = deletechars( line, " \t" );
+			     
 			if ( String::StartsWith( line, "AUTO_VLAN" ) )
 			{
 			    return "AUTO_VLAN=\"no\"";
@@ -719,7 +721,8 @@ global boolean WriteCfgFiles()
 		
 		list <string> lines = (list<string>)splitstring( content, "\n" );
 		lines = maplist( string line, lines, {
-			line = deletechars( line, " \t" );
+			if ( !String::StartsWith( line, "#" ) )	 line = deletechars( line, " \t" );
+
 			if ( String::StartsWith( line, "FCOE_ENABLE" ) )
 			{
 			    return sformat( "FCOE_ENABLE=\"%1\"", card["fcoe_enable"]:"no" );
