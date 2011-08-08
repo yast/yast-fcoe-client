@@ -156,7 +156,7 @@ void AdjustButtons()
     // check VLAN status 
     if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_CONFIGURED )
     {
-	UI::ChangeWidget( `id(`edit), `Enabled, false );
+	UI::ChangeWidget( `id(`edit), `Enabled, true );
 	UI::ChangeWidget( `id(`create), `Enabled, true );
 	UI::ChangeWidget( `id(`remove), `Enabled, false );
     }
