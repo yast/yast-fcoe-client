@@ -268,6 +268,14 @@ symbol HandleInterfacesDialog( string id, map event )
     }
     else if ( action == `create )
     {
+	// haendel:~/:[0]# fipvlan -c -s eth3
+        // Fibre Channel Forwarders Discovered
+	// interface       | VLAN | FCF MAC          
+	// ------------------------------------------
+	// eth3            | 200  | 00:0d:ec:a2:ef:00
+	// Created VLAN device eth3.200
+	// Starting FCoE on interface eth3.200
+
 	map card = FcoeClient::GetCurrentNetworkCard();
 	string dev_name = card["dev_name"]:"";
 
@@ -480,7 +488,19 @@ symbol HandleConfigurationDialog( string id, map event )
 symbol HandleEditDialog( string id, map event )
 {
      any action = event["ID"]:nil;
-     return nil;
+     map card = FcoeClient::GetCurrentNetworkCard();
+
+     if ( action == `dcb )
+     {
+	 string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
+	 if ( dcb_required == "yes" && card["dcb_capable"]:"" != "yes" )
+	 {	 
+	     // text of a warning popup
+	     Popup::Warning( _("DCB Required is set to \"yes\" but the
+interface isn't DCB capable") );
+	     y2warning( "DCB_REQUIRED is set to yes but the interface isn't DCB capable" );
+	 }
+     }
 }
 
 /**

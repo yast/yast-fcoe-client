@@ -76,7 +76,7 @@ term EditDialogContents()
 							      `item(`id("no"), "no", true ) ]
 							     ),
 						  `VSpacing (1),
-						  `ComboBox( `id(`dcb), _("DCB Required"),
+						  `ComboBox( `id(`dcb), `opt (`notify, `immediate), _("DCB Required"),
 							     [`item(`id("yes"), "yes" ),
 							      `item(`id("no"), "no", true ) ]
 							     ),
