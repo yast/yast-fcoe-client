@@ -710,6 +710,9 @@ global boolean WriteCfgFiles()
 {
     list <map> netcards = GetNetworkCards();
     boolean success = true;
+    string command = "";
+    map output = $[];
+    
     y2milestone( "Writing /etc/fcoe/cfg-ethx files" );
     
     foreach ( map card, (list<map>)netcards, {
@@ -752,6 +755,20 @@ global boolean WriteCfgFiles()
 		else
 		{
 		    y2milestone( "%1 written", card["cfg_file"]:"" );
+		}
+		// enable DCB app fcoe (app:0)
+		if (  card["dcb_required"]:"no" == "yes" )
+		{
+		    command = sformat( "dcbtool sc %1 app:0 e:1 a:1 w:1", card["dev_name"]:"" );
+		    y2milestone( "Executing command: %1", command );
+
+		    output = (map)SCR::Execute( .target.bash_output, command );
+		    y2milestone( "Output: %1", output );
+		    if ( output["exit"]:255 != 0 )
+		    {
+			Popup::Error( sformat( _("Command: %1 failed"), command ) );
+			y2error( "Command: %1 failed", command);
+		    } 
 		}
 	    }
 	} );
