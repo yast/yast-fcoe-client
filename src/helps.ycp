@@ -128,7 +128,10 @@ Messages are sent to the system log if set to <i>yes</i> (data are logged to /va
 <b>FCoE Enable</b>: <i>yes</i> or <i>no</i><br>
 Enable or disable the creation of FCoE instances.<br>
 <b>DCB Required</b>: <i>yes</i> or <i>no</i><br>
-The default is <i>yes</i>, DCB is usually required.</p>" ),
+The default is <i>yes</i>, DCB is usually required.<br>
+<b>AUTO VLAN</b>: <i>yes</i> or <i>no</i><br>
+If set to <i>yes</i> 'fcoemon' will create the VLAN
+interfaces automatically.</p>" ),
 
 ];
 
