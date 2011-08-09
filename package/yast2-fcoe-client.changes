@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Mon Aug  8 11:35:47 CEST 2011 - gs@suse.de
+
+- Add a warning popup if DCB is required and the interface
+  isn't DCB capable, call 'dcbtool' if DCB is required, 
+  bug-fix for writing cfg files (write comments correctly)
+- V 2.17.9
+
+-------------------------------------------------------------------
 Thu Aug  4 14:34:30 CEST 2011 - gs@suse.de
 
 - Do not check for running network services (related to
