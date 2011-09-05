@@ -57,11 +57,11 @@ boolean ReallyAbort() {
     // revert start of 'fcoe' or 'lldpad' 
     if ( FcoeClient::fcoe_started )
     {
-	Service::Stop( "fcoe" );
+	Service::Stop( "boot.fcoe" );
     }
     if ( FcoeClient::lldpad_started )
     {
-	Service::Stop( "lldpad" );
+	Service::Stop( "boot.lldpad" );
     }
     
     if ( !FcoeClient::Modified() )

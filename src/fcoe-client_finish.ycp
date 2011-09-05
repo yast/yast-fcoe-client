@@ -68,8 +68,8 @@ else if (func == "Write")
     if ( start_services )
     {
 	y2milestone( "Enabling service start of fcoe and lldpad" ); 
-	Service::Enable("fcoe");
-	Service::Enable("lldpad"); 
+	Service::Enable("boot.fcoe");
+	Service::Enable("boot.lldpad"); 
     }
 }
 else

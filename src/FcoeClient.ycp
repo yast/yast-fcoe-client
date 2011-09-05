@@ -498,17 +498,17 @@ string DCBCapable( string netcard )
 //
 global void AdjustStartStatus( )
 {
-    y2milestone( "Setting start of /etc/init.d/fcoe to %1", service_start["fcoe"]:false );
+    y2milestone( "Setting start of /etc/init.d/boot.fcoe to %1", service_start["fcoe"]:false );
     if ( service_start["fcoe"]:false == true )
-	Service::Enable("fcoe");	
+	Service::Enable("boot.fcoe");	
     else
-	Service::Disable("open-fcoe");
+	Service::Disable("boot.fcoe");
 
     y2milestone( "Setting start of /etc/init.d/lldpad to %1", service_start["lldpad"]:false );
     if ( service_start["lldpad"]:false == true )
-	Service::Enable("lldpad");	
+	Service::Enable("boot.lldpad");	
     else
-	Service::Disable("lldpad");
+	Service::Disable("boot.lldpad");
     
 }
 
@@ -525,11 +525,11 @@ void DetectStartStatus()
 {
     boolean status = false;
     
-    status = Service::Enabled( "fcoe" );
+    status = Service::Enabled( "boot.fcoe" );
     y2milestone( "Start status of fcoe: %1", status );
     service_start = add( service_start, "fcoe", status );
 
-    status = Service::Enabled( "lldpad" );
+    status = Service::Enabled( "boot.lldpad" );
     y2milestone( "Start status of lldpad: %1", status );
     service_start = add( service_start, "lldpad", status );
 }
@@ -548,19 +548,19 @@ global boolean ServiceStatus()
     // see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
     boolean ret = true;
 			 
-    if ( Service::Status( "fcoe" ) != 0 ) 
+    if ( Service::Status( "boot.fcoe" ) != 0 ) 
     {
-	boolean success = Service::Start( "fcoe" );
+	boolean success = Service::Start( "boot.fcoe" );
 	if ( success )
 	{
-	    y2milestone( "FCoE started (/etc/init.d/fcoe start)");
+	    y2milestone( "FCoE started (/etc/init.d/boot.fcoe start)");
 	    fcoe_started = true;;
 	}
 	else
 	{
-	    y2error( "Cannot start FCoE service - '/etc/init.d/fcoe start' failed" );
+	    y2error( "Cannot start FCoE service - '/etc/init.d/boot.fcoe start' failed" );
 	    Popup::Error( "Cannot start FCoE service.
-'/etc/init.d/fcoe start' failed" );
+'/etc/init.d/boot.fcoe start' failed" );
 	    ret = false;
 	}
     }
@@ -569,19 +569,19 @@ global boolean ServiceStatus()
 	y2milestone( "FCoE service is running");
     }
 
-    if ( Service::Status( "lldpad" ) != 0 ) 
+    if ( Service::Status( "boot.lldpad" ) != 0 ) 
     {
-	boolean success = Service::Start( "lldpad" );
+	boolean success = Service::Start( "boot.lldpad" );
 	if ( success )
 	{
-	    y2milestone( "Lldpad started (/etc/init.d/lldpad start)");
+	    y2milestone( "Lldpad started (/etc/init.d/boot.lldpad start)");
 	    lldpad_started = true;
 	}
 	else
 	{
-	    y2error( "Cannot start service lldpad - '/etc/init.d/lldpad start' failed" );
+	    y2error( "Cannot start service lldpad - '/etc/init.d/boot.lldpad start' failed" );
 	    Popup::Error( "Cannot start service lldpad.
-'/etc/init.d/lldpad start' failed" );
+'/etc/init.d/boot.lldpad start' failed" );
 	    ret = false;
 	}
     }
@@ -782,7 +782,7 @@ global boolean RestartServiceFcoe()
     if ( FcoeClient::Modified() )
     {
 	y2milestone( "Restarting fcoe");
-	ret = Service::Restart("fcoe");
+	ret = Service::Restart("boot.fcoe");
     }
     return ret;
 }
