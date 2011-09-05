@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Sep  5 14:10:31 CEST 2011 - gs@suse.de
+
+- Rename services to boot.fcoe and boot.lldpad (bnc #710390)
+- V 2.17.10
+
+-------------------------------------------------------------------
 Tue Aug  9 15:01:17 CEST 2011 - gs@suse.de
 
 - Add a warning popup if DCB is required and the interface
