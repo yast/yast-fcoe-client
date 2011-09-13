@@ -381,7 +381,7 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    if ( fcoe_vlan_interface != "" )
 	    {
 		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
-		status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
+		status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface, card );
 
 		// store command to be able to revert the creation of FCoE VLAN interface in case of 'Abort'
 		// (also if only 'fipvlan -s <interface>' is called)
@@ -425,12 +425,20 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	map card = FcoeClient::GetCurrentNetworkCard();
 	map output = $[];
 	string command = "";
+	// popup text: really remove FCoE VLAN interface
+	string popup_text =  sformat( _("Do you really want to remove the FCoE VLAN device %1?"),
+					card["fcoe_vlan"]:"" );
+
+	if ( !Stage::initial() )
+	{
+	    // popup text continues 
+	    popup_text = popup_text + "\n" + _( "Please note: The device won't be restored on 'Cancel'." );
+	}
 	
 	// headline of a popup
 	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN device"),
-					    // question to the user: really remove FCoE VLAN interface
-					    sformat( _("Do you really want to remove the VLAN device %1?
-Please note: The device won't be restored on 'Abort'."), card["fcoe_vlan"]:"" ) );
+					    popup_text );
+	
 	if ( ret == true )
 	{
 	    y2milestone( "Removing %1",  card["fcoe_vlan"]:"" );

@@ -349,90 +349,99 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 
 //
 // Get status of FCoE and DCB from /etc/fcoe/cfg-eth<vlan_device_name>
+// If the config file doesn't exist create one (with default values or
+// already changed values).
 //
-global map <string, string> GetFCoEStatus( string vlan_device_name )
+global map <string, string> GetFCoEStatus( string vlan_device_name, map netcard )
 {
     map <string, string> status_map = $[];
     string content = "";
     boolean file_exists = false;
     
-    if ( vlan_device_name != "")
+    if ( vlan_device_name == "")
     {
-	// fcoemon reads values from /etc/fcoe/cfg-<vlan-interface>, e.g. /etc/fcoe/cfg-eth3.200
-	string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
-	y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
+	y2error( "Interface not valid" );
+	return $[];
+    }
+    
+    // fcoemon reads values from /etc/fcoe/cfg-<vlan-interface>, e.g. /etc/fcoe/cfg-eth3.200
+    string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
+    y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
 
-	content = (string)SCR::Read(.target.string, file_name);
+    content = (string)SCR::Read(.target.string, file_name);
 
-	if ( content == "" || content == nil )
+    if ( content == "" || content == nil )
+    {
+	y2milestone( "Cannot read cfg-file - creating %1 (set AUTO_VLAN to 'no')", file_name );
+	content = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
+
+	if ( content != "" && content != nil )
 	{
-	    y2milestone( "Cannot read cfg-file - create %1 (using /etc/fcoe/cfg-ethx) and set AUTO_VLAN to 'no'",
-			  file_name );
-	    content = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
-
-	    if ( content != "" && content != nil )
-	    {
-		// bnc #692403: if file name is created with vlan interface in the name
-		// (e.g. eth3.200) then set AUTO_VLAN to "no"
-		list <string> lines = (list<string>)splitstring( content, "\n" );
-		lines = maplist( string line, lines, {
-			if ( !String::StartsWith( line, "#" ) )	line = deletechars( line, " \t" );
+	    // bnc #692403: if file name is created with vlan interface in the name
+	    // (e.g. eth3.200) then set AUTO_VLAN to "no"
+	    list <string> lines = (list<string>)splitstring( content, "\n" );
+	    lines = maplist( string line, lines, {
+		    if ( !String::StartsWith( line, "#" ) )	line = deletechars( line, " \t" );
 			     
-			if ( String::StartsWith( line, "AUTO_VLAN" ) )
-			{
-			    return "AUTO_VLAN=\"no\"";
-			}
-			else
-			{
-			    return line;
-			}
-		    });
-		content = mergestring( lines, "\n" );
-		y2milestone( "Writing content: %1", content );
+		    if ( String::StartsWith( line, "AUTO_VLAN" ) )
+		    {
+			return "AUTO_VLAN=\"no\"";
+		    }
+		    else if ( String::StartsWith( line, "DCB_REQUIRED" ) && netcard["dcb_required"]:"" != "" )
+		    {
+			return sformat( "DCB_REQUIRED=\"%1\"", netcard["dcb_required"]:"no" );
+		    }
+		    else if ( String::StartsWith( line, "FCOE_ENABLE" ) && netcard["fcoe_enable"]:"" != "" )
+		    {
+			return sformat( "FCOE_ENABLE=\"%1\"", netcard["fcoe_enable"]:"no" );
+		    }
+		    else
+		    {
+			return line;
+		    }
+		});
+	    content = mergestring( lines, "\n" );
+	    y2milestone( "Writing content: %1", content );
 		
-		file_exists = SCR::Write( .target.string, file_name, content );
+	    file_exists = SCR::Write( .target.string, file_name, content );
 
-		if ( file_exists )
-		{
-		    AddRevertCommand( sformat( "rm %1", file_name ) );
-		}
-		else
-		{
-		    y2error( "Cannot create %1", file_name );
-		}
+	    if ( file_exists )
+	    {
+		AddRevertCommand( sformat( "rm %1", file_name ) );
 	    }
 	    else
 	    {
-		y2error( "Cannot read /etc/fcoe/cfg-ethx" );
+		y2error( "Cannot create %1", file_name );
 	    }
 	}
 	else
 	{
-	    file_exists = true;
-	    y2milestone( "Content: %1", content );
-	}
-	
-	if ( file_exists )
-	{
-	    list <string> lines = splitstring( content, "\n" );
-	    foreach( string line, (list<string>)lines, {
-		    line = deletechars( line, " \t" );
-		    foreach( string var, ["FCOE_ENABLE", "DCB_REQUIRED", "AUTO_VLAN"], {
-			    if ( String::StartsWith(line, var) )
-			    {
-				status_map = add( status_map, var,
-						  deletechars( substring(line, size(var) + 1), "\"") );
-			    }
-			});
-
-		});
-	    status_map = add( status_map, "Filename", file_name );
+	    y2error( "Cannot read /etc/fcoe/cfg-ethx" );
 	}
     }
     else
     {
-	y2error( "Interface not valid" );
+	file_exists = true;
+	y2milestone( "Content: %1", content );
     }
+	
+    if ( file_exists )
+    {
+	list <string> lines = splitstring( content, "\n" );
+	foreach( string line, (list<string>)lines, {
+		line = deletechars( line, " \t" );
+		foreach( string var, ["FCOE_ENABLE", "DCB_REQUIRED", "AUTO_VLAN"], {
+			if ( String::StartsWith(line, var) )
+			{
+			    status_map = add( status_map, var,
+					      deletechars( substring(line, size(var) + 1), "\"") );
+			}
+		    });
+
+	    });
+	status_map = add( status_map, "Filename", file_name );
+    }
+
     y2milestone( "Returning: %1", status_map );
     
     return status_map;
@@ -629,7 +638,7 @@ global boolean DetectNetworkCards()
 	    }
 	    if ( vlan_interface == "" )
 	    {
-		// FCoE isn't enabled on the switch - we can't do anything here.
+		// Interface down or FCoE not enabled on the switch - we can't do anything here.
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
@@ -638,7 +647,7 @@ global boolean DetectNetworkCards()
 
 		if ( fcoe_vlan_interface != "" )
 		{
-		    status_map = GetFCoEStatus( fcoe_vlan_interface );
+		    status_map = GetFCoEStatus( fcoe_vlan_interface, card );
 		}
 		else
 		{
