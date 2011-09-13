@@ -2,7 +2,7 @@
 Tue Sep 13 10:55:19 CEST 2011 - gs@suse.de
 
 - Call 'fipvlan <if>' only for configured interfaces (bnc #692403),
-  write /etc/sysconfig/network/ifcfg_ethx also during installation
+  write /etc/sysconfig/network/ifcfg-ethx also during installation
   (related to bnc #705610),
   allow to change settings before the FCoE VLAN interface is 
   created (bnc #710390) 
