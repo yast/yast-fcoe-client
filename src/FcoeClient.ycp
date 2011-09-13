@@ -290,20 +290,6 @@ global string GetVlanInterface( string interface )
     string vlan_interface = "";
     map output = $[];
     
-
-    // call 'ifconfig <interface> up' here because it's not yet clear who configures
-    // the interfaces (fipvlan command itself?) -> see bnc #705171
-    // (this applies also to installed system)
-    string cmd_ifup = sformat( "ifconfig %1 up", interface );
-    y2milestone( "Executing command: %1", cmd_ifup );
-    output = (map)SCR::Execute( .target.bash_output, cmd_ifup );
-    y2milestone( "Output: %1", output );
-    if ( output["exit"]:255 != 0 )
-    {
-	Popup::Error( sformat( _("Interface %1 not up"), interface ) );
-	y2error( "Interface %1 not up", interface );
-    }
-    
     // check whether there is a VLAN interface which is configured for FCoE
     string cmd_fcoe = sformat( "LANG=POSIX fipvlan %1", interface );
     y2milestone( "Executing command: %1", cmd_fcoe );
@@ -610,17 +596,37 @@ global boolean DetectNetworkCards()
 
     if ( netcards == [] || netcards == nil )
 	return false;
-    
+
     foreach ( map card, netcards, {
+	    // get first (at the moment only) state map from link list in resource map
+	    map state_map = card["resource", "link", 0 ]:$[];
+
+	    if ( state_map["state"]:false == false )
+	    {
+		// call 'ifconfig <interface> up' here because it's not yet
+		// clear who configures the interfaces (fipvlan command itself?)
+		// -> see bnc #705171 (this applies also to installed system)
+
+		string cmd_ifup = sformat( "ifconfig %1 up", card["dev_name"]:"" );
+		y2milestone( "Executing command: %1", cmd_ifup );
+		SCR::Execute( .target.bash_output, cmd_ifup );
+
+		// ifconfig up always returns 0 -> no error message can be made
+	    }
+	} );
+    // call .probe.netcard again
+    netcards = (list<map>)SCR::Read(.probe.netcard);
+
+    foreach ( map card, netcards, {
+	    map state_map = card["resource", "link", 0]:$[];
 	    map info_map = $[];
 	    map <string, string> status_map = $[];
 
-            // It's not possible to distinguish between no cable attached
-	    // and interface not up in 'link' map got from .probe.network
-	    // (according to snwint), so we have to check every interface.
-	    // This may take a while!
-	    vlan_interface = GetVlanInterface( card["dev_name"]:"" );
-
+	    // only call fipvlan <interface> for configured interfaces
+	    if ( state_map["state"]:false == true )
+	    {
+		vlan_interface = GetVlanInterface( card["dev_name"]:"" );
+	    }
 	    if ( vlan_interface == "" )
 	    {
 		// FCoE isn't enabled on the switch - we can't do anything here.
