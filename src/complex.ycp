@@ -156,7 +156,7 @@ void AdjustButtons()
     // check VLAN status 
     if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_CONFIGURED )
     {
-	UI::ChangeWidget( `id(`edit), `Enabled, false );
+	UI::ChangeWidget( `id(`edit), `Enabled, true );
 	UI::ChangeWidget( `id(`create), `Enabled, true );
 	UI::ChangeWidget( `id(`remove), `Enabled, false );
     }
@@ -284,8 +284,9 @@ symbol HandleInterfacesDialog( string id, map event )
 	string vlan_interface = "";
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
-	boolean create_ifcfg = false;
-	string ifcfg_file = "";
+	boolean create_ifcfg = true;
+
+	FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
 	
 	if ( Stage::initial() )	// first stage of installation - create and start FCoE VLAN interface
 	{
@@ -326,11 +327,9 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    if ( ret == true )
 	    {
-		ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
-		
 		// if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
 		// call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
-		if ( FileUtils::Exists( ifcfg_file ) ) 
+		if ( FileUtils::Exists( FcoeClient::ifcfg_file ) ) 
 		{						 
 		    command = sformat( "ifup %1\.%2", dev_name, card["vlan_interface"]:"" );
 		    y2milestone( "Executing command: %1", command );
@@ -345,13 +344,11 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		    else
 		    {
 			command = sformat( "fipvlan -c -s %1", dev_name ); // create and start FCoE
-			create_ifcfg = true;
 		    }
 		}
 		else
 		{
 		    command = sformat( "fipvlan -c -s %1", dev_name );
-		    create_ifcfg = true;
 		}
 
 		y2milestone( "Executing command: %1", command );
@@ -393,10 +390,10 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		{
 		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"nfsroot\"
 ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
-		    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
-		    SCR::Write(.target.string, ifcfg_file, config);
-		    y2milestone( "Writing config: %1 to %2", config, ifcfg_file );
-		    FcoeClient::AddRevertCommand( sformat( "rm %1", ifcfg_file ) );
+		    FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
+		    SCR::Write(.target.string, FcoeClient::ifcfg_file, config);
+		    y2milestone( "Writing config: %1 to %2", config, FcoeClient::ifcfg_file );
+		    FcoeClient::AddRevertCommand( sformat( "rm %1", FcoeClient::ifcfg_file ) );
 		}
 	    }
 	    else

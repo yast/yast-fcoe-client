@@ -167,6 +167,7 @@ global string NOT_AVAILABLE = "not available";
 global boolean lldpad_started = false;	// service fcoe was started
 global boolean fcoe_started = false;	// service lldpad was started
 
+global string ifcfg_file = "";
 
 // Settings: Define all variables needed for configuration of fcoe-client
 
