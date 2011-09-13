@@ -154,7 +154,10 @@ any GlobalDialog() {
 				Label::BackButton (),
 				Label::FinishButton()
 				);
-    Wizard::DisableBackButton ();
+    Wizard::SetNextButton(`next, Label::OKButton());
+    Wizard::SetAbortButton(`abort, Label::CancelButton());
+    Wizard::HideBackButton();
+
     // TODO: rename icon to yast2-fcoe-client (yast2-theme package)
     Wizard::SetTitleIcon("fcoe");
 
