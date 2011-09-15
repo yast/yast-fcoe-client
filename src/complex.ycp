@@ -381,8 +381,8 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    if ( fcoe_vlan_interface != "" )
 	    {
 		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
-		status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface, card );
-
+		FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
+		status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card );
 		// store command to be able to revert the creation of FCoE VLAN interface in case of 'Abort'
 		// (also if only 'fipvlan -s <interface>' is called)
 		FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );

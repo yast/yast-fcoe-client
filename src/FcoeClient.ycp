@@ -348,84 +348,114 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 }
 
 //
-// Get status of FCoE and DCB from /etc/fcoe/cfg-eth<vlan_device_name>
-// If the config file doesn't exist create one (with default values or
-// already changed values).
+// Create /etc/fcoe/cfg-<vlan_device_name> (with default values or already changed values).
 //
-global map <string, string> GetFCoEStatus( string vlan_device_name, map netcard )
+global void CreateFcoeConfig( string vlan_device_name, map netcard )
 {
-    map <string, string> status_map = $[];
-    string content = "";
+    string file_name = "";
     boolean file_exists = false;
     
-    if ( vlan_device_name == "")
+    // if the config value are already edited and AUTO_VLAN is set to "yes"
+    if ( netcard["auto_vlan"]:"no" == "yes" )
     {
-	y2error( "Interface not valid" );
-	return $[];
+	// set file name to cfg-<interface>, e.g. /etc/fcoe/eth3
+	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" ); 
+    }
+    else
+    {
+	// set file name to cfg-<vlan_device>, e.g. /etc/fcoe/eth3.200
+	file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
     }
     
-    // fcoemon reads values from /etc/fcoe/cfg-<vlan-interface>, e.g. /etc/fcoe/cfg-eth3.200
-    string file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
-    y2milestone( "VLAN channel %1 found, reading %2", vlan_device_name, file_name );
+    // read default values
+    string content = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
 
-    content = (string)SCR::Read(.target.string, file_name);
-
-    if ( content == "" || content == nil )
+    // and prepare content 
+    if ( content != "" && content != nil )
     {
-	y2milestone( "Cannot read cfg-file - creating %1 (set AUTO_VLAN to 'no')", file_name );
-	content = (string)SCR::Read( .target.string, "/etc/fcoe/cfg-ethx" );
-
-	if ( content != "" && content != nil )
-	{
-	    // bnc #692403: if file name is created with vlan interface in the name
-	    // (e.g. eth3.200) then set AUTO_VLAN to "no"
-	    list <string> lines = (list<string>)splitstring( content, "\n" );
-	    lines = maplist( string line, lines, {
-		    if ( !String::StartsWith( line, "#" ) )	line = deletechars( line, " \t" );
+	list <string> lines = (list<string>)splitstring( content, "\n" );
+	lines = maplist( string line, lines, {
+		if ( !String::StartsWith( line, "#" ) )	line = deletechars( line, " \t" );
 			     
-		    if ( String::StartsWith( line, "AUTO_VLAN" ) )
+		if ( String::StartsWith( line, "AUTO_VLAN" ) )
+		{
+		    if ( netcard["auto_vlan"]:"" != "" )
 		    {
-			return "AUTO_VLAN=\"no\"";
-		    }
-		    else if ( String::StartsWith( line, "DCB_REQUIRED" ) && netcard["dcb_required"]:"" != "" )
-		    {
-			return sformat( "DCB_REQUIRED=\"%1\"", netcard["dcb_required"]:"no" );
-		    }
-		    else if ( String::StartsWith( line, "FCOE_ENABLE" ) && netcard["fcoe_enable"]:"" != "" )
-		    {
-			return sformat( "FCOE_ENABLE=\"%1\"", netcard["fcoe_enable"]:"no" );
+			return sformat( "AUTO_VLAN=\"%1\"", netcard["auto_vlan"]:"no" );
 		    }
 		    else
 		    {
-			return line;
+			// default is to create /etc/fcoe/cfg-ethx file with VLAN device in name
+			// (e.g. cfg-eth3.200), set AUTO_VLAN to "no" here (see bnc #692403)
+			return "AUTO_VLAN=\"no\"";
 		    }
-		});
-	    content = mergestring( lines, "\n" );
-	    y2milestone( "Writing content: %1", content );
+		}
+		else if ( String::StartsWith( line, "DCB_REQUIRED" ) && netcard["dcb_required"]:"" != "" )
+		{
+		    return sformat( "DCB_REQUIRED=\"%1\"", netcard["dcb_required"]:"no" );
+		}
+		else if ( String::StartsWith( line, "FCOE_ENABLE" ) && netcard["fcoe_enable"]:"" != "" )
+		{
+		    return sformat( "FCOE_ENABLE=\"%1\"", netcard["fcoe_enable"]:"no" );
+		}
+		else
+		{
+		    return line;
+		}
+	    });
+	content = mergestring( lines, "\n" );
+	y2milestone( "Writing content: %1", content );
 		
-	    file_exists = SCR::Write( .target.string, file_name, content );
+	file_exists = SCR::Write( .target.string, file_name, content );
 
-	    if ( file_exists )
-	    {
-		AddRevertCommand( sformat( "rm %1", file_name ) );
-	    }
-	    else
-	    {
-		y2error( "Cannot create %1", file_name );
-	    }
+	if ( file_exists )
+	{
+	    AddRevertCommand( sformat( "rm %1", file_name ) );
 	}
 	else
 	{
-	    y2error( "Cannot read /etc/fcoe/cfg-ethx" );
+	    y2error( "Cannot create %1", file_name );
 	}
     }
     else
     {
-	file_exists = true;
-	y2milestone( "Content: %1", content );
+	y2error( "Cannot read /etc/fcoe/cfg-ethx" );
     }
-	
-    if ( file_exists )
+}
+
+//
+// Get status of FCoE and DCB from /etc/fcoe/cfg-ethx
+// If the config file doesn't exist create one (with default values or
+// already changed values).
+//
+global map <string, string> GetFcoeStatus( string vlan_device_name, map netcard )
+{
+    map <string, string> status_map = $[];
+    string content = "";
+    boolean file_exists = false;
+    string file_name = "";
+    
+    if ( vlan_device_name == "" )
+    {
+	y2error( "Interface not valid" );
+	return $[];
+    }
+
+    y2milestone( "VLAN channel %1 found", vlan_device_name );
+
+    file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
+    y2milestone( "Reading %1", file_name );
+    content = (string)SCR::Read(.target.string, file_name);
+
+    if ( content == "" || content == nil )
+    {
+	// try to read /etc/fcoe/cfg-<interface> (interface was automatically created)
+	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" );
+	y2milestone( "Reading %1", file_name );
+	content = (string)SCR::Read(.target.string, file_name);
+    }
+
+    if ( content != "" )
     {
 	list <string> lines = splitstring( content, "\n" );
 	foreach( string line, (list<string>)lines, {
@@ -440,10 +470,14 @@ global map <string, string> GetFCoEStatus( string vlan_device_name, map netcard 
 
 	    });
 	status_map = add( status_map, "Filename", file_name );
+	y2milestone( "Returning: %1", status_map );	
+    }
+    else
+    {
+	y2warning( "Cannot read /etc/fcoe/%1", file_name );
+	Popup::Warning( sformat(_("Cannot read /etc/fcoe/cfg-file for %1"), vlan_device_name) );
     }
 
-    y2milestone( "Returning: %1", status_map );
-    
     return status_map;
 }
 
@@ -647,7 +681,7 @@ global boolean DetectNetworkCards()
 
 		if ( fcoe_vlan_interface != "" )
 		{
-		    status_map = GetFCoEStatus( fcoe_vlan_interface, card );
+		    status_map = GetFcoeStatus( fcoe_vlan_interface, card );
 		}
 		else
 		{
