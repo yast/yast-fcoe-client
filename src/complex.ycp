@@ -33,7 +33,6 @@ textdomain "fcoe-client";
 import "Label";
 import "Popup";
 import "Wizard";
-import "Wizard_hw";
 import "Confirm";
 import "FcoeClient";
 import "Service";
