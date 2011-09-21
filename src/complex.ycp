@@ -389,7 +389,7 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		if ( create_ifcfg )
 		{
 		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"nfsroot\"
-ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
+ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\n", dev_name );
 		    FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
 		    SCR::Write(.target.string, FcoeClient::ifcfg_file, config);
 		    y2milestone( "Writing config: %1 to %2", config, FcoeClient::ifcfg_file );
@@ -454,7 +454,11 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 		y2milestone( "Calling %1", command );
 		output = (map)SCR::Execute( .target.bash_output, command );
 		y2milestone( "Output: %1", output );
-	    
+		command = sformat( "rm /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
+		y2milestone( "Calling %1", command );
+		output = (map)SCR::Execute( .target.bash_output, command );
+		y2milestone( "Output: %1", output );
+		
 		// set new values in global map network_interfaces
 		card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
 		card["fcoe_enable"] = "";
