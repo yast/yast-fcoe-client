@@ -623,8 +623,8 @@ global boolean ServiceStatus()
 }
 
 //
-// dev_name  device             fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface	cfg_file
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no    yes/no       200   		/etc/fcoe/cfg-eth3.200
+// dev_name  device             fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface cfg_file
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no    yes/no       200   	 /etc/fcoe/cfg-eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
 //
@@ -641,7 +641,7 @@ global boolean DetectNetworkCards()
 	return false;
 
     foreach ( map card, netcards, {
-	    // get first (at the moment only) state map from link list in resource map
+	    // get first state map from link list in resource map
 	    map state_map = card["resource", "link", 0 ]:$[];
 
 	    if ( state_map["state"]:false == false )
