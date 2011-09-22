@@ -348,14 +348,15 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 }
 
 //
-// Create /etc/fcoe/cfg-<vlan_device_name> (with default values or already changed values).
+// Create /etc/fcoe/cfg-<if> or /etc/fcoe/cfg-<if>.<vlan>
+// (depending on AUTO_VLAN setting)
 //
 global void CreateFcoeConfig( string vlan_device_name, map netcard )
 {
     string file_name = "";
     boolean file_exists = false;
     
-    // if the config value are already edited and AUTO_VLAN is set to "yes"
+    // if AUTO_VLAN is set to "yes"
     if ( netcard["auto_vlan"]:"no" == "yes" )
     {
 	// set file name to cfg-<interface>, e.g. /etc/fcoe/eth3
@@ -363,7 +364,7 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
     }
     else
     {
-	// set file name to cfg-<vlan_device>, e.g. /etc/fcoe/eth3.200
+	// set file name to cfg-<vlan_device_name>, e.g. /etc/fcoe/eth3.200
 	file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
     }
     
@@ -379,24 +380,15 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
 			     
 		if ( String::StartsWith( line, "AUTO_VLAN" ) )
 		{
-		    if ( netcard["auto_vlan"]:"" != "" )
-		    {
-			return sformat( "AUTO_VLAN=\"%1\"", netcard["auto_vlan"]:"no" );
-		    }
-		    else
-		    {
-			// default is to create /etc/fcoe/cfg-ethx file with VLAN device in name
-			// (e.g. cfg-eth3.200), set AUTO_VLAN to "no" here (see bnc #692403)
-			return "AUTO_VLAN=\"no\"";
-		    }
+		    return sformat( "AUTO_VLAN=\"%1\"", netcard["auto_vlan"]:"no" );
 		}
-		else if ( String::StartsWith( line, "DCB_REQUIRED" ) && netcard["dcb_required"]:"" != "" )
+		else if ( String::StartsWith( line, "DCB_REQUIRED" ) )
 		{
 		    return sformat( "DCB_REQUIRED=\"%1\"", netcard["dcb_required"]:"no" );
 		}
-		else if ( String::StartsWith( line, "FCOE_ENABLE" ) && netcard["fcoe_enable"]:"" != "" )
+		else if ( String::StartsWith( line, "FCOE_ENABLE" ) )
 		{
-		    return sformat( "FCOE_ENABLE=\"%1\"", netcard["fcoe_enable"]:"no" );
+		    return sformat( "FCOE_ENABLE=\"%1\"", netcard["fcoe_enable"]:"yes" );
 		}
 		else
 		{
@@ -424,9 +416,7 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
 }
 
 //
-// Get status of FCoE and DCB from /etc/fcoe/cfg-ethx
-// If the config file doesn't exist create one (with default values or
-// already changed values).
+// Get status of FCoE config from /etc/fcoe/cfg-<if>.<vlan> or /etc/fcoe/cfg-<if>
 //
 global map <string, string> GetFcoeStatus( string vlan_device_name, map netcard )
 {
@@ -517,7 +507,6 @@ string DCBCapable( string netcard )
     else
     {
 	y2error( "Exit code: %1 Error: %2", output["exit"]:255, output["stderr"]:"" );
-	// if ( output["stderr"]:"" != "" ) Popup::Error ( output["stderr"]:"" );
     }
 
     return ret;
@@ -649,7 +638,6 @@ global boolean DetectNetworkCards()
 		// call 'ifconfig <interface> up' here because it's not yet
 		// clear who configures the interfaces (fipvlan command itself?)
 		// -> see bnc #705171 (this applies also to installed system)
-
 		string cmd_ifup = sformat( "ifconfig %1 up", card["dev_name"]:"" );
 		y2milestone( "Executing command: %1", cmd_ifup );
 		SCR::Execute( .target.bash_output, cmd_ifup );
@@ -685,21 +673,37 @@ global boolean DetectNetworkCards()
 		}
 		else
 		{
-		    // FCoE VLAN interface not yet configured
+		    // FCoE VLAN interface not yet configured (status_map remains empty)
 		    fcoe_vlan_interface = NOT_CONFIGURED;
 		}
 	    }
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
 	    
 	    info_map = add( info_map, "dev_name", card["dev_name"]:"");		// network card, e.g. eth3
-	    info_map = add( info_map, "device", card["device"]:"");		// description
+	    if ( card["device"]:"" != "" )
+	    {
+		info_map = add( info_map, "device", card["device"]:"");		// device name
+	    }
+	    else
+	    {
+		info_map = add( info_map, "device", card["model"]:"");		// model
+	    }
+		
 	    info_map = add( info_map, "fcoe_vlan", fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
-	    info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"");	// FCOE_ENABLE
-	    info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:""); 	// DCB_REQUIRED
-	    info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"");	// AUTO_VLAN
-	    info_map = add( info_map, "dcb_capable", dcb_capable );		// DCB capable
-	    info_map = add( info_map, "vlan_interface", vlan_interface );		// VLAN interface, e.g. 200
-	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); 	// cfg file name, e.g. /etc/fcoe/cfg-eth3.200
+
+	    if ( fcoe_vlan_interface != NOT_AVAILABLE )
+	    {
+		// default for FCoE enable is yes
+		info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"yes" );	// FCOE_ENABLE
+                // default for DCB required is yes unless the interface is not dcb capable
+		info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:( (dcb_capable=="yes")?"yes":"no" ) );
+		// default is to create /etc/fcoe/cfg-ethx file with VLAN device in name
+		// (e.g. cfg-eth3.200), set AUTO_VLAN to "no" then (see bnc #692403)
+		info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"no"); // AUTO_VLAN
+	    }
+	    info_map = add( info_map, "dcb_capable", dcb_capable ); // DCB capable
+	    info_map = add( info_map, "vlan_interface", vlan_interface ); // VLAN interface, e.g. 200
+	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); // cfg file name, e.g. /etc/fcoe/cfg-eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
 	} );
