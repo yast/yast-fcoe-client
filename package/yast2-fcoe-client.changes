@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Sep 22 13:48:10 CEST 2011 - gs@suse.de
+
+- Several improvements (add 'Remove Interface', allow to change
+  settings before creating FCoE interface, respect AUTO_VLAN) and 
+  bug-fixes (bnc #705171, bnc #705610, bnc #692403, bnc #710390) 
+- 2.21.7
+
+-------------------------------------------------------------------
 Mon Sep 19 14:34:30 CEST 2011 - visnov@suse.cz
 
 - removed unneeded import

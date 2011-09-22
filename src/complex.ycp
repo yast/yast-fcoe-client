@@ -51,14 +51,16 @@ include "fcoe-client/dialogs.ycp";
  * @return true if users aborts installation
  */
 boolean ReallyAbort() {
+    y2milestone( "Aborting FCoE configuration" );
+
     // revert start of 'fcoe' or 'lldpad' 
     if ( FcoeClient::fcoe_started )
     {
-	Service::Stop( "fcoe" );
+	Service::Stop( "boot.fcoe" );
     }
     if ( FcoeClient::lldpad_started )
     {
-	Service::Stop( "lldpad" );
+	Service::Stop( "boot.lldpad" );
     }
     
     if ( !FcoeClient::Modified() )
@@ -112,14 +114,12 @@ symbol WriteDialog() {
     return ret ? `next : `abort;
 }
 
-// TODO - check whether a 'validate' is required
-
 /**
  * Init
  **/
 void InitServicesDialog (string id) {
     y2milestone( "Init services dialog" );
-    y2milestone( "Modified: %1", FcoeClient::Modified() );
+    y2milestone( "Data modified: %1", FcoeClient::Modified() );
     map status_map = FcoeClient::GetStartStatus();
 
     if ( status_map["fcoe"]:false == true )
@@ -155,18 +155,21 @@ void AdjustButtons()
     // check VLAN status 
     if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_CONFIGURED )
     {
-	UI::ChangeWidget( `id(`edit), `Enabled, false );
+	UI::ChangeWidget( `id(`edit), `Enabled, true );
 	UI::ChangeWidget( `id(`create), `Enabled, true );
+	UI::ChangeWidget( `id(`remove), `Enabled, false );
     }
     else if ( card["fcoe_vlan"]:"" == FcoeClient::NOT_AVAILABLE )
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, false );
-	UI::ChangeWidget( `id(`create), `Enabled, false );	
+	UI::ChangeWidget( `id(`create), `Enabled, false );
+	UI::ChangeWidget( `id(`remove), `Enabled, false );
     }
     else
     {
 	UI::ChangeWidget( `id(`edit), `Enabled, true );
 	UI::ChangeWidget( `id(`create), `Enabled, false );
+	UI::ChangeWidget( `id(`remove), `Enabled, true );
     }
 }
 
@@ -184,7 +187,7 @@ void InitInterfacesDialog (string id) {
     foreach ( map card, (list<map>)netcards, {
 	    table_items = add( table_items,
 			       `item(`id(row), card["dev_name"]:"", card["device"]:"", card["fcoe_vlan"]:"",
-				     card["fcoe_enable"]:"", card["dcb_required"]:"", card["dcb_capable"]:"" )
+				     card["fcoe_enable"]:"", card["dcb_required"]:"", card["auto_vlan"]:"", card["dcb_capable"]:"" )
 			       );
 	    row = row + 1;
 	});
@@ -232,6 +235,8 @@ void InitEditDialog( string id )
     // set values for 'FCoE Enabled' and 'DCB Required'
     UI::ChangeWidget( `id(`fcoe), `Value, card["fcoe_enable"]:"" );
     UI::ChangeWidget( `id(`dcb), `Value, card["dcb_required"]:"" );
+    UI::ChangeWidget( `id(`auto), `Value, card["auto_vlan"]:"" );
+    // headline of the edit dialog - configuration of values for a certain network interface
     UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
 }
 
@@ -262,6 +267,14 @@ symbol HandleInterfacesDialog( string id, map event )
     }
     else if ( action == `create )
     {
+	// haendel:~/:[0]# fipvlan -c -s eth3
+        // Fibre Channel Forwarders Discovered
+	// interface       | VLAN | FCF MAC          
+	// ------------------------------------------
+	// eth3            | 200  | 00:0d:ec:a2:ef:00
+	// Created VLAN device eth3.200
+	// Starting FCoE on interface eth3.200
+
 	map card = FcoeClient::GetCurrentNetworkCard();
 	string dev_name = card["dev_name"]:"";
 
@@ -270,10 +283,11 @@ symbol HandleInterfacesDialog( string id, map event )
 	string vlan_interface = "";
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
-	boolean create_ifcfg = false;
-	string ifcfg_file = "";
+	boolean create_ifcfg = true;
+
+	FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
 	
-	if ( Stage::initial() )		// first stage - create and start FCoE VLAN interface
+	if ( Stage::initial() )	// first stage of installation - create and start FCoE VLAN interface
 	{
 	    // headline of a popup: creating and starting Fibre Channel over Ethernet
 	    boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
@@ -312,11 +326,9 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    if ( ret == true )
 	    {
-		ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
-		
 		// if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
 		// call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
-		if ( FileUtils::Exists( ifcfg_file ) ) 
+		if ( FileUtils::Exists( FcoeClient::ifcfg_file ) ) 
 		{						 
 		    command = sformat( "ifup %1\.%2", dev_name, card["vlan_interface"]:"" );
 		    y2milestone( "Executing command: %1", command );
@@ -331,13 +343,11 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 		    else
 		    {
 			command = sformat( "fipvlan -c -s %1", dev_name ); // create and start FCoE
-			// create_ifcfg = true;
 		    }
 		}
 		else
 		{
 		    command = sformat( "fipvlan -c -s %1", dev_name );
-		    // create_ifcfg = true;
 		}
 
 		y2milestone( "Executing command: %1", command );
@@ -370,19 +380,19 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    if ( fcoe_vlan_interface != "" )
 	    {
 		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
-		status_map = FcoeClient::GetFCoEStatus( fcoe_vlan_interface );
-
-		// store command to be able to revert the creation of FCoE VLAN interface in case of abort
-		// TODO: is this also OK if only 'fipvlan -s <interface>' is called?
+		FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
+		status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card );
+		// store command to be able to revert the creation of FCoE VLAN interface in case of 'Abort'
+		// (also if only 'fipvlan -s <interface>' is called)
 		FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 		if ( create_ifcfg )
 		{
-		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"onboot\"
-ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
-		    ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
-		    SCR::Write(.target.string, ifcfg_file, config);
-		    y2milestone( "Writing config: %1 to %2", config, ifcfg_file );
-		    FcoeClient::AddRevertCommand( sformat( "rm %1", ifcfg_file ) );
+		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"nfsroot\"
+ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\n", dev_name );
+		    FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
+		    SCR::Write(.target.string, FcoeClient::ifcfg_file, config);
+		    y2milestone( "Writing config: %1 to %2", config, FcoeClient::ifcfg_file );
+		    FcoeClient::AddRevertCommand( sformat( "rm %1", FcoeClient::ifcfg_file ) );
 		}
 	    }
 	    else
@@ -395,6 +405,7 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	card["fcoe_vlan"] = fcoe_vlan_interface;
 	card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 	card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
+	card["auto_vlan"] = status_map["AUTO_VLAN"]:"";
 	card["cfg_file"] = status_map["Filename"]:"";
 	FcoeClient::SetModified( true );
 		
@@ -405,7 +416,72 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\nINTERFACETYPE=\"vlan\"\n", dev_name );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), fcoe_vlan_interface );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), status_map["FCOE_ENABLE"]:"" );
 	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["DCB_REQUIRED"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["AUTO_VLAN"]:"" );
 	AdjustButtons();
+    }
+    else if ( action == `remove )
+    {
+	map card = FcoeClient::GetCurrentNetworkCard();
+	map output = $[];
+	string command = "";
+	// popup text: really remove FCoE VLAN interface
+	string popup_text =  sformat( _("Do you really want to remove the FCoE VLAN device %1?"),
+					card["fcoe_vlan"]:"" );
+
+	if ( !Stage::initial() )
+	{
+	    // popup text continues 
+	    popup_text = popup_text + "\n" + _( "Please note: The device won't be restored on 'Cancel'." );
+	}
+	
+	// headline of a popup
+	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN device"),
+					    popup_text );
+	
+	if ( ret == true )
+	{
+	    y2milestone( "Removing %1",  card["fcoe_vlan"]:"" );
+	
+	    command  = sformat( "vconfig rem %1", card["fcoe_vlan"]:"") ;
+	    y2milestone( "Calling %1", command );
+	    output = (map)SCR::Execute( .target.bash_output, command );
+	    y2milestone( "Output: %1", output );
+
+	    if ( output["exit"]:255 == 0 )
+	    {
+		command = sformat( "rm %1", card["cfg_file"]:"" );
+		y2milestone( "Calling %1", command );
+		output = (map)SCR::Execute( .target.bash_output, command );
+		y2milestone( "Output: %1", output );
+		command = sformat( "rm /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
+		y2milestone( "Calling %1", command );
+		output = (map)SCR::Execute( .target.bash_output, command );
+		y2milestone( "Output: %1", output );
+		
+		// set new values in global map network_interfaces
+		card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
+		card["fcoe_enable"] = "";
+		card["dcb_required"] = "";
+		card["auto_vlan"] = "";
+		card["cfg_file"] = "";
+		FcoeClient::SetModified( true );
+
+		FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
+		y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
+	    
+		// replace values in table 
+		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), card["fcoe_vlan"]:"" );
+		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), card["fcoe_enable"]:"" );
+		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), card["dcb_required"]:"" );
+		UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), card["auto_vlan"]:"" );
+		AdjustButtons();
+	    }
+	    else
+	    {
+		Popup::Error( sformat( _("Removing of interface %1 failed"), card["fcoe_vlan"]:"") );
+		y2error( "Removing of interface %1 failed", card["fcoe_vlan"]:"" );
+	    }
+	}
     }
 
     return nil;
@@ -420,7 +496,19 @@ symbol HandleConfigurationDialog( string id, map event )
 symbol HandleEditDialog( string id, map event )
 {
      any action = event["ID"]:nil;
-     return nil;
+     map card = FcoeClient::GetCurrentNetworkCard();
+
+     if ( action == `dcb )
+     {
+	 string dcb_required = (string)UI::QueryWidget( `id(`dcb), `Value );
+	 if ( dcb_required == "yes" && card["dcb_capable"]:"" != "yes" )
+	 {	 
+	     // text of a warning popup
+	     Popup::Warning( _("DCB Required is set to \"yes\" but the
+interface isn't DCB capable") );
+	     y2warning( "DCB_REQUIRED is set to yes but the interface isn't DCB capable" );
+	 }
+     }
 }
 
 /**
@@ -430,21 +518,16 @@ symbol HandleEditDialog( string id, map event )
 void StoreServicesDialog (string id, map event)
 {
     y2milestone( "Store services dialog" );
+
     boolean fcoe_auto = (boolean)UI::QueryWidget( `id ("fcoe_startup_auto"), `Value );
+    FcoeClient::SetStartStatus( "fcoe", fcoe_auto );
 
-    if ( fcoe_auto )
-    {
-	FcoeClient::SetStartStatus( "fcoe", true );
-	y2milestone( "Setting auto start of FCoE to true");
-    }
-
+    y2milestone ("Setting auto start of service 'fcoe' to: %1", fcoe_auto );
+    
     boolean lldpad_auto = (boolean)UI::QueryWidget( `id ("lldpad_startup_auto"), `Value );
 
-    if ( lldpad_auto )
-    {
-	FcoeClient::SetStartStatus( "lldpad", true );
-	y2milestone( "Setting auto start of lldpad to true");
-    }
+    FcoeClient::SetStartStatus( "lldpad", lldpad_auto );
+    y2milestone( "Setting auto start of service 'lldpad' to: %1", lldpad_auto );
 }
 
 void StoreInterfacesDialog (string id, map event)
@@ -493,6 +576,13 @@ void StoreEditDialog (string id, map event)
 	FcoeClient::SetModified( true );
     }
 
+    string auto_vlan = (string)UI::QueryWidget( `id(`auto), `Value );
+    if ( card["auto_vlan"]:"" != auto_vlan )
+    {
+	card["auto_vlan"] = auto_vlan;
+	FcoeClient::SetModified( true );
+    }
+    
     FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
 
     y2milestone( "Current data: %1", FcoeClient::GetNetworkCards() );

@@ -121,10 +121,23 @@ any GlobalDialog() {
 		 ];
 
 	map <string, boolean> status_map = FcoeClient::GetStartStatus();
-	if ( status_map["fcoe"]:false == true || status_map["lldpad"]:false == true )
-	    ini_tab = "interfaces";
+
+	if ( CWMTab::LastTab() == nil || CWMTab::LastTab() == "" )	// first run
+	{
+	    if ( status_map["fcoe"]:false == true && status_map["lldpad"]:false == true )
+	    {
+		ini_tab = "interfaces";
+	    }
+	    else
+	    {
+		ini_tab = "services";
+	    }
+	}
 	else
-	    ini_tab = "services";
+	{
+	    // get correct tab to return after 'Edit'
+	    ini_tab = CWMTab::LastTab();
+	}
 	tab_order = ["services", "interfaces", "configuration"];	
     }
     
@@ -154,7 +167,10 @@ any GlobalDialog() {
 				Label::BackButton (),
 				Label::FinishButton()
 				);
-    Wizard::DisableBackButton ();
+    Wizard::SetNextButton(`next, Label::OKButton());
+    Wizard::SetAbortButton(`abort, Label::CancelButton());
+    Wizard::HideBackButton();
+
     // TODO: rename icon to yast2-fcoe-client (yast2-theme package)
     Wizard::SetTitleIcon("fcoe");
 
