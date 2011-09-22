@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Sep 21 13:11:41 CEST 2011 - gs@suse.de
+
+- don't write INTERFACETYPE=\"vlan\" to network config file 
+  (bnc #705610), improve setting of default values
+- V 2.17.13
+
+-------------------------------------------------------------------
 Thu Sep 15 14:05:18 CEST 2011 - gs@suse.de
 
 - Respect AUTO_VLAN setting when creating /etc/fcoe/cfg-file
