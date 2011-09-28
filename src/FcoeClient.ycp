@@ -445,6 +445,9 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, map netcard 
 	content = (string)SCR::Read(.target.string, file_name);
     }
 
+    // foreach( string var, values, {
+    //	SCR::Read(.fcoe.cfg-ethx.value + vlan_device_name + var);
+    // });
     if ( content != "" )
     {
 	list <string> lines = splitstring( content, "\n" );
@@ -719,16 +722,16 @@ global boolean DetectNetworkCards()
 //
 global boolean ReadFcoeConfig()
 {
-    list <string> options = (list<string>) SCR::Dir(.fcoe);
+    list <string> options = (list<string>) SCR::Dir(.fcoe.config);
     y2milestone( "List of options in /etc/fcoe/config: %1", options );
 
     if ( options == [] || options == nil )
 	return false;
     
-    string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
+    string debug_val = (string)SCR::Read(add(.fcoe.config, "DEBUG"));
     fcoe_general_config = add( fcoe_general_config, "DEBUG", debug_val );
 	
-    string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
+    string syslog_val = (string)SCR::Read(add(.fcoe.config, "USE_SYSLOG"));
     fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
 
     y2milestone( "/etc/fcoe/config read: DEBUG: %1, USE_SYSLOG: %2", debug_val, syslog_val );
@@ -743,16 +746,16 @@ global boolean WriteFcoeConfig()
 {
     boolean ret = true;
     
-    boolean success = (boolean)SCR::Write(add(.fcoe, "DEBUG"), GetFcoeConfig()["DEBUG"]:"" );
+    boolean success = (boolean)SCR::Write(add(.fcoe.config, "DEBUG"), GetFcoeConfig()["DEBUG"]:"" );
     if ( !success )
 	ret = false;
 
-    success = (boolean)SCR::Write(add(.fcoe, "USE_SYSLOG"), GetFcoeConfig()["USE_SYSLOG"]:"" );	
+    success = (boolean)SCR::Write(add(.fcoe.config, "USE_SYSLOG"), GetFcoeConfig()["USE_SYSLOG"]:"" );	
     if ( !success )
 	ret = false;
 
     // This is very important- it flushes the cache, and stores the configuration on the disk
-    SCR::Write(.fcoe, nil);
+    SCR::Write(.fcoe.config, nil);
 
     return ret;
 }
