@@ -118,7 +118,7 @@ global boolean WriteOnly() {
 }
 
 /**
- * Set write_only flag (for autoinstalation).
+ * Set write_only flag (for autoinstallation).
  */
 global void SetWriteOnly(boolean value) {
     write_only = value;
