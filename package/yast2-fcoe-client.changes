@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep 29 10:13:01 CEST 2011 - visnov@suse.cz
+
+- set dialog title
+- 2.21.8 
+
+-------------------------------------------------------------------
 Thu Sep 22 13:48:10 CEST 2011 - gs@suse.de
 
 - Several improvements (add 'Remove Interface', allow to change
