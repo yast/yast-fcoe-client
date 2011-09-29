@@ -205,7 +205,7 @@ else if (func == "Write") {
 				y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
 				// create /etc/fcoe/ethx file and get values
 				FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
-				status_map = FcoeClient::GetFcoeStatus( fcoe_vlan_interface, card );
+				status_map = FcoeClient::GetFcoeStatus( fcoe_vlan_interface, card["dev_name"]:"" );
 				// apply modified data
 				detected_netcards[ index, "fcoe_vlan"] = fcoe_vlan_interface;
 				detected_netcards[ index, "cfg_file"] = status_map["Filename"]:"";

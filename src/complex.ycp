@@ -382,7 +382,7 @@ on discovered FCoE VLAN interface on %1?"), dev_name ) );
 	    {
 		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
 		FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
-		status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card );
+		status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
 		// store command to be able to revert the creation of FCoE VLAN interface in case of 'Abort'
 		// (also if only 'fipvlan -s <interface>' is called)
 		FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
@@ -407,7 +407,7 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\n", dev_name );
 	card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 	card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
 	card["auto_vlan"] = status_map["AUTO_VLAN"]:"";
-	card["cfg_file"] = status_map["Filename"]:"";
+	card["cfg_file"] = status_map["cfg_device"]:"";
 	FcoeClient::SetModified( true );
 		
 	FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
@@ -450,7 +450,7 @@ ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\n", dev_name );
 
 	    if ( output["exit"]:255 == 0 )
 	    {
-		command = sformat( "rm %1", card["cfg_file"]:"" );
+		command = sformat( "rm /etc/fcoe/cfg-%1", card["cfg_file"]:"" );
 		y2milestone( "Calling %1", command );
 		output = (map)SCR::Execute( .target.bash_output, command );
 		y2milestone( "Output: %1", output );
