@@ -316,8 +316,8 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		// create and start FCoE
 		command = sformat( "fipvlan -c -s %1", dev_name );
 
-                // if /etc/sysconfig/network/ifcfg-<vlan-interface> already exists
-		// call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
+                // if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
+		// call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
 		if ( FileUtils::Exists( FcoeClient::ifcfg_file ) ) 
 		{						 
 		    string cmd_ifup = sformat( "ifup %1\.%2", dev_name, card["vlan_interface"]:"" );
@@ -325,6 +325,8 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		    output = (map)SCR::Execute( .target.bash_output, cmd_ifup );
 		    y2milestone( "Output: %1", output );
 
+		    create_ifcfg = false;	// /etc/sysconfig/network/ifcfg-file already exists
+		    
 		    if ( output["exit"]:255 == 0 )
 		    {
 			// only start FCoE
