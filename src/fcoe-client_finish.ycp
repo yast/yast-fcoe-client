@@ -50,7 +50,7 @@ else if (func == "Write")
     string command = "";
     list <map> netcards = FcoeClient::GetNetworkCards();
 
-    if ( netcards != $[] )
+    if ( netcards != [] )
     {
 	y2milestone( "Copying files /etc/fcoe/* to destination" );
 	// copy fcoe config files to destdir
@@ -72,7 +72,7 @@ else if (func == "Write")
 		
 		// copy sysconfig files
 		file_name = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2",
-				     card["dev_name"]:"", card["vlan_interface"] );
+				     card["dev_name"]:"", card["vlan_interface"]:"" );
 		command = sformat ( "cp -a %1 '%2/etc/sysconfig/network'", file_name,
 				    String::Quote(Installation::destdir) );
 		y2milestone( "Executing command: %1", command );
