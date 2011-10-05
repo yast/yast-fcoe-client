@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Oct  5 12:54:48 CEST 2011 - gs@suse.de
+
+- Write /etc/sysconfig/network/ifcfg-file for underlying interface
+  (bnc #705610)
+- V 2.17.15 
+
+-------------------------------------------------------------------
 Thu Sep 29 11:32:16 CEST 2011 - gs@suse.de
 
 - Use ini agent to read/write /etc/fcoe/cfg-ethx files 
