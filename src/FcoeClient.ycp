@@ -764,7 +764,7 @@ global boolean WriteSysconfigFiles( )
 
     foreach ( map card, (list<map>)netcards, {
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
-		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED && Modified() )
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED  )
 	    {
 		y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
 		// write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
@@ -800,7 +800,7 @@ global boolean WriteCfgFiles()
     
     foreach ( map card, (list<map>)netcards, {
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
-		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED && Modified() )  	// and data are modified 
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
 		y2milestone( "Writing /etc/fcoe/cfg-%1", card["cfg_file"]:"" );
 		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "FCOE_ENABLE", card[ "fcoe_enable"]:"no" );
@@ -854,11 +854,10 @@ global boolean WriteCfgFiles()
 global boolean RestartServiceFcoe()
 {
     boolean ret = true;
-    if ( FcoeClient::Modified() )
-    {
-	y2milestone( "Restarting fcoe");
-	ret = Service::Restart("boot.fcoe");
-    }
+
+    y2milestone( "Restarting fcoe");
+    ret = Service::Restart("boot.fcoe");
+
     return ret;
 }
 
