@@ -284,9 +284,8 @@ symbol HandleInterfacesDialog( string id, map event )
 	string vlan_interface = "";
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
-	boolean create_ifcfg = true;
 
-	FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
+	string ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
 
 	// headline of a popup: creating and starting Fibre Channel over Ethernet
 	boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
@@ -318,15 +317,13 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 
                 // if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
 		// call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
-		if ( FileUtils::Exists( FcoeClient::ifcfg_file ) ) 
+		if ( FileUtils::Exists( ifcfg_file ) ) 
 		{						 
 		    string cmd_ifup = sformat( "ifup %1\.%2", dev_name, card["vlan_interface"]:"" );
 		    y2milestone( "Executing command: %1", cmd_ifup );
 		    output = (map)SCR::Execute( .target.bash_output, cmd_ifup );
 		    y2milestone( "Output: %1", output );
 
-		    create_ifcfg = false;	// /etc/sysconfig/network/ifcfg-file already exists
-		    
 		    if ( output["exit"]:255 == 0 )
 		    {
 			// only start FCoE
@@ -351,39 +348,22 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    return nil;
 	} 	
 
-	// Get new status and exchange list (table) entry
-	vlan_interface = FcoeClient::GetVlanInterface( card["dev_name"]:"" );
-	if ( vlan_interface == "" )
+	// Get values and exchange list (table) entry
+	fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", card["vlan_interface"]:"" );
+
+	if ( fcoe_vlan_interface != "" )
 	{
-	    fcoe_vlan_interface = FcoeClient::NOT_AVAILABLE;
+	    y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface );
+	    // write config for FCoE VLAN interface
+	    FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
+	    status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
+
+	    // store command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
+	    FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 	}
 	else
 	{
-	    fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", vlan_interface );
-
-	    if ( fcoe_vlan_interface != "" )
-	    {
-		y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
-		FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
-		status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
-		// store command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
-		// (also if only 'fipvlan -s <interface>' is called)
-		FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
-
-		if ( create_ifcfg )
-		{
-		    string config = sformat( "BOOTPROTO=\"static\"\nSTARTMODE=\"nfsroot\"
-ETHERDEVICE=\"%1\"\nUSERCONTROL=\"no\"\n", dev_name );
-		    FcoeClient::ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", fcoe_vlan_interface );
-		    SCR::Write(.target.string, FcoeClient::ifcfg_file, config);
-		    y2milestone( "Writing config: %1 to %2", config, FcoeClient::ifcfg_file );
-		    FcoeClient::AddRevertCommand( sformat( "rm %1", FcoeClient::ifcfg_file ) );
-		}
-	    }
-	    else
-	    {
-		fcoe_vlan_interface = FcoeClient::NOT_CONFIGURED;
-	    }
+	    fcoe_vlan_interface = FcoeClient::NOT_CONFIGURED;
 	}
 
 	// set new values in global map network_interfaces

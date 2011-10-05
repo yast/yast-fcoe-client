@@ -48,27 +48,41 @@ else if (func == "Write")
 {
     boolean start_services = false;
     string command = "";
-    y2milestone( "Copying files /etc/fcoe/* to destination" );
-    
-    // copy fcoe config files to destdir
-    WFM::Execute (.local.bash,"test -d /etc/fcoe/ && mkdir -p '" + String::Quote(Installation::destdir) + "/etc/fcoe' && cp -a /etc/fcoe/* '" + String::Quote(Installation::destdir) + "/etc/fcoe/'");
-
-    // copy sysconfig file
-    command = sformat ( "cp -a %1 '%2/etc/sysconfig/network'", FcoeClient::ifcfg_file,
-                        String::Quote(Installation::destdir) );
-    y2milestone( "Executing command: %1", command );
-
-    WFM::Execute (.local.bash, command );
-    
-    // only enable services if any FCoE VLAN interface is enabled
     list <map> netcards = FcoeClient::GetNetworkCards();
 
+    if ( netcards != $[] )
+    {
+	y2milestone( "Copying files /etc/fcoe/* to destination" );
+	// copy fcoe config files to destdir
+	WFM::Execute (.local.bash,"test -d /etc/fcoe/ && mkdir -p '" + String::Quote(Installation::destdir) + "/etc/fcoe' && cp -a /etc/fcoe/* '" + String::Quote(Installation::destdir) + "/etc/fcoe/'");
+    }
+    else
+    {
+	y2milestone( "Nothing to do" );
+    }
+
     foreach ( map card, netcards, {
+	    string command = "";
+	    string file_name = "";
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
 		// FCoE VLAN interface is configured -> start services
 		start_services = true;
+		
+		// copy sysconfig files
+		file_name = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2",
+				     card["dev_name"]:"", card["vlan_interface"] );
+		command = sformat ( "cp -a %1 '%2/etc/sysconfig/network'", file_name,
+				    String::Quote(Installation::destdir) );
+		y2milestone( "Executing command: %1", command );
+		WFM::Execute (.local.bash, command );
+
+		file_name = sformat( "/etc/sysconfig/network/ifcfg-%1", card["dev_name"]:"" );
+		command = sformat ( "cp -a %1 '%2/etc/sysconfig/network'", file_name,
+				    String::Quote(Installation::destdir) );
+		y2milestone( "Executing command: %1", command );
+		WFM::Execute (.local.bash, command );	
 	    }
 	} );
 
