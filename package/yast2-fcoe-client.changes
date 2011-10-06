@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Oct  6 12:20:02 CEST 2011 - gs@suse.de
+
+- Destroy FCoE interface before removing it (bnc #719443),
+  bug-fix for getting available VLAN interfaces
+- V 2.17.16
+
+-------------------------------------------------------------------
 Wed Oct  5 12:54:48 CEST 2011 - gs@suse.de
 
 - Write /etc/sysconfig/network/ifcfg-file for underlying interface
