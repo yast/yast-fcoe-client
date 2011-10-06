@@ -617,10 +617,6 @@ global boolean ServiceStatus()
 //
 global boolean DetectNetworkCards()
 {
-    string vlan_interface = "";
-    string fcoe_vlan_interface = "";
-    string dcb_capable = "";
-    
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
     y2milestone( "Detected netcards: %1", netcards );
 
@@ -650,8 +646,11 @@ global boolean DetectNetworkCards()
 	    map state_map = card["resource", "link", 0]:$[];
 	    map info_map = $[];
 	    map <string, string> status_map = $[];
-
-	    // only call fipvlan <interface> for configured interfaces
+	    string vlan_interface = "";
+	    string fcoe_vlan_interface = "";
+	    string dcb_capable = "";
+	    
+	    // only call 'fipvlan <interface>' for configured interfaces
 	    if ( state_map["state"]:false == true )
 	    {
 		vlan_interface = GetVlanInterface( card["dev_name"]:"" );
@@ -794,14 +793,16 @@ global boolean WriteSysconfigFiles( )
 global boolean WriteCfgFiles()
 {
     list <map> netcards = GetNetworkCards();
+
     boolean success = false;
-    string command = "";
-    map output = $[];
     
     foreach ( map card, (list<map>)netcards, {
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
+		string command = "";
+		map output = $[];
+
 		y2milestone( "Writing /etc/fcoe/cfg-%1", card["cfg_file"]:"" );
 		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "FCOE_ENABLE", card[ "fcoe_enable"]:"no" );
 		if ( !success )
