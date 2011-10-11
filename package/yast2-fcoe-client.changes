@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Tue Oct 11 13:04:16 CEST 2011 - gs@suse.de
+
+- Use ini agent to write /etc/fcoe/cfg-ethx files,
+  write /etc/sysconfig/network/ifcfg-file for underlying interface
+  (bnc #705610),
+  destroy FCoE interface before removing it (bnc #719443)
+- V 2.21.9 
+
+-------------------------------------------------------------------
 Thu Sep 29 10:13:01 CEST 2011 - visnov@suse.cz
 
 - set dialog title

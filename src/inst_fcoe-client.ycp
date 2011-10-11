@@ -85,12 +85,14 @@ if ( ret == `next )
     y2milestone( "Adding package open-fcoe to pool" );
     PackagesProposal::AddResolvables( "fcoe", `package, ["open-fcoe"] ); 
     // write changes to config files
-    y2milestone( "Writing config files");
+    y2milestone( "Writing FCoE config files");
     FcoeClient::WriteFcoeConfig();
     FcoeClient::WriteCfgFiles();
     // restart fcoemon
     y2milestone( "Restarting FCoE" );
     FcoeClient::RestartServiceFcoe();
+    y2milestone( "Writing sysconfig files" );
+    FcoeClient::WriteSysconfigFiles();
     // enable start of services
     y2milestone( "Enabling service start of fcoe and lldpad" );
     FcoeClient::SetStartStatus( "fcoe", true );

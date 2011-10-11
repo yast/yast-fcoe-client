@@ -30,7 +30,6 @@
 
     textdomain "fcoe-client";
 
-    import "Mode";
     import "Sequencer";
     import "Wizard";
     import "CWM";
@@ -173,10 +172,7 @@ any GlobalDialog() {
     Wizard::HideBackButton();
 
     // TODO: rename icon to yast2-fcoe-client (yast2-theme package)
-    if (Mode::normal ())
-    	Wizard::SetDesktopTitleAndIcon("fcoe-client");
-    else
-  	Wizard::SetTitleIcon("fcoe");
+    Wizard::SetTitleIcon("fcoe");
 
     return CWM::Run (w, $[`abort : ReallyAbort]);
 }
@@ -235,10 +231,6 @@ any MainSequence() {
 			 ];
 
 	Wizard::CreateDialog();
-	if (Mode::normal ())
-    	    Wizard::SetDesktopTitleAndIcon("fcoe-client");
-	else
-  	    Wizard::SetTitleIcon("fcoe");
 
 	any ret = Sequencer::Run(aliases, sequence);
 
@@ -275,10 +267,6 @@ any FcoeClientSequence() {
 		     ];
 
     Wizard::CreateDialog();
-    if (Mode::normal ())
-    	Wizard::SetDesktopTitleAndIcon("fcoe-client");
-    else
-  	Wizard::SetTitleIcon("fcoe");
 
     any ret = Sequencer::Run(aliases, sequence);
 

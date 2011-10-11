@@ -42,9 +42,11 @@ integer mbox_y = 0.5;
 term items_fcoe = `VBox(
 		   `VSpacing (0.4),
 		   `Left (`RadioButton (`id ("fcoe_startup_auto"), `opt (`notify),
-					"When Booting")),
+					// radio button: start service on boot
+					_("When Booting"))),
 		   `Left (`RadioButton (`id ("fcoe_startup_manual"), `opt (`notify),
-					"Manually")
+					// radio button: start service manually
+					_("Manually"))
 			  ),
 		   `VSpacing (0.4)
 		   );
@@ -52,9 +54,11 @@ term items_fcoe = `VBox(
 term items_lldpad = `VBox(
 			  `VSpacing (0.4),
 			  `Left (`RadioButton (`id ("lldpad_startup_auto"), `opt (`notify),
-					       "When Booting")),
+					       // radio button: start service on boot
+					       _("When Booting"))),
 			  `Left (`RadioButton (`id ("lldpad_startup_manual"), `opt (`notify),
-					       "Manually")
+					       // radio button: start service manually
+					       _("Manually"))
 				 ),
 			  `VSpacing (0.4)
 			  );
@@ -71,17 +75,20 @@ term EditDialogContents()
 			`Frame( (""),
 				`MarginBox( 10, 2, 
 					    `VBox(
-						  `ComboBox( `id(`fcoe), _("FCoE Enable"),
+						  // combo box label: enable FCoE (yes/no)
+						  `ComboBox( `id(`fcoe), _("&FCoE Enable"),
 							     [`item(`id("yes"), "yes" ),
 							      `item(`id("no"), "no", true ) ]
 							     ),
 						  `VSpacing (1),
-						  `ComboBox( `id(`dcb), `opt (`notify, `immediate), _("DCB Required"),
+						  // combo box label: require DCB (yes/no)
+						  `ComboBox( `id(`dcb), `opt (`notify), _("&DCB Required"),
 							     [`item(`id("yes"), "yes" ),
 							      `item(`id("no"), "no", true ) ]
 							     ),
 						  `VSpacing (1),
-						  `ComboBox( `id(`auto), _("AUTO_VLAN"),
+						  // combo box label: AUTO_VLAN setting (yes/no)
+						  `ComboBox( `id(`auto), _("&AUTO_VLAN"),
 							     [`item(`id("yes"), "yes" ),
 							      `item(`id("no"), "no", true ) ]
 							     )
@@ -150,16 +157,16 @@ term ConfigurationDialogContent() {
 		       `VBox(
 			     `VSpacing(2.0),
 			     `Frame (
-				     // Frame label - configuration settings of FCoE
+				     // frame label - configuration settings of FCoE
 				     _("Configuration Settings"),
 				     `VBox (
-					    // ComboBox label
+					    // combo box label
 					    `Left(`ComboBox(`id("debug"), _("&Debug"),
 							    [`item(`id("yes"), "yes" ),
 							     `item(`id("no"), "no", true )
 							     ])
 						  ),
-					     // ComboBox label
+					     // combo box label
 					    `Left(`ComboBox(`id("syslog"), _("&Use syslog"),
 							    [`item(`id("yes"), "yes", true ),
 							     `item(`id("no"), "no" )

@@ -45,6 +45,7 @@ import "Popup";
 import "Service";
 import "NetworkService";
 import "String";
+import "FileUtils";
 
 /**
  * Prototypes
@@ -117,7 +118,7 @@ global boolean WriteOnly() {
 }
 
 /**
- * Set write_only flag (for autoinstalation).
+ * Set write_only flag (for autoinstallation).
  */
 global void SetWriteOnly(boolean value) {
     write_only = value;
@@ -167,7 +168,6 @@ global string NOT_AVAILABLE = "not available";
 global boolean lldpad_started = false;	// service fcoe was started
 global boolean fcoe_started = false;	// service lldpad was started
 
-global string ifcfg_file = "";
 
 // Settings: Define all variables needed for configuration of fcoe-client
 
@@ -359,12 +359,12 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
     // if AUTO_VLAN is set to "yes"
     if ( netcard["auto_vlan"]:"no" == "yes" )
     {
-	// set file name to cfg-<interface>, e.g. /etc/fcoe/eth3
+	// set file name to cfg-<interface>, e.g. /etc/fcoe/cfg-eth3
 	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" ); 
     }
     else
     {
-	// set file name to cfg-<vlan_device_name>, e.g. /etc/fcoe/eth3.200
+	// set file name to cfg-<vlan_device_name>, e.g. /etc/fcoe/cfg-eth3.200
 	file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
     }
     
@@ -396,7 +396,7 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
 		}
 	    });
 	content = mergestring( lines, "\n" );
-	y2milestone( "Writing content: %1", content );
+	y2milestone( "Writing content: %1 to %2", content, file_name );
 		
 	file_exists = SCR::Write( .target.string, file_name, content );
 
@@ -418,14 +418,15 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
 //
 // Get status of FCoE config from /etc/fcoe/cfg-<if>.<vlan> or /etc/fcoe/cfg-<if>
 //
-global map <string, string> GetFcoeStatus( string vlan_device_name, map netcard )
+global map <string, string> GetFcoeStatus( string vlan_device_name, string device_name )
 {
     map <string, string> status_map = $[];
     string content = "";
     boolean file_exists = false;
     string file_name = "";
+    string device = vlan_device_name;
     
-    if ( vlan_device_name == "" )
+    if ( vlan_device_name == "" || device_name == "" )
     {
 	y2error( "Interface not valid" );
 	return $[];
@@ -434,39 +435,36 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, map netcard 
     y2milestone( "VLAN channel %1 found", vlan_device_name );
 
     file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
-    y2milestone( "Reading %1", file_name );
-    content = (string)SCR::Read(.target.string, file_name);
 
-    if ( content == "" || content == nil )
+    if ( !FileUtils::Exists( file_name ) )
     {
-	// try to read /etc/fcoe/cfg-<interface> (interface was automatically created)
-	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" );
-	y2milestone( "Reading %1", file_name );
-	content = (string)SCR::Read(.target.string, file_name);
-    }
+	file_name = sformat( "/etc/fcoe/cfg-%1", device_name );
 
-    if ( content != "" )
-    {
-	list <string> lines = splitstring( content, "\n" );
-	foreach( string line, (list<string>)lines, {
-		line = deletechars( line, " \t" );
-		foreach( string var, ["FCOE_ENABLE", "DCB_REQUIRED", "AUTO_VLAN"], {
-			if ( String::StartsWith(line, var) )
-			{
-			    status_map = add( status_map, var,
-					      deletechars( substring(line, size(var) + 1), "\"") );
-			}
-		    });
+	if ( !FileUtils::Exists( file_name ) )
+	{
+	    y2warning( "Cannot read config file for %1 in /etc/fcoe", vlan_device_name );
+	    Popup::Warning( sformat(_("Cannot read config file for %1"), vlan_device_name) );
+	    return status_map;
+	}
+	device = device_name;
+    }
+    // for debugging purpose, read only needed values later 
+    list values = SCR::Dir( .fcoe.cfg-ethx.value + device );
+    y2milestone( "Available values in %1: %2", file_name, values );
+    
+    foreach( string var, ["FCOE_ENABLE", "DCB_REQUIRED", "AUTO_VLAN"], {
+	    string value = (string)SCR::Read(.fcoe.cfg-ethx.value + device + var);
+	    if ( value == nil )
+	    {
+		y2warning( "Cannot read %1", var );
+		continue;
+	    }
+	    status_map = add( status_map, var, value );
+    });
 
-	    });
-	status_map = add( status_map, "Filename", file_name );
-	y2milestone( "Returning: %1", status_map );	
-    }
-    else
-    {
-	y2warning( "Cannot read /etc/fcoe/%1", file_name );
-	Popup::Warning( sformat(_("Cannot read /etc/fcoe/cfg-file for %1"), vlan_device_name) );
-    }
+    status_map = add( status_map, "cfg_device", device );
+
+    y2milestone( "Returning: %1", status_map );	
 
     return status_map;
 }
@@ -613,16 +611,12 @@ global boolean ServiceStatus()
 
 //
 // dev_name  device             fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface cfg_file
-// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no    yes/no       200   	 /etc/fcoe/cfg-eth3.200
+// eth3      Ethernet card ...  eth3.200   yes/no      yes/no       yes/no    yes/no       200   	 eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
 //
 global boolean DetectNetworkCards()
 {
-    string vlan_interface = "";
-    string fcoe_vlan_interface = "";
-    string dcb_capable = "";
-    
     list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
     y2milestone( "Detected netcards: %1", netcards );
 
@@ -652,8 +646,11 @@ global boolean DetectNetworkCards()
 	    map state_map = card["resource", "link", 0]:$[];
 	    map info_map = $[];
 	    map <string, string> status_map = $[];
-
-	    // only call fipvlan <interface> for configured interfaces
+	    string vlan_interface = "";
+	    string fcoe_vlan_interface = "";
+	    string dcb_capable = "";
+	    
+	    // only call 'fipvlan <interface>' for configured interfaces
 	    if ( state_map["state"]:false == true )
 	    {
 		vlan_interface = GetVlanInterface( card["dev_name"]:"" );
@@ -669,7 +666,7 @@ global boolean DetectNetworkCards()
 
 		if ( fcoe_vlan_interface != "" )
 		{
-		    status_map = GetFcoeStatus( fcoe_vlan_interface, card );
+		    status_map = GetFcoeStatus( fcoe_vlan_interface, card["dev_name"]:"" );
 		}
 		else
 		{
@@ -703,7 +700,7 @@ global boolean DetectNetworkCards()
 	    }
 	    info_map = add( info_map, "dcb_capable", dcb_capable ); // DCB capable
 	    info_map = add( info_map, "vlan_interface", vlan_interface ); // VLAN interface, e.g. 200
-	    info_map = add( info_map, "cfg_file", status_map["Filename"]:"" ); // cfg file name, e.g. /etc/fcoe/cfg-eth3.200
+	    info_map = add( info_map, "cfg_file", status_map["cfg_device"]:"" ); // part of cfg-file name, e.g. eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
 	} );
@@ -719,16 +716,16 @@ global boolean DetectNetworkCards()
 //
 global boolean ReadFcoeConfig()
 {
-    list <string> options = (list<string>) SCR::Dir(.fcoe);
+    list <string> options = (list<string>) SCR::Dir(.fcoe.config);
     y2milestone( "List of options in /etc/fcoe/config: %1", options );
 
     if ( options == [] || options == nil )
 	return false;
     
-    string debug_val = (string)SCR::Read(add(.fcoe, "DEBUG"));
+    string debug_val = (string)SCR::Read(add(.fcoe.config, "DEBUG"));
     fcoe_general_config = add( fcoe_general_config, "DEBUG", debug_val );
 	
-    string syslog_val = (string)SCR::Read(add(.fcoe, "USE_SYSLOG"));
+    string syslog_val = (string)SCR::Read(add(.fcoe.config, "USE_SYSLOG"));
     fcoe_general_config = add( fcoe_general_config, "USE_SYSLOG", syslog_val );
 
     y2milestone( "/etc/fcoe/config read: DEBUG: %1, USE_SYSLOG: %2", debug_val, syslog_val );
@@ -737,82 +734,104 @@ global boolean ReadFcoeConfig()
 }
 
 //
-// Write /etc/fcoe/config using SCR agent
+// Write /etc/fcoe/config using fcoe_config.scr
 //
 global boolean WriteFcoeConfig()
 {
-    boolean ret = true;
-    
-    boolean success = (boolean)SCR::Write(add(.fcoe, "DEBUG"), GetFcoeConfig()["DEBUG"]:"" );
+    boolean success = (boolean)SCR::Write(add(.fcoe.config, "DEBUG"), GetFcoeConfig()["DEBUG"]:"" );
     if ( !success )
-	ret = false;
+	return false;
 
-    success = (boolean)SCR::Write(add(.fcoe, "USE_SYSLOG"), GetFcoeConfig()["USE_SYSLOG"]:"" );	
+    success = (boolean)SCR::Write(add(.fcoe.config, "USE_SYSLOG"), GetFcoeConfig()["USE_SYSLOG"]:"" );	
     if ( !success )
-	ret = false;
+	return false;
 
     // This is very important- it flushes the cache, and stores the configuration on the disk
-    SCR::Write(.fcoe, nil);
+    success = SCR::Write(.fcoe.config, nil);
 
-    return ret;
+    return success;
 }
 
 //
-// Write /etc/fcoe/cfg-ethx files
+// Write ifcfg-files in /etc/sysconfig/network (for FCoE VLAN interface and underlying interface)
+// using network.scr from yast2/library/network
+//
+global boolean WriteSysconfigFiles( )
+{
+    list <map> netcards = GetNetworkCards();
+    boolean success = true;
+
+    foreach ( map card, (list<map>)netcards, {
+	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED  )
+	    {
+		y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
+		// write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
+		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "BOOTPROTO", "static" );
+		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "STARTMODE", "nfsroot" );
+		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "ETHERDEVICE", card["dev_name"]:"" );
+		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "USERCONTROL", "no" );
+		y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["dev_name"]:"" );
+		// write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
+		SCR::Write(.network.value + card["dev_name"]:"" + "BOOTPROTO", "static" );
+		SCR::Write(.network.value + card["dev_name"]:"" + "STARTMODE", "nfsroot" );
+		SCR::Write(.network.value + card["dev_name"]:"" + "NAME", card["device"]:"" );
+	    }
+	} );
+    // This is very important- it flushes the cache, and stores the configuration on the disk
+    success = SCR::Write( .network, nil );
+    if ( !success )
+    {
+	y2error( "Error writing /etc/sysconfig/network/ifcfg-<fcoe-interface>" );
+    }
+    return success;
+}
+
+//
+// Write /etc/fcoe/cfg-ethx files using fcoe_cfg-ethx.scr
 //
 global boolean WriteCfgFiles()
 {
     list <map> netcards = GetNetworkCards();
-    boolean success = true;
-    string command = "";
-    map output = $[];
-    
-    y2milestone( "Writing /etc/fcoe/cfg-ethx files" );
+
+    boolean success = false;
     
     foreach ( map card, (list<map>)netcards, {
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
-		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED && Modified() )  	// and data are modified 
+		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
 	    {
-		string content = (string)SCR::Read( .target.string, card["cfg_file"]:"" );
-		y2debug( "Original content of %1: %2", card["cfg_file"]:"", content );
-		
-		list <string> lines = (list<string>)splitstring( content, "\n" );
-		lines = maplist( string line, lines, {
-			if ( !String::StartsWith( line, "#" ) )	 line = deletechars( line, " \t" );
+		string command = "";
+		map output = $[];
 
-			if ( String::StartsWith( line, "FCOE_ENABLE" ) )
-			{
-			    return sformat( "FCOE_ENABLE=\"%1\"", card["fcoe_enable"]:"no" );
-			}
-			else if ( String::StartsWith( line, "DCB_REQUIRED" ) )
-			{
-			    return sformat( "DCB_REQUIRED=\"%1\"", card["dcb_required"]:"no" );
-			}
-			else if ( String::StartsWith( line, "AUTO_VLAN" ) )
-			{
-			    return sformat( "AUTO_VLAN=\"%1\"", card["auto_vlan"]:"no" );
-			}
-			else
-			{
-			    return line;
-			}
-		    });
-		content = mergestring( lines, "\n" );
-		y2milestone( "Writing content: %1", content );
-
-		boolean ret = SCR::Write( .target.string, card["cfg_file"]:"", content );
-		if ( !ret )
+		y2milestone( "Writing /etc/fcoe/cfg-%1", card["cfg_file"]:"" );
+		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "FCOE_ENABLE", card[ "fcoe_enable"]:"no" );
+		if ( !success )
 		{
-		    success = ret;
-		    y2error( "Cannot write %1", card["cfg_file"]:"" );
+		    y2error( "Writing FCOE_ENABLE=%1 failed", card[ "fcoe_enable"]:"no" );
 		}
-		else
+		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "DCB_REQUIRED", card["dcb_required"]:"no" );
+		if ( !success )
 		{
-		    y2milestone( "%1 written", card["cfg_file"]:"" );
+		    y2error( "Writing DCB_REQUIRED=%1 failed", card["dcb_required"]:"no" );
 		}
-		// enable DCB app fcoe (app:0)
-		if (  card["dcb_required"]:"no" == "yes" )
+		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "AUTO_VLAN", card["auto_vlan"]:"no" );
+		if ( !success )
 		{
+		    y2error( "Writing AUTO_VLAN=%1 failed", card["auto_vlan"]:"no" );
+		}
+		if ( card["dcb_required"]:"no" == "yes" )
+		{
+		    // enable DCB on the interface
+		    command = sformat( "dcbtool sc %1 dcb on", card["dev_name"]:"" );
+		    y2milestone( "Executing command: %1", command );
+		    output = (map)SCR::Execute( .target.bash_output, command );
+		    y2milestone( "Output: %1", output );
+		    if ( output["exit"]:255 != 0 )
+		    {
+			Popup::Error( sformat( _("Command: %1 failed"), command ) );
+			y2error( "Command: %1 failed", command);
+		    }
+		    // enable App:FCoE on the interface
 		    command = sformat( "dcbtool sc %1 app:0 e:1 a:1 w:1", card["dev_name"]:"" );
 		    y2milestone( "Executing command: %1", command );
 
@@ -826,18 +845,20 @@ global boolean WriteCfgFiles()
 		}
 	    }
 	} );
+    // This is very important- it flushes the cache, and stores the configuration on the disk
+    success = SCR::Write( .fcoe.cfg-ethx, nil );
     
     return success;
 }
 
+// restart service fcoe
 global boolean RestartServiceFcoe()
 {
     boolean ret = true;
-    if ( FcoeClient::Modified() )
-    {
-	y2milestone( "Restarting fcoe");
-	ret = Service::Restart("boot.fcoe");
-    }
+
+    y2milestone( "Restarting fcoe");
+    ret = Service::Restart("boot.fcoe");
+
     return ret;
 }
 
@@ -994,13 +1015,19 @@ global boolean Write()
     if( !success ) Report::Error (_("Cannot write settings for FCoE interfaces.
 For details see /var/log/YaST2/y2log") );
 
-    // restart fcoe to enable changes 
     if(PollAbort()) return false;
     Progress::NextStage();
 
+    // restart fcoe to enable changes 
     success = RestartServiceFcoe();
      /* Error message */
-    if( !success ) Report::Error (_("/etc/init.d/fcoe restart failed."));
+    if( !success ) Report::Error (_("Restarting of service fcoe failed."));
+    sleep(sl);
+
+    // write ifcfg-files in /etc/sysconfig/network
+    success = WriteSysconfigFiles();
+    /* Error message */
+    if( !success ) Report::Error (_("Cannot write /etc/sysconfig/network/ifcfg-files."));
     sleep(sl);
     
     // adjust service start of lldpad and fcoe
