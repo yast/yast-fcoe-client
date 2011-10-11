@@ -8,7 +8,7 @@ BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-devtools yast2-t
 
 BuildArchitectures:	noarch
 
-Summary:	Configuration of fcoe-client
+Summary:	YaST2 - Configuration of Fibre Channel over Ethernet
 
 %description
 This package contains the YaST2 component for the Fibre Channel over
