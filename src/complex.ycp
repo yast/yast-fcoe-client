@@ -432,9 +432,9 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		
 		    // set new values in global map network_interfaces
 		    card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
-		    card["fcoe_enable"] = "";
-		    card["dcb_required"] = "";
-		    card["auto_vlan"] = "";
+		    card["fcoe_enable"] = "yes";
+		    card["dcb_required"] = (card["dcb_capable"]:""=="yes")?"yes":"no";
+		    card["auto_vlan"] = "no";
 		    card["cfg_file"] = "";
 		    FcoeClient::SetModified( true );
 
