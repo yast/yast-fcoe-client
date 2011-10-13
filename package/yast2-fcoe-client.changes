@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Oct 13 10:57:26 CEST 2011 - gs@suse.de
+
+- Set default values after removing interface
+- V 2.21.10 
+
+-------------------------------------------------------------------
 Tue Oct 11 13:04:16 CEST 2011 - gs@suse.de
 
 - Use ini agent to write /etc/fcoe/cfg-ethx files,
