@@ -89,7 +89,7 @@ establishes a connection with the daemon <i>lldpad</i>.</p>" ) +
     _("<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent daemon <i>lldpad</i> which informs <i>fcoemon</i> about DCB (Data Center Bridging) features and configuration of the interfaces.</p>"),
     
     /* Interfaces dialog help 1/4 */
-    "interfaces" : _("<p><b><big>Network interface overview</big></b><br></p>") +
+    "interfaces" : _("<p><b><big>Network interface overview</big></b></p>") +
 
     /* Interfaces dialog help 2/4 */
 _("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column <i>FCoE VLAN Interface</i>.</p>") +
