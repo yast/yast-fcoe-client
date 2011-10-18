@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Oct 13 12:53:48 CEST 2011 - gs@suse.de
+
+- Set default values after removing the interface,
+  add FCoE configuration to group Network Services
+- V 2.17.17
+
+-------------------------------------------------------------------
 Thu Oct  6 12:20:02 CEST 2011 - gs@suse.de
 
 - Destroy FCoE interface before removing it (bnc #719443),
