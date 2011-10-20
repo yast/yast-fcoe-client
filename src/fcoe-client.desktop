@@ -17,7 +17,7 @@ X-SuSE-YaST-SortKey=
 X-SuSE-YaST-AutoInstResource=fcoe-client
 X-SuSE-YaST-AutoInstClonable=true
 
-Icon=fcoe
+Icon=yast-fcoe
 Exec=/sbin/yast2 fcoe-client 
 
 Name=FCoE Client Configuration
