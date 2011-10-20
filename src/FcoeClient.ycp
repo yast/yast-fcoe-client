@@ -828,8 +828,8 @@ global boolean WriteCfgFiles()
 		    y2milestone( "Output: %1", output );
 		    if ( output["exit"]:255 != 0 )
 		    {
-			Popup::Error( sformat( _("Command: %1 failed"), command ) );
-			y2error( "Command: %1 failed", command);
+			// only warning, not necessarily an error
+			y2warning( "Command: %1 failed", command);
 		    }
 		    // enable App:FCoE on the interface
 		    command = sformat( "dcbtool sc %1 app:0 e:1 a:1 w:1", card["dev_name"]:"" );
@@ -839,8 +839,8 @@ global boolean WriteCfgFiles()
 		    y2milestone( "Output: %1", output );
 		    if ( output["exit"]:255 != 0 )
 		    {
-			Popup::Error( sformat( _("Command: %1 failed"), command ) );
-			y2error( "Command: %1 failed", command);
+			// only warning, not necessarily an error
+			y2warning( "Command: %1 failed", command);
 		    } 
 		}
 	    }
