@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Oct 20 14:42:30 CEST 2011 - gs@suse.de
+
+- Add FCoE configuration to group Network Services,
+  only log warning if dcbtool fails
+- V 2.21.11 
+
+-------------------------------------------------------------------
 Thu Oct 13 10:57:26 CEST 2011 - gs@suse.de
 
 - Set default values after removing interface
