@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Oct 19 12:57:23 CEST 2011 - gs@suse.de
+
+- Correct icon name yast-fcoe, only log warning if dcbtool fails
+- V 2.17.18 
+
+-------------------------------------------------------------------
 Thu Oct 13 12:53:48 CEST 2011 - gs@suse.de
 
 - Set default values after removing the interface,
