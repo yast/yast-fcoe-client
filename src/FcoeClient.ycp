@@ -443,7 +443,9 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, string devic
 	if ( !FileUtils::Exists( file_name ) )
 	{
 	    y2warning( "Cannot read config file for %1 in /etc/fcoe", vlan_device_name );
-	    Popup::Warning( sformat(_("Cannot read config file for %1"), vlan_device_name) );
+	    Popup::Warning( sformat(_("Cannot read config file for %1.
+You may edit the settings and recreate the FCoE
+VLAN interface to get a valid configuration."), vlan_device_name) );
 	    return status_map;
 	}
 	device = device_name;
@@ -667,6 +669,11 @@ global boolean DetectNetworkCards()
 		if ( fcoe_vlan_interface != "" )
 		{
 		    status_map = GetFcoeStatus( fcoe_vlan_interface, card["dev_name"]:"" );
+		    if ( status_map == $[] )
+		    {
+			// the interface isn't configured correctly 
+			fcoe_vlan_interface = NOT_CONFIGURED;
+		    }
 		}
 		else
 		{
