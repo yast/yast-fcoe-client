@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu Oct 27 13:41:55 CEST 2011 - gs@suse.de
+
+- Don't enable service start at boot during installation (is
+  enabled at the end), improve warning message
+- V 2.21.12 
+
+-------------------------------------------------------------------
 Thu Oct 20 14:42:30 CEST 2011 - gs@suse.de
 
 - Add FCoE configuration to group Network Services,
