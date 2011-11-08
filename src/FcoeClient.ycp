@@ -272,45 +272,53 @@ boolean CheckInstalledPackages()
 }
 
 //
-// Check whether a VLAN interface is configured for FCoE on the switch (for given interface)
+// Check whether VLAN interfaces are configured for FCoE on the switch
 //
 // Params:
 // string 	interface	network interface card, e.g. eth3
 // Return:
 // string	Vlan interface number, e.g. 200
 // Example:
-// # fipvlan eth3
+// # fipvlan eth0 eth1 eth2 eth3
 //Fibre Channel Forwarders Discovered
 //interface       | VLAN | FCF MAC          
 //------------------------------------------
-//eth3            | 200  | 00:0d:ec:a2:ef:00
+//eth0            | 200  | 00:0d:ec:a2:ef:00
+//eth3		  | 200  | 00:0d:ec:a2:ef:01
 //
-global string GetVlanInterface( string interface )
+global map GetVlanInterfaces( list net_devices )
 {
-    string vlan_interface = "";
-    map output = $[];
+    string vlan_cmd = "LANG=POSIX fipvlan";
+    map vlan_info = $[];
     
-    // check whether there is a VLAN interface which is configured for FCoE
-    string cmd_fcoe = sformat( "LANG=POSIX fipvlan %1", interface );
-    y2milestone( "Executing command: %1", cmd_fcoe );
-    output = (map)SCR::Execute( .target.bash_output, cmd_fcoe );
-    y2milestone( "Output: %1", output );
-
-    list <string> lines = splitstring( output["stdout"]:"", "\n" );
-    foreach( string line, (list<string>)lines, {
-	    // check whether there is a line for the given interface, e.g.
-	    // eth3            | 200  | 00:0d:ec:a2:ef:00\n
-	    // and extract name/number of VLAN channel.
-	    if ( String::StartsWith( line, interface ) )
-	    {
-		line = deletechars( line, " \t" );
-		vlan_interface = substring( line, findfirstof( line, "|" )+1,
-					    findlastof( line, "|" )-findfirstof( line, "|")-1 );
-		y2milestone( "VLAN: %1", vlan_interface );
-	    }
+    foreach ( string dev, (list<string>)net_devices, {
+	    vlan_cmd = vlan_cmd + " " + dev;
 	} );
     
-    return vlan_interface;
+    // call fipvlan command for all interfaces (saves time because is executed in parallel)
+    y2milestone( "Executing command: %1", vlan_cmd );
+    map output = (map)SCR::Execute( .target.bash_output, vlan_cmd );
+    y2milestone( "Output: %1", output );
+ 
+    list <string> lines = splitstring( output["stdout"]:"", "\n" );
+
+    foreach ( string dev, (list<string>)net_devices, {
+	    foreach( string line, (list<string>)lines, {
+		    // check whether there is a line for the given interface, e.g.
+		    // eth3            | 200  | 00:0d:ec:a2:ef:00\n
+		    // and extract name/number of VLAN channel.
+		    if ( String::StartsWith( line, dev ) )
+		    {
+			line = deletechars( line, " \t" );
+			string vlan_interface = substring( line, findfirstof( line, "|" )+1,
+						    findlastof( line, "|" )-findfirstof( line, "|")-1 );
+			y2milestone( "Interface: %1 VLAN: %2", dev, vlan_interface );
+			vlan_info = add( vlan_info, dev, vlan_interface );
+		    }
+		} );
+	} );
+    y2milestone( "VLAN info: %1", vlan_info );
+    return vlan_info;
 }
 
 //
@@ -625,46 +633,30 @@ global boolean DetectNetworkCards()
     if ( netcards == [] || netcards == nil )
 	return false;
 
+    list net_devices = [];
+    
     foreach ( map card, netcards, {
-	    // get first state map from link list in resource map
-	    map state_map = card["resource", "link", 0 ]:$[];
+	    net_devices = add( net_devices, card["dev_name"]:"" ); 
+	});
 
-	    if ( state_map["state"]:false == false )
-	    {
-		// call 'ifconfig <interface> up' here because it's not yet
-		// clear who configures the interfaces (fipvlan command itself?)
-		// -> see bnc #705171 (this applies also to installed system)
-		string cmd_ifup = sformat( "ifconfig %1 up", card["dev_name"]:"" );
-		y2milestone( "Executing command: %1", cmd_ifup );
-		SCR::Execute( .target.bash_output, cmd_ifup );
-
-		// ifconfig up always returns 0 -> no error message can be made
-	    }
-	} );
-    // call .probe.netcard again
-    netcards = (list<map>)SCR::Read(.probe.netcard);
+    // The 'fipvlan' command which is called in GetVlanInterfaces configures the interfaces itself,
+    // therefore it's not needed any longer to call 'ifconfig <if> up' here.
+    map vlan_info = GetVlanInterfaces( net_devices );
 
     foreach ( map card, netcards, {
-	    map state_map = card["resource", "link", 0]:$[];
 	    map info_map = $[];
 	    map <string, string> status_map = $[];
-	    string vlan_interface = "";
 	    string fcoe_vlan_interface = "";
 	    string dcb_capable = "";
-	    
-	    // only call 'fipvlan <interface>' for configured interfaces
-	    if ( state_map["state"]:false == true )
-	    {
-		vlan_interface = GetVlanInterface( card["dev_name"]:"" );
-	    }
-	    if ( vlan_interface == "" )
+
+	    if ( vlan_info[card["dev_name"]:""]:"" == "" )
 	    {
 		// Interface down or FCoE not enabled on the switch - we can't do anything here.
 		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
 	    {
-		fcoe_vlan_interface = GetFcoeVlanInterface( card["dev_name"]:"", vlan_interface );
+		fcoe_vlan_interface = GetFcoeVlanInterface( card["dev_name"]:"", vlan_info[card["dev_name"]:""]:"" );
 
 		if ( fcoe_vlan_interface != "" )
 		{
@@ -706,15 +698,18 @@ global boolean DetectNetworkCards()
 		info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"no"); // AUTO_VLAN
 	    }
 	    info_map = add( info_map, "dcb_capable", dcb_capable ); // DCB capable
-	    info_map = add( info_map, "vlan_interface", vlan_interface ); // VLAN interface, e.g. 200
+	    info_map = add( info_map, "vlan_interface", vlan_info[card["dev_name"]:""]:"" ); // VLAN interface, e.g. 200
 	    info_map = add( info_map, "cfg_file", status_map["cfg_device"]:"" ); // part of cfg-file name, e.g. eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
+		 
 	} );
+     
     // sort the list of interfaces (eth0, eth1, eth2...)
     network_interfaces = sort( map a, map b, network_interfaces, {
 		    return ( a["dev_name"]:"" < b["dev_name"]:"" );
-		} );
+	} );
+
     return true;
 }
 
