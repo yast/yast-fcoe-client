@@ -281,7 +281,6 @@ symbol HandleInterfacesDialog( string id, map event )
 
 	string command = "";
 	map output = $[];	 
-	string vlan_interface = "";
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
 
@@ -390,18 +389,22 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	map output = $[];
 	string command = "";
 	// popup text: really remove FCoE VLAN interface
-	string popup_text =  sformat( _("Do you really want to remove the FCoE VLAN device %1?"),
+	string popup_text =  sformat( _("Do you really want to remove the FCoE interface %1?"),
 					card["fcoe_vlan"]:"" );
 
 	if ( !Stage::initial() )
 	{
 	    // popup text continues 
-	    popup_text = popup_text + "\n" + _( "Please note: The device won't be restored on 'Cancel'." );
+	    popup_text = popup_text + "\n" + _( "Attention:
+Make sure the interface is not essential for a used device.
+The interface won't be restored on 'Cancel'." );
 	}
 	
-	// headline of a popup
-	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN device"),
-					    popup_text );
+	boolean ret = Popup::AnyQuestion( Label::WarningMsg(),
+					  popup_text,
+					  Label::ContinueButton(),
+					  Label::CancelButton(),
+					  `focus_no );	// default: Cancel
 	
 	if ( ret == true )
 	{
