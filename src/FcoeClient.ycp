@@ -648,7 +648,8 @@ global boolean DetectNetworkCards()
 	    map <string, string> status_map = $[];
 	    string fcoe_vlan_interface = "";
 	    string dcb_capable = "";
-
+	    string dcb_default = "";
+	    
 	    if ( vlan_info[card["dev_name"]:""]:"" == "" )
 	    {
 		// Interface down or FCoE not enabled on the switch - we can't do anything here.
@@ -674,7 +675,7 @@ global boolean DetectNetworkCards()
 		}
 	    }
 	    dcb_capable = DCBCapable( card["dev_name"]:"" );
-	    
+
 	    info_map = add( info_map, "dev_name", card["dev_name"]:"");		// network card, e.g. eth3
 	    if ( card["device"]:"" != "" )
 	    {
@@ -691,8 +692,18 @@ global boolean DetectNetworkCards()
 	    {
 		// default for FCoE enable is yes
 		info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"yes" );	// FCOE_ENABLE
-                // default for DCB required is yes unless the interface is not dcb capable
-		info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:( (dcb_capable=="yes")?"yes":"no" ) );
+
+                // exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
+		if ( !String::StartsWith( card["driver"]:"", "bnx2" ) && dcb_capable=="yes" )
+		{
+		    dcb_default = "yes";
+		}
+		else
+		{
+		    dcb_default = "no";
+		}
+		info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:dcb_default );
+
 		// default is to create /etc/fcoe/cfg-ethx file with VLAN device in name
 		// (e.g. cfg-eth3.200), set AUTO_VLAN to "no" then (see bnc #692403)
 		info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"no"); // AUTO_VLAN
@@ -702,7 +713,6 @@ global boolean DetectNetworkCards()
 	    info_map = add( info_map, "cfg_file", status_map["cfg_device"]:"" ); // part of cfg-file name, e.g. eth3.200
 
 	    network_interfaces = add( network_interfaces, info_map );
-		 
 	} );
      
     // sort the list of interfaces (eth0, eth1, eth2...)
