@@ -694,7 +694,7 @@ global boolean DetectNetworkCards()
 		info_map = add( info_map, "fcoe_enable", status_map["FCOE_ENABLE"]:"yes" );	// FCOE_ENABLE
 
                 // exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
-		if ( !String::StartsWith( card["driver"]:"", "bnx2" ) && dcb_capable=="yes" )
+		if ( (card["driver"]:"" != "bnx2x") && (dcb_capable == "yes") )
 		{
 		    dcb_default = "yes";
 		}
