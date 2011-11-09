@@ -397,7 +397,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    // popup text continues 
 	    popup_text = popup_text + "\n" + _( "Attention:
 Make sure the interface is not essential for a used device.
-The interface won't be restored on 'Cancel'." );
+Removing it may result in an unusable system." );
 	}
 	
 	boolean ret = Popup::AnyQuestion( Label::WarningMsg(),
