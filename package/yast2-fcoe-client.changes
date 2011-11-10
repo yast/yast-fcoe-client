@@ -2,7 +2,7 @@
 Wed Nov  9 13:37:30 CET 2011 - gs@suse.de
 
 - Improve detection of VLAN interfaces by using improved 'fipvlan'
-  command (bnc #728103), 
+  command (bnc #728103), better warning when removing interface, 
   set DCB_REQUIRED to "no" for Broadcom devices (bnc #728658)
 - 2.17.20
 
