@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Nov 16 12:26:34 CET 2011 - jsuchome@suse.cz
+
+- merged texts from proofreading
+- 2.22.0 
+
+-------------------------------------------------------------------
 Thu Oct 27 13:41:55 CEST 2011 - gs@suse.de
 
 - Don't enable service start at boot during installation (is

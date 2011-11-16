@@ -287,7 +287,7 @@ symbol HandleInterfacesDialog( string id, map event )
 	string ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1\.%2", dev_name, card["vlan_interface"]:"" );
 
 	// headline of a popup: creating and starting Fibre Channel over Ethernet
-	boolean ret = Popup::YesNoHeadline( _("Creating and starting FCoE on detected VLAN device"),
+	boolean ret = Popup::YesNoHeadline( _("Creating and Starting FCoE on Detected VLAN Device"),
 					    // question to the user: really create and start FCoE
 					    sformat( _("Do you really want to create a FCoE network
 interface for discovered FCoE VLAN interface
@@ -305,7 +305,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		if ( output["exit"]:255 != 0 )
 		{
 		    // text of an error popup
-		    Popup::Error( sformat( _("Cannot create and start FCoE on %1"), dev_name ) ); 
+		    Popup::Error( sformat( _("Cannot create and start FCoE on %1."), dev_name ) ); 
 		    return nil;
 		}
 	    }
@@ -395,11 +395,11 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	if ( !Stage::initial() )
 	{
 	    // popup text continues 
-	    popup_text = popup_text + "\n" + _( "Please note: The device won't be restored on 'Cancel'." );
+	    popup_text = popup_text + "\n" + _("Please note: The device won't be restored on 'Cancel'.");
 	}
 	
 	// headline of a popup
-	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN device"),
+	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN Device"),
 					    popup_text );
 	
 	if ( ret == true )
@@ -450,7 +450,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		}
 		else
 		{
-		    Popup::Error( sformat( _("Removing of interface %1 failed"), card["fcoe_vlan"]:"") );
+		    Popup::Error( sformat( _("Removing of interface %1 failed."), card["fcoe_vlan"]:"") );
 		    y2error( "Removing of interface %1 failed", card["fcoe_vlan"]:"" );
 		}	
 	    }
@@ -483,7 +483,8 @@ symbol HandleEditDialog( string id, map event )
 	 {	 
 	     // text of a warning popup
 	     Popup::Warning( _("DCB Required is set to \"yes\" but the
-interface isn't DCB capable") );
+interface isn't DCB capable.
+") );
 	     y2warning( "DCB_REQUIRED is set to yes but the interface isn't DCB capable" );
 	 }
      }

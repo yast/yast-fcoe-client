@@ -64,7 +64,7 @@ Configure fcoe-client here.<br></p>
 
     /* Summary dialog help 2/3 */
     _("<p><b><big>Adding a fcoe-client:</big></b><br>
-Choose an fcoe-client from the list of detected fcoe-clients.
+Choose a fcoe-client from the list of detected fcoe-clients.
 If your fcoe-client was not detected, use <b>Other (not detected)</b>.
 Then press <b>Configure</b>.</p>
 ") +
@@ -77,37 +77,37 @@ the configuration opens.</p>
 
     /* Services dialog help 1/3 */
     "services" : _("<p><b><big>Starting of services</big><br></b><br>
-There is the possibility to enable or disable the start of the services
-<b>fcoe</b> and <b>lldpad</b> at boot time.</p>
+Enable or disable the start of the services <b>fcoe</b> and <b>lldpad</b> at boot time.</p>
 ") +
      /* Services dialog help 2/3 */
     _("<p>Starting the service <b>fcoe</b> means starting the <i>Fibre Channel over
 Ethernet</i> service daemon <i>fcoemon</i> which controls the FCoE interfaces and
-establishes a connection with the daemon <i>lldpad</i>.</p>" ) +
+establishes a connection with the daemon <i>lldpad</i>.</p>") +
 
     /* Services dialog help 3/3 */
-    _("<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent daemon <i>lldpad</i> which informs <i>fcoemon</i> about DCB (Data Center Bridging) features and configuration of the interfaces.</p>"),
+    _("<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent daemon <i>lldpad</i>, which informs <i>fcoemon</i> about DCB (Data Center Bridging) features and configuration of the interfaces.</p>"),
     
     /* Interfaces dialog help 1/4 */
     "interfaces" : _("<p><b><big>Network interface overview</big></b></p>") +
 
     /* Interfaces dialog help 2/4 */
-_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface) this is shown in column <i>FCoE VLAN Interface</i>.</p>") +
+_("<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface), this is shown in column <i>FCoE VLAN Interface</i>.</p>") +
     
     /* Interfaces dialog help 3/4 */
     _("<p>The values for <i>FCoE VLAN Interface</i> in detail:<br>
-<b>not available</b>: Fibre Channel over Ethernet isn't possible (must be enabled on the switch first)<br>
-<b>not configured</b>: FCoE is possible but not yet activated, press <b>Create FCoE VLAN Interface</b> to do this.<br>
- If the FCoE VLAN interface is already created the name is shown in the column, e.g. eth3.200.</p>") +
+<b>not available</b>: Fibre Channel over Ethernet is not possible (must be enabled on the switch first).<br>
+<b>not configured</b>: FCoE is possible but not yet activated. Press <b>Create FCoE VLAN Interface</b> to activate.<br>
+ If the FCoE VLAN interface has already been created, the name is shown in the column, e.g. eth3.200.</p>
+") +
 
     /* Interfaces dialog help 3/4 */
-    _("<p>To change the configuration of an existing FCoE VLAN interface press button <b>Change Settings</b>.</p>" ),
+    _("<p>To change the configuration of an existing FCoE VLAN interface, click on<b>Change Settings</b>.</p>"),
 
     /* Configuration dialog help 1/3 */
-    "configuration" : _("<p><b><big>General configuration of FCoE</big></b></p>") +
+    "configuration" : _("<p><b><big>General Configuration of FCoE</big></b></p>") +
 
     /* Configuration dialog help 2/3 */
-    _("<p>Here you can configure the general settings for the FCoE system service. The settings are written to '/etc/fcoe/config'.</p>") +
+    _("<p>Configure the general settings for the FCoE system service. The settings are written to '/etc/fcoe/config'.</p>") +
 
     /*  Configuration dialog help 3/3 */
     _("<p>The values are:<br>
@@ -117,21 +117,21 @@ This is used to enable or disable debugging messages from the fcoe service scrip
 Messages are sent to the system log if set to <i>yes</i> (data are logged to /var/log/messages).</p>"),
 
     /* edit dialog help 1/3 */
-    "change" : _("<p>Edit settings in /etc/fcoe/ethx</p>" ) +
+    "change" : _("<p>Edit Settings in /etc/fcoe/ethx</p>") +
     
     /* Edit dialog help 2/3 */
-    _( "<p>The daemon <i>fcoemon</i> reads these configuration files on initialization.
+    _("<p>The daemon <i>fcoemon</i> reads these configuration files on initialization.
            There is a file for every interface and the values indicate whether FCoE instances
-           should be created and if DCB is required.</p>" )     +
+           should be created and if DCB is required.</p>")     +
     /* Edit dialog help 3/3 */
-    _( "<p>The values are:<br>       
+    _("<p>The values are:<br>       
 <b>FCoE Enable</b>: <i>yes</i> or <i>no</i><br>
 Enable or disable the creation of FCoE instances.<br>
 <b>DCB Required</b>: <i>yes</i> or <i>no</i><br>
 The default is <i>yes</i>, DCB is usually required.<br>
 <b>AUTO VLAN</b>: <i>yes</i> or <i>no</i><br>
 If set to <i>yes</i> 'fcoemon' will create the VLAN
-interfaces automatically.</p>" ),
+interfaces automatically.</p>"),
 
 ];
 
