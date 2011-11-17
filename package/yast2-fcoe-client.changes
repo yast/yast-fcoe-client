@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Nov 17 09:47:44 CET 2011 - gs@suse.de
+
+- Enable service start of 'lldpad' before enabling 'fcoe',
+  don't overwrite BOOTPROTO for underlying interface,
+  set default for AUTO_VLAN to "yes" (bnc #724563)
+- 2.17.21 
+
+-------------------------------------------------------------------
 Wed Nov  9 13:37:30 CET 2011 - gs@suse.de
 
 - Improve detection of VLAN interfaces by using improved 'fipvlan'
