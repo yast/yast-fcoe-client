@@ -718,9 +718,9 @@ global boolean DetectNetworkCards()
 		}
 		info_map = add( info_map, "dcb_required", status_map["DCB_REQUIRED"]:dcb_default );
 
-		// default is to create /etc/fcoe/cfg-ethx file with VLAN device in name
-		// (e.g. cfg-eth3.200), set AUTO_VLAN to "no" then (see bnc #692403)
-		info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"no"); // AUTO_VLAN
+		// default is AUTO_VLAN="yes", create /etc/fcoe/cfg-ethx file without VLAN device in name
+		// (e.g. /etc/fcoe/cfg-eth3), see bnc #724563
+		info_map = add( info_map, "auto_vlan", status_map["AUTO_VLAN"]:"yes"); // AUTO_VLAN
 	    }
 	    info_map = add( info_map, "dcb_capable", dcb_capable ); // DCB capable
 	    info_map = add( info_map, "vlan_interface", vlan_info[card["dev_name"]:""]:"" ); // VLAN interface, e.g. 200
