@@ -347,7 +347,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    return nil;
 	} 	
 
-	// Get values and exchange list (table) entry
+	// Get values and exchange list (table) entries
 	fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", card["vlan_interface"]:"" );
 
 	if ( fcoe_vlan_interface != "" )
@@ -398,6 +398,12 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    popup_text = popup_text + "\n" + _( "Attention:
 Make sure the interface is not essential for a used device.
 Removing it may result in an unusable system." );
+	}
+	else
+	{
+	    // popup text continues
+	     popup_text = popup_text + "\n" + _( "Don't remove the interface if it's related
+to an already activated multipath device." );
 	}
 	
 	boolean ret = Popup::AnyQuestion( Label::WarningMsg(),
@@ -508,6 +514,14 @@ void StoreServicesDialog (string id, map event)
     
     boolean lldpad_auto = (boolean)UI::QueryWidget( `id ("lldpad_startup_auto"), `Value );
 
+    if ( fcoe_auto && !lldpad_auto )
+    {
+	// text of an information (notify)  popup
+	Popup::Notify( _( "Service 'fcoe' requires enabled service 'lldpad'.
+Enabling start on boot of service 'lldpad'." ) );
+	lldpad_auto = true;
+    }
+    
     FcoeClient::SetStartStatus( "lldpad", lldpad_auto );
     y2milestone( "Setting auto start of service 'lldpad' to: %1", lldpad_auto );
 }

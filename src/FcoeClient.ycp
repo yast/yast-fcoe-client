@@ -525,20 +525,32 @@ string DCBCapable( string netcard )
 //
 global void AdjustStartStatus( )
 {
-    y2milestone( "Setting start of /etc/init.d/boot.fcoe to %1", service_start["fcoe"]:false );
-    if ( service_start["fcoe"]:false == true )
-	Service::Enable("boot.fcoe");	
-    else
-	Service::Disable("boot.fcoe");
+    boolean fcoe_start = service_start["fcoe"]:false;
+    boolean lldpad_start = service_start["lldpad"]:false;
+    y2milestone( "Setting start of /etc/init.d/boot.fcoe to %1", fcoe_start );
+    y2milestone( "Setting start of /etc/init.d/lldpad to %1", lldpad_start );
 
-    y2milestone( "Setting start of /etc/init.d/lldpad to %1", service_start["lldpad"]:false );
-    if ( service_start["lldpad"]:false == true )
-	Service::Enable("boot.lldpad");	
-    else
+    if ( fcoe_start && lldpad_start )
+    {
+	Service::Enable("boot.lldpad");		// enable 'lldpad' first
+	Service::Enable("boot.fcoe");
+    }
+    else if ( !fcoe_start && lldpad_start )
+    {	
+	Service::Disable("boot.fcoe");
+	Service::Enable("boot.lldpad" );
+    }
+    else if ( !fcoe_start && !lldpad_start )
+    {
+	Service::Disable("boot.fcoe");		// disable 'fcoe' first
 	Service::Disable("boot.lldpad");
-    
+    }
+    // fcoe_start && !lldpad_start isn't possible -> see complex.ycp StoreServicesDialog 
 }
 
+//
+// Set status of services
+// 
 global void SetStartStatus( string service, boolean status )
 {
     y2milestone( "Starting service %1 on boot: %2", service, status );
@@ -574,28 +586,8 @@ global boolean ServiceStatus()
     // Loading of modules in Stage::initial() is not required (like in IsciClientLib.ycp, line 523 )
     // see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
     boolean ret = true;
-			 
-    if ( Service::Status( "boot.fcoe" ) != 0 ) 
-    {
-	boolean success = Service::Start( "boot.fcoe" );
-	if ( success )
-	{
-	    y2milestone( "FCoE started (/etc/init.d/boot.fcoe start)");
-	    fcoe_started = true;;
-	}
-	else
-	{
-	    y2error( "Cannot start FCoE service - '/etc/init.d/boot.fcoe start' failed" );
-	    Popup::Error( "Cannot start FCoE service.
-'/etc/init.d/boot.fcoe start' failed" );
-	    ret = false;
-	}
-    }
-    else
-    {
-	y2milestone( "FCoE service is running");
-    }
 
+    // first start lldpad
     if ( Service::Status( "boot.lldpad" ) != 0 ) 
     {
 	boolean success = Service::Start( "boot.lldpad" );
@@ -616,6 +608,28 @@ global boolean ServiceStatus()
     {
 	y2milestone( "Lldpad service is running");
     }
+
+    if ( Service::Status( "boot.fcoe" ) != 0 ) 
+    {
+	boolean success = Service::Start( "boot.fcoe" );
+	if ( success )
+	{
+	    y2milestone( "FCoE started (/etc/init.d/boot.fcoe start)");
+	    fcoe_started = true;;
+	}
+	else
+	{
+	    y2error( "Cannot start FCoE service - '/etc/init.d/boot.fcoe start' failed" );
+	    Popup::Error( "Cannot start FCoE service.
+'/etc/init.d/boot.fcoe start' failed" );
+	    ret = false;
+	}
+    }
+    else
+    {
+	y2milestone( "FCoE service is running");
+    }
+    
     return ret;
 }
 
@@ -774,7 +788,7 @@ global boolean WriteSysconfigFiles( )
     boolean success = true;
 
     foreach ( map card, (list<map>)netcards, {
-	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&			// FCoE VLAN is configured
+	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&		// FCoE VLAN is configured
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED  )
 	    {
 		y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
@@ -783,18 +797,29 @@ global boolean WriteSysconfigFiles( )
 		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "STARTMODE", "nfsroot" );
 		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "ETHERDEVICE", card["dev_name"]:"" );
 		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "USERCONTROL", "no" );
-		y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["dev_name"]:"" );
+
+		string ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", card["dev_name"]:"" );
+		y2milestone( "Writing %1", ifcfg_file );
+		
 		// write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
-		SCR::Write(.network.value + card["dev_name"]:"" + "BOOTPROTO", "static" );
-		SCR::Write(.network.value + card["dev_name"]:"" + "STARTMODE", "nfsroot" );
-		SCR::Write(.network.value + card["dev_name"]:"" + "NAME", card["device"]:"" );
+		if ( !FileUtils::Exists(ifcfg_file) )
+		{
+		    SCR::Write(.network.value + card["dev_name"]:"" + "BOOTPROTO", "none" );
+		    SCR::Write(.network.value + card["dev_name"]:"" + "STARTMODE", "nfsroot" );
+		    SCR::Write(.network.value + card["dev_name"]:"" + "NAME", card["device"]:"" );
+		}
+		else
+		{
+		    // don't overwrite BOOTPROTO !!!
+		    SCR::Write(.network.value + card["dev_name"]:"" + "STARTMODE", "nfsroot" );
+		}
 	    }
 	} );
     // This is very important- it flushes the cache, and stores the configuration on the disk
     success = SCR::Write( .network, nil );
     if ( !success )
     {
-	y2error( "Error writing /etc/sysconfig/network/ifcfg-<fcoe-interface>" );
+	y2error( "Error writing /etc/sysconfig/network/ifcfg-files" );
     }
     return success;
 }
