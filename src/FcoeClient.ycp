@@ -804,7 +804,7 @@ global boolean WriteSysconfigFiles( )
 		// write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
 		if ( !FileUtils::Exists(ifcfg_file) )
 		{
-		    SCR::Write(.network.value + card["dev_name"]:"" + "BOOTPROTO", "none" );
+		    SCR::Write(.network.value + card["dev_name"]:"" + "BOOTPROTO", "static" );
 		    SCR::Write(.network.value + card["dev_name"]:"" + "STARTMODE", "nfsroot" );
 		    SCR::Write(.network.value + card["dev_name"]:"" + "NAME", card["device"]:"" );
 		}
