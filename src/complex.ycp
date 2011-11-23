@@ -395,15 +395,15 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	if ( !Stage::initial() )
 	{
 	    // popup text continues 
-	    popup_text = popup_text + "\n" + _( "Attention:
+	    popup_text = popup_text + "\n" + _("Attention:
 Make sure the interface is not essential for a used device.
-Removing it may result in an unusable system." );
+Removing it may result in an unusable system.");
 	}
 	else
 	{
 	    // popup text continues
-	     popup_text = popup_text + "\n" + _( "Don't remove the interface if it's related
-to an already activated multipath device." );
+	     popup_text = popup_text + "\n" + _("Don't remove the interface if it's related
+to an already activated multipath device.");
 	}
 	
 	boolean ret = Popup::AnyQuestion( Label::WarningMsg(),
@@ -443,8 +443,9 @@ to an already activated multipath device." );
 		    // set new values in global map network_interfaces
 		    card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
 		    card["fcoe_enable"] = "yes";
-		    card["dcb_required"] = (card["dcb_capable"]:""=="yes")?"yes":"no";
-		    card["auto_vlan"] = "no";
+		    // exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
+		    card["dcb_required"] = ((card["driver"]:"" != "bnx2x") && (card["dcb_capable"]:""=="yes"))?"yes":"no";
+		    card["auto_vlan"] = "yes"; // default is "yes" (bnc #724563)
 		    card["cfg_file"] = "";
 		    FcoeClient::SetModified( true );
 
