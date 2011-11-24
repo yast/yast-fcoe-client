@@ -1067,7 +1067,6 @@ For details see /var/log/YaST2/y2log") );
     if( !success ) Report::Error (_("Cannot write /etc/sysconfig/network/ifcfg-files."));
     sleep(sl);
     
-    // adjust service start of lldpad and fcoe
     if(PollAbort()) return false;
     Progress::NextStage ();
 
