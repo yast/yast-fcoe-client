@@ -83,7 +83,10 @@ boolean ReallyAbort() {
 		    y2milestone( "Calling %1", command );
 		    map output = (map)SCR::Execute( .target.bash_output, command );
 		    y2milestone( "Output: %1", output );
-
+		    if ( output["exit"]:255 != 0 )
+		    {
+			Popup::Error( sformat( _("Command %1 failed"), command ) );
+		    }
 		} );
 	    FcoeClient::ResetRevertCommands(); // important during installation
 	}
@@ -237,6 +240,12 @@ void InitEditDialog( string id )
     UI::ChangeWidget( `id(`fcoe), `Value, card["fcoe_enable"]:"" );
     UI::ChangeWidget( `id(`dcb), `Value, card["dcb_required"]:"" );
     UI::ChangeWidget( `id(`auto), `Value, card["auto_vlan"]:"" );
+    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
+    {
+	// don't allow to change AUTO_VLAN for a configured interface
+	// (would require new /etc/fcoe/cfg-file)
+	UI::ChangeWidget( `id(`auto), `Enabled, false );	
+    }
     // headline of the edit dialog - configuration of values for a certain network interface
     UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
 }
@@ -346,7 +355,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    y2milestone( "Starting FCoE canceled" );
 	    return nil;
 	} 	
-
+	
 	// Get values and exchange list (table) entries
 	fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", card["vlan_interface"]:"" );
 
@@ -358,7 +367,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
 	   
 	    // command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
-	    FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %1", fcoe_vlan_interface ) );
+	    FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
 	}
 	else
 	{
@@ -417,7 +426,7 @@ to an already activated multipath device.");
 	    y2milestone( "Removing %1",  card["fcoe_vlan"]:"" );
 
 	    // call fcoeadm -d <fcoe_vlan> first (bnc #719443)
-	    command = sformat( "fcoeadm -d %1", card["fcoe_vlan"]:"") ;
+	    command = sformat( "fcoeadm -d %1", card["cfg_file"]:"") ;
 	    y2milestone( "Calling %1", command );
 	    output = (map)SCR::Execute( .target.bash_output, command );
 	    y2milestone( "Output: %1", output );
