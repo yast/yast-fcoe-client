@@ -85,7 +85,9 @@ boolean ReallyAbort() {
 		    y2milestone( "Output: %1", output );
 		    if ( output["exit"]:255 != 0 )
 		    {
-			Popup::Error( sformat( _("Command %1 failed"), command ) );
+			// text of an error popup
+			Popup::Error( sformat( _("Cannot remove the FCoE interface.
+Command %1 failed."), command ) );
 		    }
 		} );
 	    FcoeClient::ResetRevertCommands(); // important during installation
