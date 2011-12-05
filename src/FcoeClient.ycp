@@ -451,7 +451,7 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, string devic
 	if ( !FileUtils::Exists( file_name ) )
 	{
 	    y2warning( "Cannot read config file for %1 in /etc/fcoe", vlan_device_name );
-	    Popup::Warning( sformat(_("Cannot read config file for %1.
+	    Report::Warning( sformat(_("Cannot read config file for %1.
 You may edit the settings and recreate the FCoE
 VLAN interface to get a valid configuration."), vlan_device_name) );
 	    return status_map;
@@ -599,7 +599,7 @@ global boolean ServiceStatus()
 	else
 	{
 	    y2error( "Cannot start service lldpad - '/etc/init.d/boot.lldpad start' failed" );
-	    Popup::Error( "Cannot start service lldpad.
+	    Report::Error( "Cannot start service lldpad.
 '/etc/init.d/boot.lldpad start' failed" );
 	    ret = false;
 	}
@@ -620,7 +620,7 @@ global boolean ServiceStatus()
 	else
 	{
 	    y2error( "Cannot start FCoE service - '/etc/init.d/boot.fcoe start' failed" );
-	    Popup::Error( "Cannot start FCoE service.
+	    Report::Error( "Cannot start FCoE service.
 '/etc/init.d/boot.fcoe start' failed" );
 	    ret = false;
 	}
