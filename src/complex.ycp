@@ -369,7 +369,10 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
 	   
 	    // command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
-	    FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
+	    // FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
+	    // 'fcoeadm -d <if>/<if>.<vlan>' fails here, 'vconfig rem <if>.<vlan>' succeeds
+	    // and removes the interface properly (tested on RC1)
+	    FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 	}
 	else
 	{
