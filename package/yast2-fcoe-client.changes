@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Dec  6 13:52:56 CET 2011 - gs@suse.de
+
+- Don't allow to change AUTO_VLAN setting for a configured device,
+  set interface for fcoeadm -d according to AUTO_VLAN setting 
+- 2.17.23
+
+-------------------------------------------------------------------
 Wed Nov 23 10:07:53 CET 2011 - gs@suse.de
 
 - Set BOOTPROTO to 'static' when creating ifcfg-file,
