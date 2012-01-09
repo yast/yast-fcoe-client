@@ -34,5 +34,5 @@ Ethernet (FCoE) configuration.
 %dir @scrconfdir@
 @scrconfdir@/*.scr
 %doc @docdir@
-%doc COPYING.GPL2
+%doc COPYING
 
