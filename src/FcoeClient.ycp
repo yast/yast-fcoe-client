@@ -288,7 +288,9 @@ boolean CheckInstalledPackages()
 //
 global map GetVlanInterfaces( list net_devices )
 {
-    string vlan_cmd = "LANG=POSIX fipvlan";
+    // Add option -u (or --link_up): don't shut down interfaces
+    // to be able to detect DCB state afterwards (see bnc #737683)
+    string vlan_cmd = "LANG=POSIX fipvlan -u";
     map vlan_info = $[];
     
     foreach ( string dev, (list<string>)net_devices, {
@@ -583,6 +585,8 @@ global map<string, boolean> GetStartStatus()
 // 
 global boolean ServiceStatus()
 {
+    boolean success = true;
+    
     // Loading of modules in Stage::initial() is not required (like in IsciClientLib.ycp, line 523 )
     // see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
     boolean ret = true;
@@ -590,7 +594,7 @@ global boolean ServiceStatus()
     // first start lldpad
     if ( Service::Status( "boot.lldpad" ) != 0 ) 
     {
-	boolean success = Service::Start( "boot.lldpad" );
+	success = Service::Start( "boot.lldpad" );
 	if ( success )
 	{
 	    y2milestone( "Lldpad started (/etc/init.d/boot.lldpad start)");
@@ -609,9 +613,14 @@ global boolean ServiceStatus()
 	y2milestone( "Lldpad service is running");
     }
 
-    if ( Service::Status( "boot.fcoe" ) != 0 ) 
+    if ( Service::Status( "boot.fcoe" ) != 0 )
     {
-	boolean success = Service::Start( "boot.fcoe" );
+	// workaround for installed system (see bnc #737798)
+	if ( Stage::normal() )
+	    success = Service::Restart( "boot.fcoe" );
+	else
+	    success = Service::Start( "boot.fcoe" );
+	
 	if ( success )
 	{
 	    y2milestone( "FCoE started (/etc/init.d/boot.fcoe start)");
