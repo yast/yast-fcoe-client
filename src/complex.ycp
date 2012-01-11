@@ -55,11 +55,11 @@ boolean ReallyAbort() {
     y2milestone( "Aborting FCoE configuration" );
 
     // revert start of 'fcoe' or 'lldpad' 
-    if ( FcoeClient::fcoe_started )
+    if ( FcoeClient::fcoe_started && !Service::Enabled( "boot.fcoe" ) )
     {
 	Service::Stop( "boot.fcoe" );
     }
-    if ( FcoeClient::lldpad_started )
+    if ( FcoeClient::lldpad_started && !Service::Enabled( "boot.lldpad" ) )
     {
 	Service::Stop( "boot.lldpad" );
     }
