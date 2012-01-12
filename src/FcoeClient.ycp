@@ -615,11 +615,7 @@ global boolean ServiceStatus()
 
     if ( Service::Status( "boot.fcoe" ) != 0 )
     {
-	// workaround for installed system (see bnc #737798)
-	if ( Stage::normal() )
-	    success = Service::Restart( "boot.fcoe" );
-	else
-	    success = Service::Start( "boot.fcoe" );
+	success = Service::Start( "boot.fcoe" );
 	
 	if ( success )
 	{

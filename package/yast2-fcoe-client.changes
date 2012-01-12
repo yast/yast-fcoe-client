@@ -2,8 +2,7 @@
 Thu Jan 12 10:04:53 CET 2012 - gs@suse.de
 
 - Call 'fipvlan' with option --link-up to be able to detect the
-  DCB state (bnc #737683),
-  restart fcoe on installed system (workaround for bnc #737798) 
+  DCB state (bnc #737683)
 - 2.17.24
 
 -------------------------------------------------------------------
