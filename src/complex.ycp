@@ -54,11 +54,11 @@ boolean ReallyAbort() {
     y2milestone( "Aborting FCoE configuration" );
 
     // revert start of 'fcoe' or 'lldpad' 
-    if ( FcoeClient::fcoe_started )
+    if ( FcoeClient::fcoe_started && !Service::Enabled( "boot.fcoe" ) )
     {
 	Service::Stop( "boot.fcoe" );
     }
-    if ( FcoeClient::lldpad_started )
+    if ( FcoeClient::lldpad_started && !Service::Enabled( "boot.lldpad" ) )
     {
 	Service::Stop( "boot.lldpad" );
     }
@@ -82,7 +82,12 @@ boolean ReallyAbort() {
 		    y2milestone( "Calling %1", command );
 		    map output = (map)SCR::Execute( .target.bash_output, command );
 		    y2milestone( "Output: %1", output );
-
+		    if ( output["exit"]:255 != 0 )
+		    {
+			// text of an error popup
+			Popup::Error( sformat( _("Cannot remove the FCoE interface.
+Command %1 failed."), command ) );
+		    }
 		} );
 	    FcoeClient::ResetRevertCommands(); // important during installation
 	}
@@ -236,6 +241,12 @@ void InitEditDialog( string id )
     UI::ChangeWidget( `id(`fcoe), `Value, card["fcoe_enable"]:"" );
     UI::ChangeWidget( `id(`dcb), `Value, card["dcb_required"]:"" );
     UI::ChangeWidget( `id(`auto), `Value, card["auto_vlan"]:"" );
+    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED )
+    {
+	// don't allow to change AUTO_VLAN for a configured interface
+	// (would require new /etc/fcoe/cfg-file)
+	UI::ChangeWidget( `id(`auto), `Enabled, false );	
+    }
     // headline of the edit dialog - configuration of values for a certain network interface
     UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
 }
@@ -280,7 +291,6 @@ symbol HandleInterfacesDialog( string id, map event )
 
 	string command = "";
 	map output = $[];	 
-	string vlan_interface = "";
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
 
@@ -346,8 +356,8 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    y2milestone( "Starting FCoE canceled" );
 	    return nil;
 	} 	
-
-	// Get values and exchange list (table) entry
+	
+	// Get values and exchange list (table) entries
 	fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", card["vlan_interface"]:"" );
 
 	if ( fcoe_vlan_interface != "" )
@@ -358,7 +368,10 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
 	   
 	    // command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
-	    FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %1", fcoe_vlan_interface ) );
+	    // FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
+	    // 'fcoeadm -d <if>/<if>.<vlan>' fails here, 'vconfig rem <if>.<vlan>' succeeds
+	    // and removes the interface properly (tested on RC1)
+	    FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 	}
 	else
 	{
@@ -389,25 +402,35 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	map output = $[];
 	string command = "";
 	// popup text: really remove FCoE VLAN interface
-	string popup_text =  sformat( _("Do you really want to remove the FCoE VLAN device %1?"),
+	string popup_text =  sformat( _("Do you really want to remove the FCoE interface %1?"),
 					card["fcoe_vlan"]:"" );
 
 	if ( !Stage::initial() )
 	{
 	    // popup text continues 
-	    popup_text = popup_text + "\n" + _("Please note: The device won't be restored on 'Cancel'.");
+	    popup_text = popup_text + "\n" + _("Attention:
+Make sure the interface is not essential for a used device.
+Removing it may result in an unusable system.");
+	}
+	else
+	{
+	    // popup text continues
+	     popup_text = popup_text + "\n" + _("Don't remove the interface if it's related
+to an already activated multipath device.");
 	}
 	
-	// headline of a popup
-	boolean ret = Popup::YesNoHeadline( _("Removing FCoE VLAN Device"),
-					    popup_text );
+	boolean ret = Popup::AnyQuestion( Label::WarningMsg(),
+					  popup_text,
+					  Label::ContinueButton(),
+					  Label::CancelButton(),
+					  `focus_no );	// default: Cancel
 	
 	if ( ret == true )
 	{
 	    y2milestone( "Removing %1",  card["fcoe_vlan"]:"" );
 
 	    // call fcoeadm -d <fcoe_vlan> first (bnc #719443)
-	    command = sformat( "fcoeadm -d %1", card["fcoe_vlan"]:"") ;
+	    command = sformat( "fcoeadm -d %1", card["cfg_file"]:"") ;
 	    y2milestone( "Calling %1", command );
 	    output = (map)SCR::Execute( .target.bash_output, command );
 	    y2milestone( "Output: %1", output );
@@ -433,8 +456,9 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		    // set new values in global map network_interfaces
 		    card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
 		    card["fcoe_enable"] = "yes";
-		    card["dcb_required"] = (card["dcb_capable"]:""=="yes")?"yes":"no";
-		    card["auto_vlan"] = "no";
+		    // exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
+		    card["dcb_required"] = ((card["driver"]:"" != "bnx2x") && (card["dcb_capable"]:""=="yes"))?"yes":"no";
+		    card["auto_vlan"] = "yes"; // default is "yes" (bnc #724563)
 		    card["cfg_file"] = "";
 		    FcoeClient::SetModified( true );
 
@@ -450,7 +474,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		}
 		else
 		{
-		    Popup::Error( sformat( _("Removing of interface %1 failed."), card["fcoe_vlan"]:"") );
+		    Popup::Error( sformat( _("Removing of interface %1 failed"), card["fcoe_vlan"]:"") );
 		    y2error( "Removing of interface %1 failed", card["fcoe_vlan"]:"" );
 		}	
 	    }
@@ -483,8 +507,7 @@ symbol HandleEditDialog( string id, map event )
 	 {	 
 	     // text of a warning popup
 	     Popup::Warning( _("DCB Required is set to \"yes\" but the
-interface isn't DCB capable.
-") );
+interface isn't DCB capable.") );
 	     y2warning( "DCB_REQUIRED is set to yes but the interface isn't DCB capable" );
 	 }
      }
@@ -505,6 +528,14 @@ void StoreServicesDialog (string id, map event)
     
     boolean lldpad_auto = (boolean)UI::QueryWidget( `id ("lldpad_startup_auto"), `Value );
 
+    if ( fcoe_auto && !lldpad_auto )
+    {
+	// text of an information (notify)  popup
+	Popup::Notify( _( "Service 'fcoe' requires enabled service 'lldpad'.
+Enabling start on boot of service 'lldpad'." ) );
+	lldpad_auto = true;
+    }
+    
     FcoeClient::SetStartStatus( "lldpad", lldpad_auto );
     y2milestone( "Setting auto start of service 'lldpad' to: %1", lldpad_auto );
 }

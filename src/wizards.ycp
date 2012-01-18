@@ -172,7 +172,7 @@ any GlobalDialog() {
     Wizard::SetAbortButton(`abort, Label::CancelButton());
     Wizard::HideBackButton();
 
-    // TODO: rename icon to yast2-fcoe-client (yast2-theme package)
+    // TODO: rename icon to yast-fcoe (yast2-theme package)
     if (Mode::normal ())
     	Wizard::SetDesktopTitleAndIcon("fcoe-client");
     else
