@@ -36,3 +36,5 @@ Ethernet (FCoE) configuration.
 %doc @docdir@
 %doc COPYING
 
+%changelog
+
