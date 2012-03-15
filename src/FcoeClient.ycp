@@ -53,13 +53,26 @@ import "FileUtils";
 global boolean Modified();
 
 /**
- * Data was modified?
+ * Data
+ */
+
+/**
+ * data modified?
  */
 boolean modified = false;
 
 /**
+ * proposal valid?
  */
 boolean proposal_valid = false;
+
+/**
+ * Number of retries for fipvlan (default is 20).
+ * The number is reduced to 10 to make detection faster. 10 seconds (10 retries *
+ * 1000 ms) should be enough time for most interfaces. If not there is the
+ * possibility to retry interface dedection using 'Retry'.
+ */
+string number_of_retries = "10";
 
 /**
  * Write only, used during autoinstallation.
@@ -292,7 +305,10 @@ global map GetVlanInterfaces( list net_devices )
     // to be able to detect DCB state afterwards (see bnc #737683)
     string vlan_cmd = "LANG=POSIX fipvlan -u";
     map vlan_info = $[];
-    
+
+    if ( !Mode::autoinst() )
+        vlan_cmd = vlan_cmd + " -l " + FcoeClient::number_of_retries;      // reduce number of retries 
+
     foreach ( string dev, (list<string>)net_devices, {
 	    vlan_cmd = vlan_cmd + " " + dev;
 	} );

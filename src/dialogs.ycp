@@ -140,8 +140,9 @@ term InterfacesDialogContent () {
 				    []
 				    ),
 			     // button labels
-			     `Left(`HBox( `PushButton(`id(`edit), _("Change &Settings")),
-					  `PushButton(`id(`create), _("Create FCoE &VLAN Interface")),
+			     `Left(`HBox( `PushButton(`id(`retry), _("Retry &Detection")),
+                                          `PushButton(`id(`edit), _("Change &Settings")),
+					  `PushButton(`id(`create), _("Create &FCoE Interface")),
 					  `PushButton(`id(`remove), _("&Remove Interface")) )
 				   )
 			     )

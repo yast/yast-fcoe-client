@@ -178,9 +178,8 @@ void AdjustButtons()
     }
 }
 
-
-void InitInterfacesDialog (string id) {
-    y2milestone( "Init interfaces dialog" );
+void ShowInterfaces()
+{
     string vlan_interface = "";
     integer row = 0;
     
@@ -200,9 +199,17 @@ void InitInterfacesDialog (string id) {
     UI::ChangeWidget( `id(`interfaces), `Items, table_items );
     // set current item 
     UI::ChangeWidget( `id(`interfaces), `CurrentItem, `id(0) );
+
     FcoeClient::current_card = 0;
     
+}
+
+void InitInterfacesDialog (string id) {
+    y2milestone( "Init interfaces dialog" );
+
+    ShowInterfaces();
     AdjustButtons();
+
 }
 
 //
@@ -275,6 +282,12 @@ symbol HandleInterfacesDialog( string id, map event )
     {
 	FcoeClient::current_card = (integer)UI::QueryWidget( `id(`interfaces), `CurrentItem );
 	AdjustButtons();
+    }
+    else if ( action == `retry )
+    {
+        FcoeClient::ResetNetworkCards();
+        FcoeClient::DetectNetworkCards();
+        ShowInterfaces();
     }
     else if ( action == `create )
     {
