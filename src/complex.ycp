@@ -301,9 +301,9 @@ symbol HandleInterfacesDialog( string id, map event )
 
 	map card = FcoeClient::GetCurrentNetworkCard();
 	string dev_name = card["dev_name"]:"";
-
-	string command = "";
-	map output = $[];	 
+	string command = sformat( "fipvlan -c -s %1", dev_name );
+	
+        map output = $[];	 
 	string fcoe_vlan_interface = "";
 	map status_map = $[];
 
@@ -319,9 +319,9 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	{
 	    if ( Stage::initial() )	// first stage of installation - create and start FCoE VLAN interface
 	    {
-		// create and start FCoE e.g. 'fipvlan -c -s eth3'
-		command = sformat( "fipvlan -c -s %1", dev_name );
-		y2milestone( "Executing command: %1", command );
+		// execute command, e.g. 'fipvlan -c -s eth3'
+
+                y2milestone( "Executing command: %1", command );
 		output = (map)SCR::Execute( .target.bash_output, command );
 		y2milestone( "Output: %1", output );
 	 
@@ -334,9 +334,6 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    }
 	    else	// installed system - if VLAN already exists only start FCoE
 	    {
-		// create and start FCoE
-		command = sformat( "fipvlan -c -s %1", dev_name );
-
                 // if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
 		// call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
 		if ( FileUtils::Exists( ifcfg_file ) ) 
