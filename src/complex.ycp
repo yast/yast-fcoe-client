@@ -377,8 +377,7 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	{
 	    y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface );
 	    // write config for FCoE VLAN interface
-	    FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
-	    status_map = FcoeClient::GetFcoeStatus ( fcoe_vlan_interface, card["dev_name"]:"" );
+	    status_map = FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
 	   
 	    // command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
 	    // FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );

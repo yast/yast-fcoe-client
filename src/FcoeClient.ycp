@@ -377,11 +377,12 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 // Create /etc/fcoe/cfg-<if> or /etc/fcoe/cfg-<if>.<vlan>
 // (depending on AUTO_VLAN setting)
 //
-global void CreateFcoeConfig( string vlan_device_name, map netcard )
+global map<string, string> CreateFcoeConfig( string vlan_device_name, map netcard )
 {
     string file_name = "";
     boolean file_exists = false;
-    
+    map <string, string> status_map = $[];
+ 
     // if AUTO_VLAN is set to "yes"
     if ( netcard["auto_vlan"]:"no" == "yes" )
     {
@@ -429,6 +430,11 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
 	if ( file_exists )
 	{
 	    AddRevertCommand( sformat( "rm %1", file_name ) );
+            // fill status map
+            status_map = add( status_map, "FCOE_ENABLE", netcard["fcoe_enable"]:"yes");
+            status_map = add( status_map, "DCB_REQUIRED", netcard["dcb_required"]:"no");
+            status_map = add( status_map, "AUTO_VLAN", netcard["auto_vlan"]:"no");
+            status_map = add( status_map, "cfg_device", file_name ); 
 	}
 	else
 	{
@@ -439,6 +445,8 @@ global void CreateFcoeConfig( string vlan_device_name, map netcard )
     {
 	y2error( "Cannot read /etc/fcoe/cfg-ethx" );
     }
+    
+    return status_map;
 }
 
 //
