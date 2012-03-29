@@ -483,7 +483,7 @@ to an already activated multipath device.");
 		}
 		else
 		{
-		    Popup::Error( sformat( _("Removing of interface %1 failed"), card["fcoe_vlan"]:"") );
+		    Popup::Error( sformat( _("Removing of interface %1 failed."), card["fcoe_vlan"]:"") );
 		    y2error( "Removing of interface %1 failed", card["fcoe_vlan"]:"" );
 		}	
 	    }
@@ -540,8 +540,8 @@ void StoreServicesDialog (string id, map event)
     if ( fcoe_auto && !lldpad_auto )
     {
 	// text of an information (notify)  popup
-	Popup::Notify( _( "Service 'fcoe' requires enabled service 'lldpad'.
-Enabling start on boot of service 'lldpad'." ) );
+	Popup::Notify( _("Service 'fcoe' requires enabled service 'lldpad'.
+Enabling start on boot of service 'lldpad'.") );
 	lldpad_auto = true;
     }
     

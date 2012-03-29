@@ -953,7 +953,7 @@ global boolean Read()
 					 /* Progress stage 3/3 */
 					 _("Detect network cards"),
 					 /* Progress stage 4/4 */
-					 _("Read /etc/fcoe/config" )
+					 _("Read /etc/fcoe/config")
 					 ], [
 					     /* Progress step 1/3 */
 					     _("Checking for installed packages..."),
@@ -962,7 +962,7 @@ global boolean Read()
 					     /* Progress step 3/3 */
 					     _("Detecting network cards..."),
 					     /* Progress step 4/4 */
-					     _("Reading /etc/fcoe/config" ),
+					     _("Reading /etc/fcoe/config"),
 					     /* Progress finished */
 					     _("Finished")
 					     ],
