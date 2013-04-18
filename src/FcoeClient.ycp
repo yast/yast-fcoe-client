@@ -325,13 +325,23 @@ global map GetVlanInterfaces( list net_devices )
 		    // check whether there is a line for the given interface, e.g.
 		    // eth3            | 200  | 00:0d:ec:a2:ef:00\n
 		    // and extract name/number of VLAN channel.
-		    if ( String::StartsWith( line, dev ) )
+                    line = deletechars( line, " \t" );
+                    list<string> columns = splitstring( line, "|" );
+		    if ( columns[0]:"" == dev )
 		    {
-			line = deletechars( line, " \t" );
-			string vlan_interface = substring( line, findfirstof( line, "|" )+1,
-						    findlastof( line, "|" )-findfirstof( line, "|")-1 );
+			string vlan_interface = columns[1]:"";
 			y2milestone( "Interface: %1 VLAN: %2", dev, vlan_interface );
-			vlan_info = add( vlan_info, dev, vlan_interface );
+                        // don't overwrite interface
+                        if ( vlan_info[dev]:"" == "" )
+                        {
+                            vlan_info = add( vlan_info, dev, vlan_interface );
+                        }
+                        else
+                        {
+                            Popup::Warning( sformat(_("Multiple VLAN interfaces discovered for device %1.
+YaST FCoE configuration handles one VLAN interface per device.
+VLAN interface %2 is taken."), dev, vlan_info[dev]:"") );
+                        }
 		    }
 		} );
 	} );
