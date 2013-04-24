@@ -81,6 +81,26 @@ string number_of_retries = "10";
 boolean write_only = false;
 
 /**
+ */
+boolean test_mode = false;
+
+/**
+ * Constructor
+ */
+global void FcoeClient()
+{
+    if ( getenv("FCOE_CLIENT_TEST_MODE") == "1" )
+    {
+        y2milestone( "Running in test mode" );
+        test_mode = true;
+    }
+    else
+    {
+        test_mode = false;
+    }
+}
+
+/**
  * Abort function
  * return boolean return true if abort
  */
@@ -128,6 +148,14 @@ global void SetProposalValid(boolean value) {
  */
 global boolean WriteOnly() {
     return write_only;
+}
+
+/**
+ * @return true if test mode is set (environment variable FCOE_CLIENT_TEST_MODE)
+ */
+global boolean TestMode()
+{
+    return test_mode;
 }
 
 /**
@@ -317,8 +345,18 @@ global map GetVlanInterfaces( list net_devices )
     y2milestone( "Executing command: %1", vlan_cmd );
     map output = (map)SCR::Execute( .target.bash_output, vlan_cmd );
     y2milestone( "Output: %1", output );
- 
-    list <string> lines = splitstring( output["stdout"]:"", "\n" );
+
+    list <string> lines = [];
+    if ( !TestMode() )
+    {
+        lines = splitstring( output["stdout"]:"", "\n" );
+    }
+    else        // fake test data
+    {
+        lines = splitstring("Fibre Channel Forwarders
+< Discovered\ninterface       | VLAN | FCF MAC
+< \n------------------------------------------\neth15           | 0 |54:7f:ee:04:55:9f\neth15           | 2011    | 54:7f:ee:04:55:9f\n\n", "\n");
+    }
 
     foreach ( string dev, (list<string>)net_devices, {
 	    foreach( string line, (list<string>)lines, {
@@ -331,16 +369,16 @@ global map GetVlanInterfaces( list net_devices )
 		    {
 			string vlan_interface = columns[1]:"";
 			y2milestone( "Interface: %1 VLAN: %2", dev, vlan_interface );
-                        // don't overwrite interface
+                        // don't overwrite existing entry
                         if ( vlan_info[dev]:"" == "" )
                         {
                             vlan_info = add( vlan_info, dev, vlan_interface );
                         }
                         else
                         {
-                            Popup::Warning( sformat(_("Multiple VLAN interfaces discovered for device %1.
-YaST FCoE configuration handles one VLAN interface per device.
-VLAN interface %2 is taken."), dev, vlan_info[dev]:"") );
+                            Report::Warning( sformat(_("Additional VLAN interface %1 discovered for device %2.
+YaST FCoE configuration handles only one VLAN interface per device.
+VLAN interface %3 was taken."), vlan_interface, dev, vlan_info[dev]:"") );
                         }
 		    }
 		} );
@@ -393,8 +431,8 @@ global map<string, string> CreateFcoeConfig( string vlan_device_name, map netcar
     boolean file_exists = false;
     map <string, string> status_map = $[];
  
-    // if AUTO_VLAN is set to "yes"
-    if ( netcard["auto_vlan"]:"no" == "yes" )
+    // if AUTO_VLAN is set to "yes" or VLAN is set to "0" (means no VLAN created but FCoE started on device)
+    if ( netcard["auto_vlan"]:"no" == "yes" || netcard["vlan_interface"]:"" == "0" )
     {
 	// set file name to cfg-<interface>, e.g. /etc/fcoe/cfg-eth3
 	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" ); 
@@ -486,10 +524,7 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, string devic
 
 	if ( !FileUtils::Exists( file_name ) )
 	{
-	    y2warning( "Cannot read config file for %1 in /etc/fcoe", vlan_device_name );
-	    Report::Warning( sformat(_("Cannot read config file for %1.
-You may edit the settings and recreate the FCoE
-VLAN interface to get a valid configuration."), vlan_device_name) );
+            // return empty status map
 	    return status_map;
 	}
 	device = device_name;
@@ -680,9 +715,18 @@ global boolean ServiceStatus()
 //
 global boolean DetectNetworkCards()
 {
-    list <map> netcards = (list<map>)SCR::Read(.probe.netcard);
-    y2milestone( "Detected netcards: %1", netcards );
+    list <map> netcards = [];
 
+    if ( !TestMode() )
+    {
+        netcards = (list<map>)SCR::Read(.probe.netcard);
+    }
+    else        // fake test data
+    {
+        netcards = [$["bus":"PCI", "bus_hwcfg":"pci", "class_id":2, "dev_name":"eth1", "dev_names":["eth1"], "device":"TEST Ethernet Controller", "model":"Intel PRO/1000 MT Desktop Adapter"], $["bus":"PCI", "bus_hwcfg":"pci", "class_id":2, "dev_name":"eth15", "dev_names":["eth15"], "device":"TEST Gigabit Ethernet Controller", "model":"Intel PRO/1000 MT Desktop Adapter"]];
+    }
+    y2milestone( "Detected netcards: %1", netcards );
+    
     if ( netcards == [] || netcards == nil )
 	return false;
 
@@ -710,13 +754,27 @@ global boolean DetectNetworkCards()
 	    }
 	    else
 	    {
-		fcoe_vlan_interface = GetFcoeVlanInterface( card["dev_name"]:"", vlan_info[card["dev_name"]:""]:"" );
-
+                if ( vlan_info[card["dev_name"]:""]:"" == "0" )
+                {
+                    // for VLAN interface "0" means start FCoE on network interface (without creating a VLAN)
+                    fcoe_vlan_interface = card["dev_name"]:"";
+                }
+                else    // get FCoE VLAN interface from /proc/net/vlan/config
+                {
+                    fcoe_vlan_interface = GetFcoeVlanInterface( card["dev_name"]:"", vlan_info[card["dev_name"]:""]:"" );
+                }
 		if ( fcoe_vlan_interface != "" )
 		{
 		    status_map = GetFcoeStatus( fcoe_vlan_interface, card["dev_name"]:"" );
 		    if ( status_map == $[] )
 		    {
+                        if ( vlan_info[card["dev_name"]:""]:"" != "0" )
+                        {
+                            y2warning( "Cannot read config file for %1 in /etc/fcoe", fcoe_vlan_interface );
+                            Report::Warning( sformat(_("Cannot read config file for %1.
+You may edit the settings and recreate the FCoE
+VLAN interface to get a valid configuration."), fcoe_vlan_interface) ); 
+                        }
 			// the interface isn't configured correctly 
 			fcoe_vlan_interface = NOT_CONFIGURED;
 		    }
@@ -830,13 +888,16 @@ global boolean WriteSysconfigFiles( )
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&		// FCoE VLAN is configured
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED  )
 	    {
-		y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
-		// write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
-		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "BOOTPROTO", "static" );
-		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "STARTMODE", "nfsroot" );
-		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "ETHERDEVICE", card["dev_name"]:"" );
-		SCR::Write(.network.value + card["fcoe_vlan"]:"" + "USERCONTROL", "no" );
-
+                // write ifcfg-<if>.>VLAN> only if VLAN was created 
+                if ( card["vlan_interface"]:"" != "0" )
+                {
+                    y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
+                    // write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
+                    SCR::Write(.network.value + card["fcoe_vlan"]:"" + "BOOTPROTO", "static" );
+                    SCR::Write(.network.value + card["fcoe_vlan"]:"" + "STARTMODE", "nfsroot" );
+                    SCR::Write(.network.value + card["fcoe_vlan"]:"" + "ETHERDEVICE", card["dev_name"]:"" );
+                    SCR::Write(.network.value + card["fcoe_vlan"]:"" + "USERCONTROL", "no" );
+                }
 		string ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", card["dev_name"]:"" );
 		y2milestone( "Writing %1", ifcfg_file );
 		

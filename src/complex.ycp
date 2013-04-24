@@ -355,9 +355,17 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 		y2milestone( "Output: %1", output );
 		if ( output["exit"]:255 != 0 )
 		{
-		    // text of an error popup: command failed on the network interface 
-		    Popup::Error( sformat( _("Command \"%1\" on %2 failed."), command, dev_name ) ); 
-		    return nil;
+                    if ( !FcoeClient::TestMode() )
+                    {
+                        // text of an error popup: command failed on the network interface 
+                        Popup::Error( sformat( _("Command \"%1\" on %2 failed."), command, dev_name ) );
+                        return nil;
+                    }
+                    else
+                    {
+                        Popup::Warning( _("Creating FCoE interface failed.
+Continue because running in test mode") );
+                    }
 		}
 	    }
 	}
@@ -366,9 +374,18 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    y2milestone( "Starting FCoE canceled" );
 	    return nil;
 	} 	
-	
+
 	// Get values and exchange list (table) entries
-	fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", card["vlan_interface"]:"" );
+
+        if ( card["vlan_interface"]:"" == "0" )
+        {
+             // for VLAN interface "0" there isn't an entry in /proc/net/vlan/config
+            fcoe_vlan_interface =  card["dev_name"]:"" ;
+        }
+        else  // get interface from /proc/net/vlan/config
+        {
+            fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", card["vlan_interface"]:"" );
+        }
 
 	if ( fcoe_vlan_interface != "" )
 	{
