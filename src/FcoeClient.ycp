@@ -339,7 +339,7 @@ global map GetVlanInterfaces( list net_devices )
     {
         lines = splitstring("Fibre Channel Forwarders
 < Discovered\ninterface       | VLAN | FCF MAC
-< \n------------------------------------------\neth15           | 2011 |54:7f:ee:04:55:9f\neth15           | 0    | 54:7f:ee:04:55:9f\neth15           | 200    | 54:7f:ee:04:55:9f\n\n", "\n");
+< \n------------------------------------------\neth15           | 2011 |54:7f:ee:04:55:9f\neth15           | 0    | 54:7f:ee:04:55:9f\neth15           | 200    | 54:7f:ee:04:55:9f\neth1           | 300 |54:7f:ee:04:55:9f\n\n", "\n");
     }
 
     foreach ( string dev, (list<string>)net_devices, {
@@ -354,21 +354,10 @@ global map GetVlanInterfaces( list net_devices )
 			string vlan_interface = columns[1]:"";
 			y2milestone( "Interface: %1 VLAN: %2", dev, vlan_interface );
 
-                        if ( vlan_info[dev]:"" == "" )
+                        // overwrite existing entry for VLAN 0 (see bnc #813621)
+                        if ( vlan_info[dev]:"" == "" || vlan_interface == "0" )
                         {
                             vlan_info = add( vlan_info, dev, vlan_interface );
-                        }
-                        else
-                        {
-                            string old_if = vlan_info[dev]:"";
-                            // take VLAN '0', it's intended to start FCoE on physical device (see bnc #813621)
-                            if ( vlan_interface == "0" )
-                            {
-                                vlan_info = add( vlan_info, dev, vlan_interface ); 
-                            }
-                            Report::Warning( sformat(_("Additional to VLAN interface %1, VLAN %2 is discovered for device %3.
-YaST FCoE configuration handles only one VLAN interface per device.
-VLAN interface %4 is taken."), old_if, vlan_interface, dev, vlan_info[dev]:"") );
                         }
 		    }
 		} );
@@ -496,7 +485,7 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, string devic
 	return $[];
     }
 
-    y2milestone( "VLAN channel %1 found", vlan_device_name );
+    y2milestone( "Checking configuration for %1", vlan_device_name );
 
     file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
 
@@ -506,7 +495,7 @@ global map <string, string> GetFcoeStatus( string vlan_device_name, string devic
 
 	if ( !FileUtils::Exists( file_name ) )
 	{
-            // return empty status map
+            // no config file found - return empty status map
 	    return status_map;
 	}
 	device = device_name;
@@ -758,7 +747,11 @@ global boolean DetectNetworkCards()
 You may edit the settings and recreate the FCoE
 VLAN interface to get a valid configuration."), fcoe_vlan_interface) ); 
                         }
-			// the interface isn't configured correctly 
+                        else
+                        {
+                            y2milestone( "FCoE not configured" );
+                        }
+			// the interface isn't configured correctly
 			fcoe_vlan_interface = NOT_CONFIGURED;
 		    }
 		}
