@@ -134,7 +134,7 @@ term InterfacesDialogContent () {
 		       `VBox(
 			     `Table(`id(`interfaces), `opt(`notify, `immediate, `keepSorting ),
 				    // column headers of a table with network interfaces (keep them short)
-				    `header(_("Device Name"), _("MAC Address"), _("Model"), _("FCoE VLAN Interface"),
+				    `header(_("Device"), _("MAC Address"), _("Model"), _("FCoE VLAN Interface"),
 					    // continue column headers 
 					    _("FCoE Enable"), _("DCB Required"), _("AUTO VLAN"), _("DCB capable") ),
 				    []

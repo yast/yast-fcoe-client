@@ -416,10 +416,10 @@ Continue because running in test mode") );
 	y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
 	    
 	// replace values in table 
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), fcoe_vlan_interface );
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), status_map["FCOE_ENABLE"]:"" );
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["DCB_REQUIRED"]:"" );
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["AUTO_VLAN"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), fcoe_vlan_interface );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["FCOE_ENABLE"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["DCB_REQUIRED"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 6), status_map["AUTO_VLAN"]:"" );
 	AdjustButtons();
     }
     else if ( action == `remove )
@@ -492,10 +492,10 @@ to an already activated multipath device.");
 		    y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
 	    
 		    // replace values in table 
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 2), card["fcoe_vlan"]:"" );
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), card["fcoe_enable"]:"" );
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), card["dcb_required"]:"" );
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), card["auto_vlan"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), card["fcoe_vlan"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), card["fcoe_enable"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), card["dcb_required"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 6), card["auto_vlan"]:"" );
 		    AdjustButtons();
 		}
 		else
