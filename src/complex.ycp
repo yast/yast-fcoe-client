@@ -192,7 +192,7 @@ void InitInterfacesDialog (string id) {
     
     foreach ( map card, (list<map>)netcards, {
 	    table_items = add( table_items,
-			       `item(`id(row), card["dev_name"]:"", card["device"]:"", card["fcoe_vlan"]:"",
+			       `item(`id(row), card["dev_name"]:"", card["mac_addr"]:"", card["device"]:"", card["fcoe_vlan"]:"",
 				     card["fcoe_enable"]:"", card["dcb_required"]:"", card["auto_vlan"]:"", card["dcb_capable"]:"" )
 			       );
 	    row = row + 1;
