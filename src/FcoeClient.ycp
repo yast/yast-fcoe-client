@@ -400,6 +400,9 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 {
     string vlan_device_name = "";
 
+    if ( TestMode() )
+        return interface + "." + vlan_interface;
+
     string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1*.*%2/\\1/p' /proc/net/vlan/config",
 			       vlan_interface, interface );
     y2milestone( "Executing command: %1", command );
@@ -412,6 +415,10 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
     if ( vlan_device_name != "" )
     {
 	y2milestone( "Returning: %1", vlan_device_name );
+    }
+    else
+    {
+        y2error( "FCoE VLAN not found in /proc/net/vlan/config" );
     }
     return vlan_device_name;
 }
@@ -775,7 +782,7 @@ VLAN interface to get a valid configuration."), fcoe_vlan_interface) );
                         {
                             y2milestone( "FCoE not configured" );
                         }
-			// the interface isn't configured correctly
+			// the interface isn't configured
 			fcoe_vlan_interface = NOT_CONFIGURED;
 		    }
 		}
