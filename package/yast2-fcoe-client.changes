@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu May  2 11:41:34 CEST 2013 - gs@suse.de
+
+- Detect FCoE capable interfaces correctly (bnc #813621)
+- Write configuration files for VLAN id 0 (bnc #812602)
+- Show MAC address (bnc #812601)
+- 2.17.25 
+
+-------------------------------------------------------------------
 Thu Jan 12 10:04:53 CET 2012 - gs@suse.de
 
 - Call 'fipvlan' with option --link-up to be able to detect the
