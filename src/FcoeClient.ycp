@@ -339,7 +339,7 @@ global map GetVlanInterfaces( list net_devices )
     {
         lines = splitstring("Fibre Channel Forwarders
 < Discovered\ninterface       | VLAN | FCF MAC
-< \n------------------------------------------\neth15           | 2011 |54:7f:ee:04:55:9f\neth15           | 0    | 54:7f:ee:04:55:9f\neth15           | 200    | 54:7f:ee:04:55:9f\neth1           | 300 |54:7f:ee:04:55:9f\n\n", "\n");
+< \n------------------------------------------\neth15           | 2011 |54:7f:ee:04:55:9f\neth15           | 0    | 54:7f:ee:04:55:9f\neth15           | 200    | 54:7f:ee:04:55:9f\neth1           | 301 |54:7f:ee:04:55:9f\neth1           | 400 |54:7f:ee:04:55:9f\n\n", "\n");
     }
 
     foreach ( string dev, (list<string>)net_devices, {
@@ -354,7 +354,7 @@ global map GetVlanInterfaces( list net_devices )
 			string vlan_interface = columns[1]:"";
 			y2milestone( "Interface: %1 VLAN: %2", dev, vlan_interface );
 
-                        // overwrite existing entry for VLAN 0 (see bnc #813621)
+                        // overwrite existing entry if VLAN = 0 is found (see bnc #813621)
                         if ( vlan_info[dev]:"" == "" || vlan_interface == "0" )
                         {
                             vlan_info = add( vlan_info, dev, vlan_interface );
