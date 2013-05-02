@@ -189,8 +189,16 @@ else if (func == "Write") {
 		    }
 		    else // get FCoE VLAN interface
 		    {
-			fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"", 
-										card["vlan_interface"]:"" );
+                        if ( card["vlan_interface"]:"" == "0" )
+                        {
+                            // VLAN interface "0" means start FCoE on network interface
+                            fcoe_vlan_interface = card["dev_name"]:"";
+                        }
+                        else
+                        {
+                            fcoe_vlan_interface = FcoeClient::GetFcoeVlanInterface( card["dev_name"]:"",
+                                                                                    card["vlan_interface"]:"" );
+                        }
 			if ( fcoe_vlan_interface != "" )
 			{
 			    y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface ); 
