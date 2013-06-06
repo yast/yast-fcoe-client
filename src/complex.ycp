@@ -190,8 +190,9 @@ void ShowInterfaces()
     
     foreach ( map card, (list<map>)netcards, {
 	    table_items = add( table_items,
-			       `item(`id(row), card["dev_name"]:"", card["mac_addr"]:"", card["device"]:"", card["fcoe_vlan"]:"",
-				     card["fcoe_enable"]:"", card["dcb_required"]:"", card["auto_vlan"]:"", card["dcb_capable"]:"" )
+			       `item(`id(row), card["dev_name"]:"", card["mac_addr"]:"", card["device"]:"",
+                                     card["vlan_interface"]:"", card["fcoe_vlan"]:"", card["fcoe_enable"]:"",
+                                     card["dcb_required"]:"", card["auto_vlan"]:"", card["dcb_capable"]:"" )
 			       );
 	    row = row + 1;
 	});
@@ -300,6 +301,7 @@ symbol HandleInterfacesDialog( string id, map event )
 	// Starting FCoE on interface eth3.200
 
 	map card = FcoeClient::GetCurrentNetworkCard();
+        y2milestone( "Selected card: %1", card );
 	string dev_name = card["dev_name"]:"";
 	string command = sformat( "fipvlan -c -s %1", dev_name );
 	
@@ -389,10 +391,10 @@ Continue because running in test mode") );
 
 	if ( fcoe_vlan_interface != "" )
 	{
-	    y2milestone( "FCoE VLAN interface %1 created/started", fcoe_vlan_interface );
 	    // write config for FCoE VLAN interface
-	    status_map = FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
-	   
+	    FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
+            status_map = FcoeClient::GetFcoeStatus( fcoe_vlan_interface,  card["dev_name"]:"" );
+            y2milestone("GOT status map: %1", status_map );
 	    // command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
 	    // FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
 	    // 'fcoeadm -d <if>/<if>.<vlan>' fails here, 'vconfig rem <if>.<vlan>' succeeds
@@ -416,10 +418,10 @@ Continue because running in test mode") );
 	y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
 	    
 	// replace values in table 
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), fcoe_vlan_interface );
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), status_map["FCOE_ENABLE"]:"" );
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["DCB_REQUIRED"]:"" );
-	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 6), status_map["AUTO_VLAN"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), fcoe_vlan_interface );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), status_map["FCOE_ENABLE"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 6), status_map["DCB_REQUIRED"]:"" );
+	UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 7), status_map["AUTO_VLAN"]:"" );
 	AdjustButtons();
     }
     else if ( action == `remove )
