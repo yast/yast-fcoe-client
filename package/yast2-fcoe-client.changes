@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Jun 10 14:30:49 CEST 2013 - gs@suse.de
+
+- Create /etc/fcoe/cfg-file correctly (bug-fix in CreateFcoeConfig)
+
+-------------------------------------------------------------------
 Thu Mar 29 14:39:33 CEST 2012 - jsuchome@suse.cz
 
 - merged proofread texts 
