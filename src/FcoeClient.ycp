@@ -380,17 +380,20 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 global map<string, string> CreateFcoeConfig( string vlan_device_name, map netcard )
 {
     string file_name = "";
+    string device_name = "";
     boolean file_exists = false;
     map <string, string> status_map = $[];
  
     // if AUTO_VLAN is set to "yes"
     if ( netcard["auto_vlan"]:"no" == "yes" )
     {
+        device_name = netcard["dev_name"]:"";
 	// set file name to cfg-<interface>, e.g. /etc/fcoe/cfg-eth3
 	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" ); 
     }
     else
     {
+        device_name = vlan_device_name;
 	// set file name to cfg-<vlan_device_name>, e.g. /etc/fcoe/cfg-eth3.200
 	file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
     }
@@ -434,7 +437,7 @@ global map<string, string> CreateFcoeConfig( string vlan_device_name, map netcar
             status_map = add( status_map, "FCOE_ENABLE", netcard["fcoe_enable"]:"yes");
             status_map = add( status_map, "DCB_REQUIRED", netcard["dcb_required"]:"no");
             status_map = add( status_map, "AUTO_VLAN", netcard["auto_vlan"]:"no");
-            status_map = add( status_map, "cfg_device", file_name ); 
+            status_map = add( status_map, "cfg_device", device_name ); 
 	}
 	else
 	{
