@@ -440,17 +440,20 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 global map<string, string> CreateFcoeConfig( string vlan_device_name, map netcard )
 {
     string file_name = "";
+    string device_name = "";
     boolean file_exists = false;
     map <string, string> status_map = $[];
  
     // if AUTO_VLAN is set to "yes" or VLAN is set to "0" (means no VLAN created but FCoE started on device)
     if ( netcard["auto_vlan"]:"no" == "yes" || netcard["vlan_interface"]:"" == "0" )
     {
+        device_name = netcard["dev_name"]:"";
 	// set file name to cfg-<interface>, e.g. /etc/fcoe/cfg-eth3
-	file_name = sformat( "/etc/fcoe/cfg-%1", netcard["dev_name"]:"" ); 
+	file_name = sformat( "/etc/fcoe/cfg-%1", device_name );
     }
     else
     {
+        device_name = vlan_device_name;
 	// set file name to cfg-<vlan_device_name>, e.g. /etc/fcoe/cfg-eth3.200
 	file_name = sformat( "/etc/fcoe/cfg-%1", vlan_device_name );
     }
@@ -494,9 +497,7 @@ global map<string, string> CreateFcoeConfig( string vlan_device_name, map netcar
             status_map = add( status_map, "FCOE_ENABLE", netcard["fcoe_enable"]:"yes");
             status_map = add( status_map, "DCB_REQUIRED", netcard["dcb_required"]:"no");
             status_map = add( status_map, "AUTO_VLAN", netcard["auto_vlan"]:"no");
-            // FIXME: device_name is needed here NOT file name (like got from GetFcoeStatus)
-            //        Writing to file doesn't work:  FcoeClient.ycp:971 Writing /etc/fcoe/cfg-/etc/fcoe/cfg-eth15
-            //status_map = add( status_map, "cfg_device", file_name );
+            status_map = add( status_map, "cfg_device", device_name );
 	}
 	else
 	{
@@ -762,7 +763,7 @@ global boolean DetectNetworkCards()
 	    string dcb_capable = "";
 	    string dcb_default = "";
 	    
-	    if ( vlan_info[card["dev_name"]:""]:"" == "" )
+	    if ( vlan_info[card["dev_name"]:""]:[] == [] )
 	    {
 		// Interface down or FCoE not enabled on the switch - we can't do anything here.
 		fcoe_vlan_interface = NOT_AVAILABLE;
@@ -804,8 +805,8 @@ global boolean DetectNetworkCards()
                             status_map = GetFcoeStatus( fcoe_vlan_interface, card["dev_name"]:"" );
                             if ( status_map == $[] )
                             {
-                                // if 'fcoe_vlan_interface' is set and 'vlan' is != 0 there must be
-                                // an entry in /proc/net/vlan/config
+                                // if a 'fcoe_vlan_interface' is created for a 'vlan' != 0 there should be
+                                // a valid configuration available
                                 if ( vlan != "0" )
                                 {
                                     y2warning( "Cannot read config file for %1 in /etc/fcoe", fcoe_vlan_interface );
@@ -813,7 +814,7 @@ global boolean DetectNetworkCards()
 You may edit the settings and recreate the FCoE
 VLAN interface to get a valid configuration."), fcoe_vlan_interface) ); 
                                 }
-                                else    // for vlan = 0 there isn't an entry in /proc/net/vlan/config
+                                else    // for vlan == 0 it means FCoE is not (yet) started
                                 {
                                     y2milestone( "FCoE not configured" );
                                 }

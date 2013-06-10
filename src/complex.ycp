@@ -392,13 +392,14 @@ Continue because running in test mode") );
 	if ( fcoe_vlan_interface != "" )
 	{
 	    // write config for FCoE VLAN interface
-	    FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
-            status_map = FcoeClient::GetFcoeStatus( fcoe_vlan_interface,  card["dev_name"]:"" );
+	    status_map = FcoeClient::CreateFcoeConfig( fcoe_vlan_interface, card );
             y2milestone("GOT status map: %1", status_map );
+
 	    // command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
 	    // FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
 	    // 'fcoeadm -d <if>/<if>.<vlan>' fails here, 'vconfig rem <if>.<vlan>' succeeds
-	    // and removes the interface properly (tested on RC1)
+	    // and removes the interface properly (tested on SP2 RC1)
+            // TODO: Retest for SLES12
 	    FcoeClient::AddRevertCommand( sformat("vconfig rem %1", fcoe_vlan_interface ) );
 	}
 	else
