@@ -382,11 +382,8 @@ global map<string, list> GetVlanInterfaces( list net_devices )
                             vlans = add( vlans, vlan_interface );
                             vlan_info[dev] = vlans;
                         }
-                        // overwrite existing entry if VLAN = 0 is found (see bnc #813621)
-                        //if ( vlan_info[dev]:"" == "" || vlan_interface == "0" )
-                        //{
-                        //    vlan_info = add( vlan_info, dev, vlan_interface );
-                        //}
+                        // TODO:
+                        // add checks for VLAN = 0 concerning FCF MAC address (see bnc #813621, comment #4)
 		    }
 		} );
 	} );
