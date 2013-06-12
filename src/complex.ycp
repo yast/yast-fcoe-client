@@ -491,27 +491,56 @@ to an already activated multipath device.");
 	    output = (map)SCR::Execute( .target.bash_output, command );
 	    y2milestone( "Output: %1", output );
 
-	    if ( output["exit"]:255 == 0 )
+	    if ( output["exit"]:255 == 0 || FcoeClient::TestMode() )
 	    {
 		command = sformat( "vconfig rem %1", card["fcoe_vlan"]:"") ;
 		y2milestone( "Calling %1", command );
 		output = (map)SCR::Execute( .target.bash_output, command );
 		y2milestone( "Output: %1", output );
 
-		if ( output["exit"]:255 == 0 )
+		if ( output["exit"]:255 == 0 || FcoeClient::TestMode() )
 		{
-                    // TODO: check whether /etc/fcoe/cfg-file is also used for another VLAN interface,
-                    //       e.g. on eth1 there are VLAN 200 and 300 configured with AUTO_VLAN="yes"
-                    //       which means /etc/fcoe/cfg-eth1 applies for both.
-		    command = sformat( "rm /etc/fcoe/cfg-%1", card["cfg_device"]:"" );
-		    y2milestone( "Calling %1", command );
-		    output = (map)SCR::Execute( .target.bash_output, command );
-		    y2milestone( "Output: %1", output );
-		    command = sformat( "rm /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
-		    y2milestone( "Calling %1", command );
-		    output = (map)SCR::Execute( .target.bash_output, command );
-		    y2milestone( "Output: %1", output );
-		
+                    boolean del_cfg = true;
+                    // check whether /etc/fcoe/cfg-file is also used for another VLAN interface.
+                    // Example: eth1 have FCoE configured on VLAN 200 and 300 with AUTO_VLAN="yes"
+                    //          -> /etc/fcoe/cfg-eth1 applies to both.
+                    list <map> interfaces = FcoeClient::GetNetworkCards();
+
+                    foreach ( map interface, interfaces, {
+                            if ( interface["dev_name"]:"" == card["dev_name"]:"" &&
+                                 interface["vlan_interface"]:"" != card["vlan_interface"]:"" &&
+                                 interface["cfg_device"]:"" == card["cfg_device"]:"" )
+                            {
+                                y2milestone( sformat( "/etc/fcoe/cfg-%1 also used for VLAN %2",
+                                                      card["cfg_device"]:"", interface["vlan_interface"]:"" ) );
+                                del_cfg = false;
+                            }
+                        });
+
+                    if ( del_cfg )
+                    {
+                        command = sformat( "rm /etc/fcoe/cfg-%1", card["cfg_device"]:"" );
+                        y2milestone( "Calling %1", command );
+                        output = (map)SCR::Execute( .target.bash_output, command );
+                        y2milestone( "Output: %1", output );
+                    }
+                    else
+                    {
+                        y2milestone( sformat( "/etc/fcoe/cfg-%1 not deleted", card["cfg_device"]:"" ) );
+                    }
+
+                    if ( card["vlan_interface"]:"" != "0" )
+                    {
+                        command = sformat( "rm /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
+                        y2milestone( "Calling %1", command );
+                        output = (map)SCR::Execute( .target.bash_output, command );
+                        y2milestone( "Output: %1", output );
+                    }
+                    else
+                    {
+                        y2milestone( sformat( "/etc/sysconfig/network/ifcfg-%1 not deleted",
+                                              card["fcoe_vlan"]:"" ) );
+                    }
 		    // set new values in global map network_interfaces
 		    card["fcoe_vlan"] = FcoeClient::NOT_CONFIGURED;
 		    card["fcoe_enable"] = "yes";
@@ -525,10 +554,10 @@ to an already activated multipath device.");
 		    y2milestone( "Current network interfaces: %1", FcoeClient::GetNetworkCards() );
 	    
 		    // replace values in table 
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 3), card["fcoe_vlan"]:"" );
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4), card["fcoe_enable"]:"" );
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5), card["dcb_required"]:"" );
-		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 6), card["auto_vlan"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 4 ), card["fcoe_vlan"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 5 ), card["fcoe_enable"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 6 ), card["dcb_required"]:"" );
+		    UI::ChangeWidget( `id( `interfaces), `Cell( FcoeClient::current_card, 7 ), card["auto_vlan"]:"" );
 		    AdjustButtons();
 		}
 		else

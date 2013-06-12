@@ -409,7 +409,7 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 {
     string vlan_device_name = "";
 
-    if ( TestMode() && vlan_interface != "2011" )
+    if ( TestMode() && interface != "eth15" )
         return interface + "." + vlan_interface;
 
     string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1*.*%2/\\1/p' /proc/net/vlan/config",
@@ -777,11 +777,9 @@ global boolean DetectNetworkCards()
 
     foreach ( map card, netcards, {
 	    map info_map = $[];
-	    map <string, string> status_map = $[];
 	    string fcoe_vlan_interface = "";
-	    string dcb_capable = "";
-	    string dcb_default = "";
-	    
+            string dcb_capable = "";
+
 	    if ( vlan_info[card["dev_name"]:""]:[] == [] )
 	    {
 		// Interface down or FCoE not enabled on the switch - we can't do anything here.
@@ -809,6 +807,11 @@ global boolean DetectNetworkCards()
                 // add infos about card and VLAN interfaces
                 list vlans = vlan_info[card["dev_name"]:""]:[];
                 foreach ( string vlan, (list<string>) vlans, {
+                        map <string, string> status_map = $[];
+                        map info_map = $[];
+                        string fcoe_vlan_interface = "";
+                        string dcb_capable = "";
+                        string dcb_default = "";
 
                         if ( vlan == "0" )
                         {
@@ -849,9 +852,10 @@ VLAN interface to get a valid configuration."), fcoe_vlan_interface) );
                                     foreach ( string vlan_cfg_name, (list<string>) vlans, {
                                             // no ifcfg-<if>.<vlan> written for vlan = 0 (see WriteSysconfigFiles() )
                                             if ( FileUtils::Exists( sformat( "/etc/sysconfig/network/ifcfg-%1.%2",
-                                                                      card["dev_name"]:"", vlan_cfg_name ) ) )
+                                                                             card["dev_name"]:"", vlan_cfg_name ) ) )
                                             {
                                                 fcoe_vlan_interface = NOT_CONFIGURED;
+                                                status_map = $[];
                                             }
                                         });
                                 }
