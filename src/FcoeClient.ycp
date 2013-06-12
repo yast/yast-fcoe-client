@@ -746,7 +746,7 @@ global list IsConfigured( string device_name )
 
 // list <map> network_interfaces
 //
-// dev_name  mac_addr  device      fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface  cfg_file
+// dev_name  mac_addr  device      fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface  cfg_device
 // eth3      08:00:... Gigabit...  eth3.200   yes/no      yes/no       yes/no    yes/no      200   	     eth3.200
 //
 // Detect network interface cards (hardware probe) and get status  
@@ -901,7 +901,7 @@ VLAN interface to get a valid configuration."), fcoe_vlan_interface) );
 
                         info_map = add( info_map, "dcb_capable", dcb_capable ); // DCB capable
                         info_map = add( info_map, "vlan_interface", vlan ); // VLAN interface, e.g. 200
-                        info_map = add( info_map, "cfg_file", status_map["cfg_device"]:"" ); // part of cfg-file name, e.g. eth3.200
+                        info_map = add( info_map, "cfg_device", status_map["cfg_device"]:"" ); // part of cfg-file name, e.g. eth3.200
                         network_interfaces = add( network_interfaces, info_map );
                         
                     });
@@ -1024,18 +1024,18 @@ global boolean WriteCfgFiles()
 		string command = "";
 		map output = $[];
 
-		y2milestone( "Writing /etc/fcoe/cfg-%1", card["cfg_file"]:"" );
-		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "FCOE_ENABLE", card[ "fcoe_enable"]:"no" );
+		y2milestone( "Writing /etc/fcoe/cfg-%1", card["cfg_device"]:"" );
+		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_device"]:"" + "FCOE_ENABLE", card[ "fcoe_enable"]:"no" );
 		if ( !success )
 		{
 		    y2error( "Writing FCOE_ENABLE=%1 failed", card[ "fcoe_enable"]:"no" );
 		}
-		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "DCB_REQUIRED", card["dcb_required"]:"no" );
+		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_device"]:"" + "DCB_REQUIRED", card["dcb_required"]:"no" );
 		if ( !success )
 		{
 		    y2error( "Writing DCB_REQUIRED=%1 failed", card["dcb_required"]:"no" );
 		}
-		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_file"]:"" + "AUTO_VLAN", card["auto_vlan"]:"no" );
+		success = SCR::Write(.fcoe.cfg-ethx.value + card["cfg_device"]:"" + "AUTO_VLAN", card["auto_vlan"]:"no" );
 		if ( !success )
 		{
 		    y2error( "Writing AUTO_VLAN=%1 failed", card["auto_vlan"]:"no" );

@@ -207,7 +207,7 @@ else if (func == "Write") {
 			    status_map = FcoeClient::GetFcoeStatus( fcoe_vlan_interface, card["dev_name"]:"" );
 			    // apply modified data
 			    detected_netcards[ index, "fcoe_vlan"] = fcoe_vlan_interface;
-			    detected_netcards[ index, "cfg_file"] = status_map["cfg_device"]:"";
+			    detected_netcards[ index, "cfg_device"] = status_map["cfg_device"]:"";
 			    detected_netcards[ index, "fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 			    detected_netcards[ index, "dcb_required"] = status_map["DCB_REQUIRED"]:"";
 			}

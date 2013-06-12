@@ -439,7 +439,7 @@ Continue because running in test mode") );
 	card["fcoe_enable"] = status_map["FCOE_ENABLE"]:"";
 	card["dcb_required"] = status_map["DCB_REQUIRED"]:"";
 	card["auto_vlan"] = status_map["AUTO_VLAN"]:"";
-	card["cfg_file"] = status_map["cfg_device"]:"";
+	card["cfg_device"] = status_map["cfg_device"]:"";
 	FcoeClient::SetModified( true );
 		
 	FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
@@ -486,7 +486,7 @@ to an already activated multipath device.");
 	    y2milestone( "Removing %1",  card["fcoe_vlan"]:"" );
 
 	    // call fcoeadm -d <fcoe_vlan> first (bnc #719443)
-	    command = sformat( "fcoeadm -d %1", card["cfg_file"]:"") ;
+	    command = sformat( "fcoeadm -d %1", card["cfg_device"]:"") ;
 	    y2milestone( "Calling %1", command );
 	    output = (map)SCR::Execute( .target.bash_output, command );
 	    y2milestone( "Output: %1", output );
@@ -500,7 +500,7 @@ to an already activated multipath device.");
 
 		if ( output["exit"]:255 == 0 )
 		{
-		    command = sformat( "rm /etc/fcoe/cfg-%1", card["cfg_file"]:"" );
+		    command = sformat( "rm /etc/fcoe/cfg-%1", card["cfg_device"]:"" );
 		    y2milestone( "Calling %1", command );
 		    output = (map)SCR::Execute( .target.bash_output, command );
 		    y2milestone( "Output: %1", output );
@@ -515,7 +515,7 @@ to an already activated multipath device.");
 		    // exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
 		    card["dcb_required"] = ((card["driver"]:"" != "bnx2x") && (card["dcb_capable"]:""=="yes"))?"yes":"no";
 		    card["auto_vlan"] = "yes"; // default is "yes" (bnc #724563)
-		    card["cfg_file"] = "";
+		    card["cfg_device"] = "";
 		    FcoeClient::SetModified( true );
 
 		    FcoeClient::SetNetworkCardsValue( FcoeClient::current_card, card );
