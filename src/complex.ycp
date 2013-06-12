@@ -303,6 +303,33 @@ symbol HandleInterfacesDialog( string id, map event )
 	map card = FcoeClient::GetCurrentNetworkCard();
         y2milestone( "Selected card: %1", card );
 	string dev_name = card["dev_name"]:"";
+
+        list configured_vlans = FcoeClient::IsConfigured( dev_name );
+
+        if ( configured_vlans != [] )
+        {
+            y2milestone( "Configured VLANs on %1: %2", dev_name, configured_vlans );
+
+            if ( contains( configured_vlans, "0" ) )
+            {
+                // text of an error popup
+                Popup::Error( sformat( _("Cannot start FCoE on VLAN interface %1
+because FCoE is already configured on
+network interface %2 itself."), card["vlan_interface"]:"", dev_name ) );
+                return nil;
+            }
+            if ( card["vlan_interface"]:"" == "0" )
+            {
+                // text of an error popup
+                Popup::Error( sformat( _("Cannot start FCoE on network interface %1 itself
+because FCoE is already configured on
+VLAN interface(s) %2."), dev_name, configured_vlans ) );
+                return nil;
+            }
+            Popup::Warning( sformat( "FCoE VLAN interface(s) %1 already configured on %2.",
+                                     configured_vlans, dev_name ) );
+        }
+
 	string command = sformat( "fipvlan -c -s %1", dev_name );
 	
         map output = $[];	 
@@ -315,8 +342,8 @@ symbol HandleInterfacesDialog( string id, map event )
 	boolean ret = Popup::YesNoHeadline( _("Creating and Starting FCoE on Detected VLAN Device"),
 					    // question to the user: really create and start FCoE
 					    sformat( _("Do you really want to create a FCoE network
-interface for discovered FCoE VLAN interface
-on %1 and start the FCoE initiator?"), dev_name ) );
+interface for discovered VLAN interface %1
+on %2 and start the FCoE initiator?"), card["vlan_interface"]:"", dev_name ) );
 	if ( ret == true )
 	{
 	    if ( Stage::initial() )	// first stage of installation - create and start FCoE VLAN interface

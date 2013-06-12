@@ -257,7 +257,9 @@ map <string, boolean> service_start = $[ "fcoe":true,
 // map containing information about networks cards and VLAN, FCoE and DCB status
 list <map> network_interfaces = [];
 
-// Returns the map containing all detected interfaces including
+// Returns the map containing all detected interfaces (possibly including
+// several entries for a network interface if several VLAN interfaces are
+// detected)
 global list <map> GetNetworkCards()
 {
     return network_interfaces;
@@ -410,7 +412,7 @@ global string GetFcoeVlanInterface ( string interface, string vlan_interface )
 {
     string vlan_device_name = "";
 
-    if ( TestMode() )
+    if ( TestMode() && vlan_interface != "2011" )
         return interface + "." + vlan_interface;
 
     string command = sformat( "sed -n 's/\\([^ ]*\\) *.*%1*.*%2/\\1/p' /proc/net/vlan/config",
@@ -722,6 +724,26 @@ global boolean ServiceStatus()
     return ret;
 }
 
+//
+// Check whether there are configured FCoE VLANs for the given network interface
+// Return list of configured VLANs
+//
+global list IsConfigured( string device_name )
+{
+    list configured_vlans = [];
+    list<map> interfaces = GetNetworkCards();
+
+    foreach ( map interface, interfaces, {
+            if ( device_name == interface["dev_name"]:"" &&
+                 interface["fcoe_vlan"]:"" != NOT_CONFIGURED &&
+                 interface["fcoe_vlan"]:"" != NOT_AVAILABLE )
+            {
+                configured_vlans = add( configured_vlans, interface["vlan_interface"]:"" );
+            }
+        } );
+    return configured_vlans;
+}
+
 // list <map> network_interfaces
 //
 // dev_name  mac_addr  device      fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface  cfg_file
@@ -793,7 +815,8 @@ global boolean DetectNetworkCards()
 
                         if ( vlan == "0" )
                         {
-                            // for VLAN interface "0" means start FCoE on network interface (without creating a VLAN)
+                            // for VLAN interface "0" means start FCoE on network interface (without creating a VLAN
+                            // which means there isn't an entry in /proc/net/vlan/config)
                             fcoe_vlan_interface = card["dev_name"]:"";
                         }
                         else    // get FCoE VLAN interface from /proc/net/vlan/config
@@ -820,6 +843,21 @@ VLAN interface to get a valid configuration."), fcoe_vlan_interface) );
                                 }
                                 // the interface isn't configured
                                 fcoe_vlan_interface = NOT_CONFIGURED;
+                            }
+                            else // add additionally check for VLAN = 0
+                            {
+                                // is FCoE really configured on interface itself or configured for a VLAN interface?
+                                if ( vlan == "0" )
+                                {
+                                    foreach ( string vlan_cfg_name, (list<string>) vlans, {
+                                            // no ifcfg-<if>.<vlan> written for vlan = 0 (see WriteSysconfigFiles() )
+                                            if ( FileUtils::Exists( sformat( "/etc/sysconfig/network/ifcfg-%1.%2",
+                                                                      card["dev_name"]:"", vlan_cfg_name ) ) )
+                                            {
+                                                fcoe_vlan_interface = NOT_CONFIGURED;
+                                            }
+                                        });
+                                }
                             }
                         }
                         else
@@ -933,7 +971,8 @@ global boolean WriteSysconfigFiles( )
 	    if ( card["fcoe_vlan"]:"" != FcoeClient::NOT_AVAILABLE &&		// FCoE VLAN is configured
 		 card["fcoe_vlan"]:"" != FcoeClient::NOT_CONFIGURED  )
 	    {
-                // write ifcfg-<if>.>VLAN> only if VLAN was created 
+                // write ifcfg-<if>.>VLAN> only if VLAN was created (not for VLAN = 0 which means
+                // FCoE is started on the network interface itself)
                 if ( card["vlan_interface"]:"" != "0" )
                 {
                     y2milestone( "Writing /etc/sysconfig/network/ifcfg-%1", card["fcoe_vlan"]:"" );
