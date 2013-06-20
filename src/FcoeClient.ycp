@@ -362,9 +362,9 @@ global map<string, list> GetVlanInterfaces( list net_devices )
 
     foreach ( string dev, (list<string>)net_devices, {
 	    foreach( string line, (list<string>)lines, {
-		    // check whether there is a line for the given interface, e.g.
+		    // Check whether there is a line for the given interface, e.g.
 		    // eth3            | 200  | 00:0d:ec:a2:ef:00\n
-		    // and get VLAN channel from second columns.
+		    // Get VLAN channel from second column and FCF MAC from third.
                     line = deletechars( line, " \t" );
                     list<string> columns = splitstring( line, "|" );
 		    if ( columns[0]:"" == dev )

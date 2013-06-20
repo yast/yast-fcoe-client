@@ -256,7 +256,8 @@ void InitEditDialog( string id )
 	UI::ChangeWidget( `id(`auto), `Enabled, false );	
     }
     // headline of the edit dialog - configuration of values for a certain network interface
-    UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of Interface %1"), card["fcoe_vlan"]:"" ) );
+    UI::ChangeWidget( `id(`heading), `Value, sformat( _("Configuration of VLAN interface %1 on %2"),
+                                                      card["vlan_interface"]:"", card["dev_name"]:"" ) );
 }
 
 /**
