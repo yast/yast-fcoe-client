@@ -357,7 +357,7 @@ global map<string, list> GetVlanInterfaces( list net_devices )
     {
         lines = splitstring("Fibre Channel Forwarders
 < Discovered\ninterface       | VLAN | FCF MAC
-< \n------------------------------------------\neth15           | 2011 |54:7f:ee:05:55:9f\neth15           | 2012 |54:7f:ee:05:55:9f\neth15           | 0    | 54:7f:ee:04:55:9f\neth15           | 200    | 54:7f:ee:04:55:9f\neth1           | 301 |54:7f:ee:06:55:9f\neth1           | 400 |54:7f:ee:07:55:9f\n\n", "\n");
+< \n------------------------------------------\neth1           | 500 |54:7f:ee:09:55:9f\neth15           | 2012 |54:7f:ee:04:55:9f\neth15           | 0    | 54:7f:ee:04:55:9f\neth15           | 200    | 54:7f:ee:04:55:9f\neth1           | 301 |54:7f:ee:06:55:9f\neth1           | 400 |54:7f:ee:07:55:9f\n\n", "\n");
     }
 
     foreach ( string dev, (list<string>)net_devices, {
@@ -372,7 +372,7 @@ global map<string, list> GetVlanInterfaces( list net_devices )
                         // get VLAN and FCF MAC and add it to vlan_info
                         map<string, string> vlan_interface = $["vlan":columns[1]:""];
                         vlan_interface = add( vlan_interface, "fcf", columns[2]:"");
-			y2milestone( "Interface: %1 VLAN: %2", dev, columns[1]:"" );
+			y2milestone( "Interface: %1 VLAN: %2 FCF: %3", dev, columns[1]:"", columns[2]:"" );
 
                         if ( vlan_info[dev]:[] == [] )
                         {
@@ -381,16 +381,26 @@ global map<string, list> GetVlanInterfaces( list net_devices )
                         else
                         {
                             list<map> vlans = (list<map>)vlan_info[dev]:[];
-                            y2milestone( "HAVE vlans: %1", vlans );
-                            y2milestone( "Looking for FCF %1", vlan_interface["fcf"]:"" );
+
+                            // add vlan_interface only if no entry with identical FCF MAC exists
                             if ( find ( map vlan, vlans,  ``(vlan["fcf"]:"" ==  vlan_interface["fcf"]:"")) == nil )
                             {
                                 vlans = add( vlans, vlan_interface );
                             }
+                            else if ( vlan_interface["vlan"]:"" == "0" ) // for VLAN = 0 replace existing entry
+                            {
+                                // VLAN = 0 'wins' (see bnc #813621, comment #4)
+                                vlans = maplist ( map vlan, vlans, {
+                                        if ( vlan["fcf"]:"" == vlan_interface["fcf"]:"" )
+                                        {
+                                            y2milestone("VLAN = 0 is taken");
+                                            vlan["vlan"] = "0";
+                                        }
+                                        return vlan;
+                                        });
+                            }
                             vlan_info[dev] = vlans;
                         }
-                        // TODO:
-                        // add checks for VLAN = 0 concerning FCF MAC address (see bnc #813621, comment #4)
 		    }
 		} );
 	} );
