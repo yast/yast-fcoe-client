@@ -8,6 +8,8 @@ BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-devtools yast2-t
 
 BuildArchitectures:	noarch
 
+Requires:       yast2-ruby-bindings >= 1.0.0
+
 Summary:	YaST2 - Configuration of Fibre Channel over Ethernet
 
 %description
@@ -26,9 +28,9 @@ Ethernet (FCoE) configuration.
 %defattr(-,root,root)
 %dir @yncludedir@/fcoe-client
 @yncludedir@/fcoe-client/*
-@clientdir@/fcoe-client.ycp
-@clientdir@/fcoe-client_*.ycp
-@clientdir@/inst_fcoe-client.ycp
+@clientdir@/fcoe-client.rb
+@clientdir@/fcoe-client_*.rb
+@clientdir@/inst_fcoe-client.rb
 @moduledir@/FcoeClient.*
 @desktopdir@/fcoe-client.desktop
 %dir @scrconfdir@
