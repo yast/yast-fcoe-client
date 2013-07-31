@@ -1,32 +1,29 @@
-# Makefile.am for fcoe-client/src
+# Sources for fcoe-client
+
+module_DATA = \
+  modules/FcoeClient.rb
+
+client_DATA = \
+  clients/fcoe-client_finish.rb \
+  clients/inst_fcoe-client.rb \
+  clients/fcoe-client_proposal.rb \
+  clients/fcoe-client_auto.rb \
+  clients/fcoe-client.rb
 
 yncludedir = @yncludedir@/fcoe-client
+ynclude_DATA = \
+  include/fcoe-client/wizards.rb \
+  include/fcoe-client/dialogs.rb \
+  include/fcoe-client/complex.rb \
+  include/fcoe-client/helps.rb
 
-client_DATA =			\
-	fcoe-client.ycp		\
-	fcoe-client_auto.ycp	\
-	fcoe-client_proposal.ycp        \
-        fcoe-client_finish.ycp          \
-        inst_fcoe-client.ycp
+scrconf_DATA = \
+  scrconf/fcoe_config.scr \
+  scrconf/fcoe_cfg-ethx.scr
 
-ynclude_DATA =			\
-	helps.ycp		\
-	wizards.ycp		\
-	dialogs.ycp		\
-	complex.ycp
+desktop_DATA = \
+  desktop/fcoe-client.desktop
 
-desktop_DATA =			\
-	fcoe-client.desktop
-
-module_DATA =			\
-	FcoeClient.ycp
-
-
-# create a symlink for local build, #145327
-fcoe-client:
-	ln -sf . $@
-ycpchook = fcoe-client
-
-EXTRA_DIST = $(client_DATA) $(ynclude_DATA) $(module_DATA) $(desktop_DATA)
+EXTRA_DIST = $(module_DATA) $(client_DATA) $(ynclude_DATA) $(scrconf_DATA) $(desktop_DATA)
 
 include $(top_srcdir)/Makefile.am.common
