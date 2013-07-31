@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Jul 31 08:28:51 UTC 2013 - yast-devel@opensuse.org
+
+- converted from YCP to Ruby by YCP Killer
+  (https://github.com/yast/ycp-killer)
+- version 3.0.0
+
+-------------------------------------------------------------------
 Thu Jun 20 10:14:38 CEST 2013 - gs@suse.de
 
 - Allow several VLAN interfaces per network device, including
