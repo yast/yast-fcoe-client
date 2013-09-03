@@ -285,26 +285,22 @@ module Yast
     end
 
     #
-    # Check whether VLAN interfaces are configured for FCoE on the switch
+    # Check whether/which VLAN interfaces are configured for FCoE on the switch
+    # (by calling command 'fipvlan').
+    # $ fipvlan eth0 eth1 eth2 eth3\n
+    #Fibre Channel Forwarders Discovered\n
+    #interface      | VLAN | FCF MAC\n
+    #------------------------------------------\n
+    #eth0           | 200  | 00:0d:ec:a2:ef:00\n
+    #eth3	     | 200  | 00:0d:ec:a2:ef:01\n
     #
-    # Params:
-    # string 	interface	network interface card, e.g. eth3
-    # Return:
-    # string	Vlan interface number, e.g. 200
-    # Example:
-    # # fipvlan eth0 eth1 eth2 eth3
-    #Fibre Channel Forwarders Discovered
-    #interface       | VLAN | FCF MAC
-    #------------------------------------------
-    #eth0            | 200  | 00:0d:ec:a2:ef:00
-    #eth3		  | 200  | 00:0d:ec:a2:ef:01
+    # @param  [List] net_devices	network cards
+    # @return [List] information about FcoE VLAN interfaces
     #
-    def GetVlanInterfaces(net_devices)
-      net_devices = deep_copy(net_devices)
+    def GetFcoeInfo(net_devices)
       # Add option -u (or --link_up): don't shut down interfaces
       # to be able to detect DCB state afterwards (see bnc #737683)
       vlan_cmd = "LANG=POSIX fipvlan -u"
-      vlan_info = {}
 
       if !Mode.autoinst
         vlan_cmd = Ops.add(Ops.add(vlan_cmd, " -l "), @number_of_retries)
@@ -341,10 +337,38 @@ module Yast
           "\n"
         )
       end
+    end
+
+    #
+    # Provide information about FCoE capable VLAN interfaces for each network card
+    #
+    # @param [List] 	net_devices	network cards
+    # @param [List]     fcoe_info       information about FCoE VLAN interfaces
+    # @return [Hash]                    assorted FCoE info per network card
+    #
+    # Example:
+    # Param net_devices:
+    # ["eth0", "eth1", "eth2"]
+    # Param fcoe_info:
+    # ["eth0     | 200  | 00:0d:ec:a2:ef:00",
+    #  "eth0	 | 300  | 00:0d:ec:a2:ef:01",
+    #  "eth2     | 200  | 00:0d:ec:a2:ef:02" ]
+    #
+    # Return:
+    # { "eth0" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" },
+    #              { "vlan" => "300", "fcf" => "00:0d:ec:a2:ef:01" }],
+    #   "eth1" => [],
+    #   "eth2" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" }]
+    # }
+    #
+    def GetVlanInterfaces(net_devices, fcoe_info)
+      net_devices = deep_copy(net_devices)
+      fcoe_info = deep_copy(fcoe_info)
+      vlan_info = {}
 
       Builtins.foreach(
         Convert.convert(net_devices, :from => "list", :to => "list <string>")
-      ) { |dev| Builtins.foreach(lines) do |line|
+      ) { |dev| Builtins.foreach(fcoe_info) do |line|
         # Check whether there is a line for the given interface, e.g.
         # eth3            | 200  | 00:0d:ec:a2:ef:00\n
         # Get VLAN channel from second column and FCF MAC from third.
@@ -398,12 +422,10 @@ module Yast
     #
     # Check whether the VLAN device is created (check entries in /proc/net/vlan/config)
     #
-    # Params:
-    # string 	interface	network interface card, e.g. eth3
-    # string 	vlan_interface	Vlan Interface configured for FCoE (on switch)
-    # Return:
-    # string	Vlan device name, e.g. eth3.200
-    # Example:
+    # @param  [String] interface network interface card, e.g. eth3
+    # @param  [String] vlan_interface	 Vlan Interface configured for FCoE (on switch)
+    # @return [String] Vlan device name, e.g. eth3.200
+    #
     # # cat /proc/net/vlan/config
     #VLAN Dev name    | VLAN ID
     #Name-Type: VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD
@@ -775,6 +797,15 @@ module Yast
             "device"    => "TEST Gigabit Ethernet Controller",
             "model"     => "Intel PRO/1000 MT Desktop Adapter",
             "resource"  => { "hwaddr" => [{ "addr" => "08:23:27:11:64:78" }] }
+          },
+          {
+            "bus"       => "PCI",
+            "bus_hwcfg" => "pci",
+            "class_id"  => 2,
+            "dev_name"  => "eth2",
+            "dev_names" => ["eth15"],
+            "model"     => "Intel PRO/1000 MT Desktop Adapter",
+            "resource"  => { "hwaddr" => [{ "addr" => "08:23:27:99:64:78" }] }
           }
         ]
       end
@@ -793,7 +824,7 @@ module Yast
 
       # The 'fipvlan' command which is called in GetVlanInterfaces configures the interfaces itself,
       # therefore it's not needed any longer to call 'ifconfig <if> up' here.
-      vlan_info = GetVlanInterfaces(net_devices)
+      vlan_info = GetVlanInterfaces(net_devices, GetFcoeInfo(net_devices) )
 
       Builtins.foreach(netcards) do |card|
         info_map = {}
