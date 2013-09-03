@@ -287,14 +287,15 @@ module Yast
     #
     # Check whether/which VLAN interfaces are configured for FCoE on the switch
     # (by calling command 'fipvlan').
-    # $ fipvlan eth0 eth1 eth2 eth3\n
-    #Fibre Channel Forwarders Discovered\n
-    #interface      | VLAN | FCF MAC\n
-    #------------------------------------------\n
-    #eth0           | 200  | 00:0d:ec:a2:ef:00\n
-    #eth3	     | 200  | 00:0d:ec:a2:ef:01\n
+    # @example
+    #   $ fipvlan eth0 eth1 eth2 eth3
+    #   Fibre Channel Forwarders Discovered\n
+    #   interface      | VLAN | FCF MAC\n
+    #   ------------------------------------------\n
+    #   eth0           | 200  | 00:0d:ec:a2:ef:00\n
+    #   eth3           | 200  | 00:0d:ec:a2:ef:01\n
     #
-    # @param  [List] net_devices	network cards
+    # @param  [List] net_devices	detected network cards
     # @return [List] information about FcoE VLAN interfaces
     #
     def GetFcoeInfo(net_devices)
@@ -346,20 +347,19 @@ module Yast
     # @param [List]     fcoe_info       information about FCoE VLAN interfaces
     # @return [Hash]                    assorted FCoE info per network card
     #
-    # Example:
-    # Param net_devices:
-    # ["eth0", "eth1", "eth2"]
-    # Param fcoe_info:
-    # ["eth0     | 200  | 00:0d:ec:a2:ef:00",
-    #  "eth0	 | 300  | 00:0d:ec:a2:ef:01",
-    #  "eth2     | 200  | 00:0d:ec:a2:ef:02" ]
-    #
-    # Return:
-    # { "eth0" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" },
-    #              { "vlan" => "300", "fcf" => "00:0d:ec:a2:ef:01" }],
-    #   "eth1" => [],
-    #   "eth2" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" }]
-    # }
+    # @example
+    #   Param net_devices:
+    #   ["eth0", "eth1", "eth2"]
+    #   Param fcoe_info:
+    #   ["eth0     | 200  | 00:0d:ec:a2:ef:00",
+    #    "eth0     | 300  | 00:0d:ec:a2:ef:01",
+    #    "eth2     | 200  | 00:0d:ec:a2:ef:02" ]
+    #   Return:
+    #   { "eth0" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" },
+    #                { "vlan" => "300", "fcf" => "00:0d:ec:a2:ef:01" }],
+    #     "eth1" => [],
+    #     "eth2" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" }]
+    #   }
     #
     def GetVlanInterfaces(net_devices, fcoe_info)
       net_devices = deep_copy(net_devices)
