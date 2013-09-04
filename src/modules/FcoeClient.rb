@@ -320,20 +320,21 @@ module Yast
 
       lines = []
       if !TestMode()
-        lines = Builtins.splitstring(Ops.get_string(output, "stdout", ""), "\n") # test data
+        lines = Builtins.splitstring(output["stdout"] || "", "\n")
       else
+        # test data
         lines = Builtins.splitstring(
           "Fibre Channel Forwarders\n" +
             "< Discovered\n" +
             "interface       | VLAN | FCF MAC\n" +
             "< \n" +
             "------------------------------------------\n" +
-            "eth1           | 500 |54:7f:ee:09:55:9f\n" +
-            "eth15           | 2012 |54:7f:ee:04:55:9f\n" +
-            "eth15           | 0    | 54:7f:ee:04:55:9f\n" +
-            "eth15           | 200    | 54:7f:ee:04:55:9f\n" +
-            "eth1           | 301 |54:7f:ee:06:55:9f\n" +
-            "eth1           | 400 |54:7f:ee:07:55:9f\n" +
+            "eth1           | 500   |54:7f:ee:09:55:9f\n" +
+            "eth15          | 2012  |54:7f:ee:04:55:9f\n" +
+            "eth15          | 0     |54:7f:ee:04:55:9f\n" +
+            "eth15          | 200   |54:7f:ee:04:55:9f\n" +
+            "eth1           | 301   |54:7f:ee:06:55:9f\n" +
+            "eth1           | 400   |54:7f:ee:07:55:9f\n" +
             "\n",
           "\n"
         )
@@ -396,15 +397,13 @@ module Yast
 
             # add vlan_interface only if no entry with identical FCF MAC exists
             if Builtins.find(vlans) do |vlan|
-                Ops.get_string(vlan, "fcf", "") ==
-                  Ops.get(vlan_interface, "fcf", "")
+                (vlan["fcf"] || "") == (vlan_interface["fcf"] || "")
               end == nil
               vlans = Builtins.add(vlans, vlan_interface)
-            elsif Ops.get(vlan_interface, "vlan", "") == "0" # for VLAN = 0 replace existing entry
+            elsif (vlan_interface["vlan"] || "") == "0" # for VLAN = 0 replace existing entry
               # VLAN = 0 'wins' (see bnc #813621, comment #4)
               vlans = Builtins.maplist(vlans) do |vlan|
-                if Ops.get_string(vlan, "fcf", "") ==
-                    Ops.get(vlan_interface, "fcf", "")
+                if (vlan["fcf"] || "") == (vlan_interface["fcf"] || "")
                   Builtins.y2milestone("VLAN = 0 is taken")
                   Ops.set(vlan, "vlan", "0")
                 end
@@ -524,9 +523,9 @@ module Yast
           AddRevertCommand(Builtins.sformat("rm %1", file_name))
           # fill status map
           status_map = {
-            "FCOE_ENABLE"  => Ops.get_string(netcard, "fcoe_enable", "yes"),
-            "DCB_REQUIRED" => Ops.get_string(netcard, "dcb_required", "no"),
-            "AUTO_VLAN"    => Ops.get_string(netcard, "auto_vlan", "no"),
+            "FCOE_ENABLE"  => netcard["fcoe_enable"] || "yes",
+            "DCB_REQUIRED" => netcard["dcb_required"] || "no",
+            "AUTO_VLAN"    => netcard["auto_vlan"] || "no",
             "cfg_device"   => device_name
           }
         else
@@ -830,17 +829,17 @@ module Yast
         info_map = {}
         fcoe_vlan_interface = ""
         dcb_capable = ""
-        if Ops.get(vlan_info, Ops.get_string(card, "dev_name", ""), []) == []
+        if Ops.get(vlan_info, card["dev_name"] || "", []) == []
           # Interface down or FCoE not enabled on the switch - we can't do anything here.
           fcoe_vlan_interface = @NOT_AVAILABLE
 
           # add infos about the card
-          dcb_capable = DCBCapable(Ops.get_string(card, "dev_name", ""))
+          dcb_capable = DCBCapable(card["dev_name"] || "")
           info_map = {
             "dcb_capable"=> dcb_capable, # DCB capable
-            "dev_name"   => Ops.get_string(card, "dev_name", ""), # network card, e.g. eth3
+            "dev_name"   => card["dev_name"] || "", # network card, e.g. eth3
             "mac_addr"   => Ops.get_string(card, ["resource", "hwaddr", 0, "addr"], ""), # MAC address
-            "device"     => (Ops.get_string(card, "device", "") != "")?Ops.get_string(card, "device", ""):Ops.get_string(card, "model", ""),
+            "device"     => card["device"] || card["model"] || "",
             "fcoe_vlan"  => fcoe_vlan_interface # FCoE VLAN interface, e.g. eth3.200
           }
 
@@ -856,25 +855,20 @@ module Yast
             fcoe_vlan_interface2 = ""
             dcb_capable2 = ""
             dcb_default = ""
-            if Ops.get_string(vlan, "vlan", "") == "0"
+            if (vlan["vlan"] || "") == "0"
               # for VLAN interface "0" means start FCoE on network interface (without creating a VLAN
               # i.e. there isn't an entry in /proc/net/vlan/config)
-              fcoe_vlan_interface2 = Ops.get_string(card, "dev_name", "") # get FCoE VLAN interface from /proc/net/vlan/config
+              fcoe_vlan_interface2 = card["dev_name"] || ""
             else
-              fcoe_vlan_interface2 = GetFcoeVlanInterface(
-                Ops.get_string(card, "dev_name", ""),
-                Ops.get_string(vlan, "vlan", "")
-              )
+              # get FCoE VLAN interface from /proc/net/vlan/config
+              fcoe_vlan_interface2 = GetFcoeVlanInterface(card["dev_name"] || "", vlan["vlan"] || "")
             end
             if fcoe_vlan_interface2 != ""
-              status_map = GetFcoeStatus(
-                fcoe_vlan_interface2,
-                Ops.get_string(card, "dev_name", "")
-              )
+              status_map = GetFcoeStatus(fcoe_vlan_interface2, card["dev_name"] || "")
               if status_map == {}
                 # if a 'fcoe_vlan_interface' is created for a 'vlan' != 0 there should be
                 # a valid configuration available
-                if Ops.get_string(vlan, "vlan", "") != "0"
+                if (vlan["vlan"] || "") != "0"
                   Builtins.y2warning(
                     "Cannot read config file for %1 in /etc/fcoe",
                     fcoe_vlan_interface2
@@ -888,15 +882,17 @@ module Yast
                       ),
                       fcoe_vlan_interface2
                     )
-                  ) # for vlan == 0 it means FCoE is not (yet) started
+                  )
                 else
+                  # for vlan == 0 it means FCoE is not (yet) started
                   Builtins.y2milestone("FCoE not configured")
                 end
                 # the interface isn't configured
-                fcoe_vlan_interface2 = @NOT_CONFIGURED # add additionally check for VLAN = 0
-              else
-                # is FCoE really configured on interface itself or configured for a VLAN interface?
-                if Ops.get_string(vlan, "vlan", "") == "0"
+                fcoe_vlan_interface2 = @NOT_CONFIGURED
+              else  # if status_map == {}
+                # Additionally check for VLAN = 0:
+                # is FCoE configured on interface itself or configured for a VLAN interface?
+                if (vlan["vlan"] || "") == "0"
                   Builtins.foreach(
                     Convert.convert(
                       vlans,
@@ -908,40 +904,43 @@ module Yast
                     if FileUtils.Exists(
                         Builtins.sformat(
                           "/etc/sysconfig/network/ifcfg-%1.%2",
-                          Ops.get_string(card, "dev_name", ""),
+                          card["dev_name"] || "",
                           vlan_cfg_name
                         )
                       )
+                      # status_map got from GetFcoeStatus doesn't belong to interface itself but to an VLAN
+                      # interface on the interface
+                      # FIXME: do this check before and don't set fcoe_vlan_interface2 at all if an
+                      # sysconfig file exists for an VLAN interface
                       fcoe_vlan_interface2 = @NOT_CONFIGURED
                       status_map = {}
                     end
                   end
                 end
               end
-            else
+            else #  if fcoe_vlan_interface2 != ""
               # FCoE VLAN interface not yet configured (status_map remains empty)
               fcoe_vlan_interface2 = @NOT_CONFIGURED
             end
-            dcb_capable2 = DCBCapable(Ops.get_string(card, "dev_name", ""))
+            dcb_capable2 = DCBCapable(card["dev_name"] || "")
             # exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
-            if Ops.get_string(card, "driver", "") != "bnx2x" &&
-                dcb_capable2 == "yes"
+            if card["driver"] || "" != "bnx2x" && dcb_capable2 == "yes"
               dcb_default = "yes"
             else
               dcb_default = "no"
             end
 
             info_map2 = {
-              "dev_name"       => Ops.get_string(card, "dev_name", ""), # network card, e.g. eth3
+              "dev_name"       => card["dev_name"] || "", # network card, e.g. eth3
               "mac_addr"       => Ops.get_string(card, ["resource", "hwaddr", 0, "addr"], ""), # MAC address
-              "device"         => (Ops.get_string(card, "device", "") != "")?Ops.get_string(card, "device", ""):Ops.get_string(card, "model", ""),
+              "device"         => card["device"] || card["model"] || "",
               "fcoe_vlan"      => fcoe_vlan_interface2, # FCoE VLAN interface, e.g. eth3.200
-              "fcoe_enable"    => Ops.get(status_map, "FCOE_ENABLE", "yes"),  # default for FCoE enable is yes
-              "dcb_required"   => Ops.get(status_map, "DCB_REQUIRED", dcb_default),
-              "auto_vlan"      => Ops.get(status_map, "AUTO_VLAN", "yes"), # default is AUTO_VLAN="yes", see bnc #724563
+              "fcoe_enable"    => status_map["FCOE_ENABLE"] || "yes",  # default for FCoE enable is yes
+              "dcb_required"   => status_map["DCB_REQUIRED"] || dcb_default,
+              "auto_vlan"      => status_map["AUTO_VLAN"] || "yes", # default is AUTO_VLAN="yes", see bnc #724563
               "dcb_capable"    => dcb_capable2, # DCB capable
-              "vlan_interface" => Ops.get_string(vlan, "vlan", ""), # VLAN interface, e.g. 200
-              "cfg_device"     => Ops.get(status_map, "cfg_device", "") # part of cfg-file name, e.g. eth3.200
+              "vlan_interface" => vlan["vlan"] || "", # VLAN interface, e.g. 200
+              "cfg_device"     => status_map["cfg_device"] || "" # part of cfg-file name, e.g. eth3.200
             }
             @network_interfaces = Builtins.add(@network_interfaces, info_map2)
           end
