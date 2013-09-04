@@ -899,13 +899,13 @@ module Yast
                       :from => "list",
                       :to   => "list <string>"
                     )
-                  ) do |vlan_cfg_name|
+                  ) do |vlan_cfg|
                     # no ifcfg-<if>.<vlan> written for vlan = 0 (see WriteSysconfigFiles() )
                     if FileUtils.Exists(
                         Builtins.sformat(
                           "/etc/sysconfig/network/ifcfg-%1.%2",
                           card["dev_name"] || "",
-                          vlan_cfg_name
+                          vlan_cfg["vlan"] || ""
                         )
                       )
                       # status_map got from GetFcoeStatus doesn't belong to interface itself but to an VLAN
