@@ -546,7 +546,6 @@ module Yast
     def GetFcoeStatus(vlan_device_name, device_name)
       status_map = {}
       content = ""
-      file_exists = false
       file_name = ""
       device = vlan_device_name
 
@@ -565,6 +564,13 @@ module Yast
         if !FileUtils.Exists(file_name)
           # no config file found - return empty status map
           return deep_copy(status_map)
+        else
+          # check whether there is a sysconfig file for given vlan_device_name
+          file_name = Builtins.sformat("/etc/sysconfig/network/ifcfg-%1", vlan_device_name);
+          # configuration in /etc/fcoe/cfg-<device_name> doesn't belong to vlan_device_name
+          if !FileUtils.Exists(file_name)
+            return deep_copy(status_map)
+          end
         end
         device = device_name
       end
