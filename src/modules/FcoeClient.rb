@@ -933,30 +933,15 @@ module Yast
     # Check configuration for VLAN ID = 0
     #
     def FcoeOnInterface?(device, vlans)
-      ret = false
-      if FileUtils.Exists(Builtins.sformat("/etc/fcoe/cfg-%1", device))
-        ret = true
-        Builtins.foreach(
-                         Convert.convert(
-                                         vlans,
-                                         :from => "list",
-                                         :to   => "list <string>"
-                                         )
-                         ) do |vlan_cfg|
-          # no ifcfg-<if>.<vlan> written for vlan = 0 (see WriteSysconfigFiles() )
-          if FileUtils.Exists(
-                              Builtins.sformat(
-                                               "/etc/sysconfig/network/ifcfg-%1.%2",
-                                               device,
-                                               vlan_cfg["vlan"] || ""
-                                               )
-                              )
-            # sysconfig file for an VLAN interface found, i.e. FCoE isn't configured on interface itself
-            ret = false
-          end
+      return false unless FileUtils.Exists("/etc/fcoe/cfg-#{device}")
+      ret = true
+        vlans.each do |vlan_cfg|
+        # no ifcfg-<if>.<vlan> written for vlan = 0 (see WriteSysconfigFiles() )
+        if FileUtils.Exists( "/etc/sysconfig/network/ifcfg-#{device}.#{vlan_cfg["vlan"] || ""}" )
+          # sysconfig file for an VLAN interface found, i.e. FCoE isn't configured on interface itself
+          ret = false
         end
       end
-
       ret
     end
 
