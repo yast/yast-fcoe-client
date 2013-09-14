@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sat Sep 14 10:21:11 CEST 2013 - gs@suse.de
+
+- Refactoring of ruby code (FcoeClient.rb)
+- version 3.0.1
+
+-------------------------------------------------------------------
 Wed Jul 31 08:28:51 UTC 2013 - yast-devel@opensuse.org
 
 - converted from YCP to Ruby by YCP Killer
