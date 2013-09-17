@@ -358,8 +358,7 @@ module Yast
     #   Return:
     #   { "eth0" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" },
     #                { "vlan" => "300", "fcf" => "00:0d:ec:a2:ef:01" }],
-    #     "eth1" => [],
-    #     "eth2" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:00" }]
+    #     "eth2" => [{ "vlan" => "200", "fcf" => "00:0d:ec:a2:ef:02" }]
     #   }
     #
     def GetVlanInterfaces(net_devices, fcoe_info)
@@ -810,7 +809,7 @@ module Yast
             "bus_hwcfg" => "pci",
             "class_id"  => 2,
             "dev_name"  => "eth2",
-            "dev_names" => ["eth15"],
+            "dev_names" => ["eth2"],
             "model"     => "Intel PRO/1000 MT Desktop Adapter",
             "resource"  => { "hwaddr" => [{ "addr" => "08:23:27:99:64:78" }] }
           }
