@@ -5,7 +5,7 @@ config.log
 config.status
 config.sub
 configure
-configure.in
+configure.ac
 install-sh
 Makefile
 Makefile.in
@@ -25,3 +25,4 @@ testsuite/tmp*
 testsuite/site.exp
 testsuite/config
 testsuite/run
+package/*.tar.bz2
