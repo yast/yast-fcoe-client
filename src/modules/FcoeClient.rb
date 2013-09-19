@@ -106,8 +106,9 @@ module Yast
       # map containing information about start of services at boot
       @service_start = { "fcoe" => true, "lldpad" => true }
 
-      # map containing information about networks cards and VLAN, FCoE and DCB status
+      # list of maps containing information about networks cards and VLAN, FCoE and DCB status
       @network_interfaces = []
+
       FcoeClient()
     end
 
@@ -766,16 +767,10 @@ module Yast
       deep_copy(configured_vlans)
     end
 
-    # list <map> network_interfaces
     #
-    # dev_name  mac_addr  device     vlan_interface  fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable cfg_device
-    # eth3      08:00:... Gigabit... 200             eth3.200   yes/no      yes/no       yes/no    yes/no      eth3.200
+    # Detect network interface cards (hardware probe)
     #
-    # Detect network interface cards (hardware probe) and get status
-    #
-    def DetectNetworkCards
-      netcards = []
-
+    def ProbeNetcards
       if !TestMode()
         netcards = Convert.convert(
           SCR.Read(path(".probe.netcard")),
@@ -817,7 +812,18 @@ module Yast
       end
       Builtins.y2milestone("Detected netcards: %1", netcards)
 
-      return false if netcards == [] || netcards == nil
+      netcards
+    end
+
+    # list <map> network_interfaces
+    #
+    # dev_name  mac_addr  device     vlan_interface  fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable cfg_device
+    # eth3      08:00:... Gigabit... 200             eth3.200   yes/no      yes/no       yes/no    yes/no      eth3.200
+    #
+    # Get the network cards and check Fcoe status
+    #
+    def DetectNetworkCards(netcards)
+      return [] if netcards == nil
 
       net_devices = []
 
@@ -831,6 +837,7 @@ module Yast
       # The 'fipvlan' command which is called in GetVlanInterfaces configures the interfaces itself,
       # therefore it's not needed any longer to call 'ifconfig <if> up' here.
       vlan_info = GetVlanInterfaces(net_devices, GetFcoeInfo(net_devices) )
+      network_interfaces = []
 
       netcards.each do |card|
         device = card["dev_name"] || ""
@@ -849,7 +856,7 @@ module Yast
             "fcoe_vlan"  => fcoe_vlan_interface
           }
 
-          @network_interfaces = @network_interfaces << info_map
+          network_interfaces = network_interfaces << info_map
         else
           # add infos about card and VLAN interfaces
           vlans = Ops.get(vlan_info, device, [])
@@ -915,17 +922,18 @@ module Yast
               "cfg_device"     => status_map["cfg_device"] || "" # part of cfg-file name, e.g. eth3.200
             }
 
-            @network_interfaces = @network_interfaces << info_map
+            network_interfaces = network_interfaces << info_map
           end # do |vlan|
         end # else
       end # do |card|
 
       # sort the list of interfaces (eth0, eth1, eth2...)
-      @network_interfaces = Builtins.sort(@network_interfaces) do |a, b|
+      network_interfaces = Builtins.sort(network_interfaces) do |a, b|
         Ops.less_than(a["dev_name"] || "", b["dev_name"] || "")
       end
 
-      true
+      Builtins.y2milestone("Returning: %1", network_interfaces)
+      network_interfaces
     end
 
     #
@@ -1310,10 +1318,10 @@ module Yast
       Progress.NextStage
 
       # detect netcards
-      success = DetectNetworkCards()
+      @network_interfaces = DetectNetworkCards(ProbeNetcards())
 
       # Error message
-      Report.Warning(_("Cannot detect devices.")) if !success
+      Report.Warning(_("Cannot detect devices.")) if @network_interfaces.empty?
       Builtins.sleep(sl)
 
       return false if PollAbort()
