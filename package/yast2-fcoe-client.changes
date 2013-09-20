@@ -3,7 +3,7 @@ Wed Sep 18 16:00:49 UTC 2013 - lslezak@suse.cz
 
 - do not use *.spec.in template, use *.spec file with RPM macros
   instead
-- 3.0.2
+- 3.1.0
 
 -------------------------------------------------------------------
 Sat Sep 14 10:21:11 CEST 2013 - gs@suse.de
