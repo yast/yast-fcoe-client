@@ -304,7 +304,8 @@ module Yast
         AdjustButtons()
       elsif action == :retry
         FcoeClient.ResetNetworkCards
-        FcoeClient.DetectNetworkCards
+        netcards = FcoeClient.DetectNetworkCards(FcoeClient.ProbeNetcards)
+        FcoeClient.SetNetworkCards(netcards)
         ShowInterfaces()
       elsif action == :create
         # haendel:~/:[0]# fipvlan -c -s eth3

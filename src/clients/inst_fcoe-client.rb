@@ -74,21 +74,20 @@ module Yast
       @success = FcoeClient.ServiceStatus
       if !@success
         Builtins.y2error("Starting of services FAILED")
-        return nil
       end
 
       # detect netcards
-      @success = FcoeClient.DetectNetworkCards
-      if !@success
+      netcards = FcoeClient.DetectNetworkCards(FcoeClient.ProbeNetcards)
+      if netcards.empty?
         Builtins.y2error("Detecting netcards FAILED")
-        return nil
+      else
+        FcoeClient.SetNetworkCards(netcards)
       end
 
       # read general FCoE settings
       @success = FcoeClient.ReadFcoeConfig
       if !@success
         Builtins.y2error("Reading /etc/fcoe/config FAILED")
-        return nil
       end
 
       # run dialog
