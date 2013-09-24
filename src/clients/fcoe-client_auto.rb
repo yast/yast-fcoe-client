@@ -117,18 +117,18 @@ module Yast
         end
         # Reset info about netcards and get current values
         FcoeClient.ResetNetworkCards
-        @success = FcoeClient.DetectNetworkCards
-        if @success
-          @detected_netcards = FcoeClient.GetNetworkCards
-          Builtins.y2milestone(
-            "Information about detected netcards: %1",
-            @detected_netcards
-          )
-        else
+        @detected_netcards = FcoeClient.DetectNetworkCards(FcoeClient.ProbeNetcards)
+
+        if @detected_netcards.empty?
           Builtins.y2error(
             "Cannot detect network cards - stopping auto installation"
           )
           return false
+        else
+           Builtins.y2milestone(
+            "Information about detected netcards: %1",
+            @detected_netcards
+          )
         end
 
         # Check imported data
