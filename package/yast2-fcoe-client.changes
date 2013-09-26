@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep 26 11:46:14 CEST 2013 - gs@suse.de
+
+- Improve ruby code
+- version 3.0.2
+
+-------------------------------------------------------------------
 Sat Sep 14 10:21:11 CEST 2013 - gs@suse.de
 
 - Refactoring of ruby code (FcoeClient.rb)
