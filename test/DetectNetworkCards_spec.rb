@@ -1,4 +1,4 @@
-require '../src/modules/FcoeClient'
+require_relative '../src/modules/FcoeClient'
 
 describe Yast::FcoeClientClass do
   before :each do
