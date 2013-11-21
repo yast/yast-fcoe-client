@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Nov 20 13:40:58 CET 2013 - gs@suse.de
+
+- Use new name 'fcoe-utils' when checking for installed package
+- 3.1.1
+
+-------------------------------------------------------------------
 Thu Sep 26 16:00:49 UTC 2013 - lslezak@suse.cz
 
 - do not use *.spec.in template, use *.spec file with RPM macros

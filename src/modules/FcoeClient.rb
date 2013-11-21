@@ -260,8 +260,8 @@ module Yast
     end
 
     #
-    # Check whether open-fcoe is installed and do installation if user agrees
-    # (dependencies: 'lldpad', 'libhbalinux2' and 'libHBAAPI2')
+    # Check whether fcoe-utils is installed and do installation if user agrees
+    # (dependencies: 'open-lldp', 'libhbalinux2' and 'libHBAAPI2')
     #
     def CheckInstalledPackages
       ret = false
@@ -269,10 +269,10 @@ module Yast
       # don't check interactively for packages (bnc#367300) -> comment from iscsi-client
       # skip it during initial and second stage or when create AY profile
       return true if Stage.cont || Stage.initial || Mode.config
-      Builtins.y2milestone("Check if open-fcoe package installed")
+      Builtins.y2milestone("Check if fcoe-utils package installed")
 
       if !Package.InstallMsg(
-          "open-fcoe",
+          "fcoe-utils",
           _(
             "<p>To continue the FCoE configuration, the <b>%1</b> package must be installed.</p>"
           ) +
@@ -1294,7 +1294,7 @@ module Yast
       return false if PollAbort()
       Progress.NextStage
 
-      # checking whether open-fcoe is installed (requires lldpad, ...)
+      # checking whether fcoe-utils is installed (requires lldpad, ...)
       installed = CheckInstalledPackages()
 
       # Error message
@@ -1546,8 +1546,8 @@ module Yast
     # installed.
     # @return [Hash] with 2 lists.
     def AutoPackages
-      # installation of open-fcoe required
-      { "install" => ["open-fcoe"], "remove" => [] }
+      # installation of fcoe-utils required
+      { "install" => ["fcoe-utils"], "remove" => [] }
     end
 
     publish :function => :Modified, :type => "boolean ()"
