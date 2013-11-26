@@ -26,6 +26,7 @@ Source0:        %{name}-%{version}.tar.bz2
 Group:          System/YaST
 License:        GPL-2.0
 Requires:	yast2 >= 2.21.22
+Requires:       fcoe-utils
 BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-testsuite
 BuildRequires:  yast2-devtools >= 3.0.6
 
