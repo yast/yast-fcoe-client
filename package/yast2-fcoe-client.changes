@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Nov 26 11:40:48 CET 2013 - gs@suse.de
+
+- Add 'Requires: fcoe-utils' to spec-file
+- 3.1.2
+
+-------------------------------------------------------------------
 Wed Nov 20 13:40:58 CET 2013 - gs@suse.de
 
 - Use new name 'fcoe-utils' when checking for installed package
