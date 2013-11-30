@@ -96,15 +96,16 @@ module Yast
 
       # workflow not aborted
       if @ret == :next
-        # add packages open-fcoe (requires lldpad) and yast2-fcoe-client
+        # add packages fcoe-utils (requires lldpd) and yast2-fcoe-client
         # to the pool that is used by software proposal
         Builtins.y2milestone(
-          "Adding packages open-fcoe and yast2-fcoe-client to pool"
+          "Adding packages %1 and yast2-fcoe-client to pool",
+           FcoeClient.FCOE_PKG_NAME
         )
         PackagesProposal.AddResolvables(
           "fcoe",
           :package,
-          ["open-fcoe", "yast2-fcoe-client"]
+          [FcoeClient.FCOE_PKG_NAME, "yast2-fcoe-client"]
         )
         # write changes to config files
         Builtins.y2milestone("Writing FCoE config files")

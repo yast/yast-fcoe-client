@@ -105,7 +105,7 @@ module Yast
           @imported_netcards
         )
 
-        # AutoYaST will install package 'open-fcoe' ( checks AutoPackages() )
+        # AutoYaST will install package 'fcoe-utils' ( checks AutoPackages() )
 
         # Start services 'fcoe' and 'lldpad'
         @success = FcoeClient.ServiceStatus

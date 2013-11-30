@@ -90,6 +90,7 @@ module Yast
 
       @NOT_CONFIGURED = "not configured"
       @NOT_AVAILABLE = "not available"
+      @FCOE_PKG_NAME = "fcoe-utils"
 
       @lldpad_started = false # service fcoe was started
       @fcoe_started = false # service lldpad was started
@@ -269,10 +270,11 @@ module Yast
       # don't check interactively for packages (bnc#367300) -> comment from iscsi-client
       # skip it during initial and second stage or when create AY profile
       return true if Stage.cont || Stage.initial || Mode.config
-      Builtins.y2milestone("Check if fcoe-utils package installed")
+      Builtins.y2milestone("Check whether package %1 is installed",
+                           @FCOE_PKG_NAME)
 
       if !Package.InstallMsg(
-          "fcoe-utils",
+          @FCOE_PKG_NAME,
           _(
             "<p>To continue the FCoE configuration, the <b>%1</b> package must be installed.</p>"
           ) +
@@ -1547,7 +1549,7 @@ module Yast
     # @return [Hash] with 2 lists.
     def AutoPackages
       # installation of fcoe-utils required
-      { "install" => ["fcoe-utils"], "remove" => [] }
+      { "install" => [@FCOE_PKG_NAME], "remove" => [] }
     end
 
     publish :function => :Modified, :type => "boolean ()"
@@ -1564,6 +1566,7 @@ module Yast
     publish :variable => :current_card, :type => "integer"
     publish :variable => :NOT_CONFIGURED, :type => "string"
     publish :variable => :NOT_AVAILABLE, :type => "string"
+    publish :variable => :FCOE_PKG_NAME, :type => "string"
     publish :variable => :lldpad_started, :type => "boolean"
     publish :variable => :fcoe_started, :type => "boolean"
     publish :function => :SetFcoeConfigValue, :type => "void (string, string)"
