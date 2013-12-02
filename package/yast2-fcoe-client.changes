@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Dec  2 11:45:47 CET 2013 - gs@suse.de
+
+- Enhance help text, improve ruby code
+- 3.1.3
+
+-------------------------------------------------------------------
 Tue Nov 26 11:40:48 CET 2013 - gs@suse.de
 
 - Add 'Requires: fcoe-utils' to spec-file

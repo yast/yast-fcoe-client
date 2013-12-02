@@ -31,6 +31,9 @@ require "yast"
 
 module Yast
   class FcoeClientClass < Module
+
+    FCOE_PKG_NAME = "fcoe-utils"
+
     def main
       Yast.import "UI"
       textdomain "fcoe-client"
@@ -269,10 +272,11 @@ module Yast
       # don't check interactively for packages (bnc#367300) -> comment from iscsi-client
       # skip it during initial and second stage or when create AY profile
       return true if Stage.cont || Stage.initial || Mode.config
-      Builtins.y2milestone("Check if fcoe-utils package installed")
+      Builtins.y2milestone("Check whether package %1 is installed",
+                           FcoeClientClass::FCOE_PKG_NAME)
 
       if !Package.InstallMsg(
-          "fcoe-utils",
+          FcoeClientClass::FCOE_PKG_NAME,
           _(
             "<p>To continue the FCoE configuration, the <b>%1</b> package must be installed.</p>"
           ) +
@@ -1547,7 +1551,7 @@ module Yast
     # @return [Hash] with 2 lists.
     def AutoPackages
       # installation of fcoe-utils required
-      { "install" => ["fcoe-utils"], "remove" => [] }
+      { "install" => [FcoeClientClass::FCOE_PKG_NAME], "remove" => [] }
     end
 
     publish :function => :Modified, :type => "boolean ()"

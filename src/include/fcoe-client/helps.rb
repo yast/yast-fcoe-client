@@ -69,36 +69,49 @@ module Yast
           ),
         # Services dialog help 1/3
         "services"      => _(
-          "<p><b><big>Starting of services</big><br></b><br>\nEnable or disable the start of the services <b>fcoe</b> and <b>lldpad</b> at boot time.</p>\n"
+          "<p><b><big>Starting of services</big><br></b><br>" +
+          "Enable or disable the start of the services <b>fcoe</b> and <b>lldpad</b> at boot time.</p>"
         ) +
           # Services dialog help 2/3
           _(
-            "<p>Starting the service <b>fcoe</b> means starting the <i>Fibre Channel over\n" +
-              "Ethernet</i> service daemon <i>fcoemon</i> which controls the FCoE interfaces and\n" +
+            "<p>Starting the service <b>fcoe</b> means starting the <i>Fibre Channel over " +
+              "Ethernet</i> service daemon <i>fcoemon</i> which controls the FCoE interfaces and " +
               "establishes a connection with the daemon <i>lldpad</i>.</p>"
           ) +
           # Services dialog help 3/3
           _(
-            "<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent daemon <i>lldpad</i>, which informs <i>fcoemon</i> about DCB (Data Center Bridging) features and configuration of the interfaces.</p>"
+            "<p>The <b>lldpad</b> service provides the <i>Link Layer Discovery Protocol</i> agent " +
+            "daemon <i>lldpad</i>, which informs <i>fcoemon</i> about DCB (Data Center Bridging) " +
+            "features and configuration of the interfaces.</p>"
           ),
-        # Interfaces dialog help 1/4
+        # Interfaces dialog help 1/5
         "interfaces"    => _(
           "<p><b><big>Network interface overview</big></b></p>"
         ) +
-          # Interfaces dialog help 2/4
+          # Interfaces dialog help 2/5
           _(
-            "<p>The interfaces dialog shows all detected netcards including the status of VLAN and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE on the switch. For every netcard (network interface), this is shown in column <i>FCoE VLAN Interface</i>.</p>"
+            "<p>The interfaces dialog shows all detected netcards including the status of VLAN " +
+            "and FCoE configuration.<br>FCoE is possible if a VLAN interface is configured for FCoE " +
+            "on the switch.<br>" +
+            "For every netcard (network interface), this is shown in column <i>FCoE VLAN Interface</i>.</p>"
           ) +
-          # Interfaces dialog help 3/4
+          # Interfaces dialog help 3/5
+          _("<p>It's possible to retry the check for FCoE services by using <b>Retry Detection</b>" +
+            "(might be required for interfaces needing some time to get up).</p>"
+            ) +
+          # Interfaces dialog help 4/5
           _(
-            "<p>The values for <i>FCoE VLAN Interface</i> in detail:<br>\n" +
-              "<b>not available</b>: Fibre Channel over Ethernet is not possible (must be enabled on the switch first).<br>\n" +
-              "<b>not configured</b>: FCoE is possible but not yet activated. Press <b>Create FCoE VLAN Interface</b> to activate.<br>\n" +
-              " If the FCoE VLAN interface has already been created, the name is shown in the column, e.g. eth3.200.</p>\n"
+            "<p>The values for <i>FCoE VLAN Interface</i> in detail:<br>" +
+              "<b>not available</b>: Fibre Channel over Ethernet is not possible " +
+              "(must be enabled on the switch first).<br>" +
+              "<b>not configured</b>: FCoE is possible but not yet activated.<br>" +
+              "Press <b>Create FCoE VLAN Interface</b> to activate.<br>" +
+              "If the FCoE VLAN interface has already been created, the name " +
+              "is shown in the column, e.g. eth3.200.</p>"
           ) +
-          # Interfaces dialog help 3/4
+          # Interfaces dialog help 4/5
           _(
-            "<p>To change the configuration of an existing FCoE VLAN interface, click on<b>Change Settings</b>.</p>"
+            "<p>To change the configuration of a FCoE VLAN interface, click on <b>Change Settings</b>.</p>"
           ),
         # Configuration dialog help 1/3
         "configuration" => _(
@@ -111,9 +124,9 @@ module Yast
           #  Configuration dialog help 3/3
           _(
             "<p>The values are:<br>\n" +
-              "<b>Debug</b>: <i>yes</i> or <i>no</i><br>\n" +
-              "This is used to enable or disable debugging messages from the fcoe service script and <i>fcoemon</i>.<br>\n" +
-              "<b>Use syslog</b>: <i>yes</i> or <i>no</i><br>\n" +
+              "<b>Debug</b>: <i>yes</i> or <i>no</i><br>" +
+              "This is used to enable or disable debugging messages from the fcoe service script and <i>fcoemon</i>.<br>" +
+              "<b>Use syslog</b>: <i>yes</i> or <i>no</i><br>" +
               "Messages are sent to the system log if set to <i>yes</i> (data are logged to /var/log/messages).</p>"
           ),
         # edit dialog help 1/3
@@ -122,20 +135,19 @@ module Yast
         ) +
           # Edit dialog help 2/3
           _(
-            "<p>The daemon <i>fcoemon</i> reads these configuration files on initialization.\n" +
-              "           There is a file for every interface and the values indicate whether FCoE instances\n" +
-              "           should be created and if DCB is required.</p>"
+            "<p>The daemon <i>fcoemon</i> reads these configuration files on initialization.<br>" +
+              "There is a file for every interface and the values indicate whether FCoE instances " +
+              "should be created and if DCB is required.</p>"
           ) +
           # Edit dialog help 3/3
           _(
-            "<p>The values are:<br>       \n" +
-              "<b>FCoE Enable</b>: <i>yes</i> or <i>no</i><br>\n" +
-              "Enable or disable the creation of FCoE instances.<br>\n" +
-              "<b>DCB Required</b>: <i>yes</i> or <i>no</i><br>\n" +
-              "The default is <i>yes</i>, DCB is usually required.<br>\n" +
-              "<b>AUTO VLAN</b>: <i>yes</i> or <i>no</i><br>\n" +
-              "If set to <i>yes</i> 'fcoemon' will create the VLAN\n" +
-              "interfaces automatically.</p>"
+            "<p>The values are:<br>" +
+              "<b>FCoE Enable</b>: <i>yes</i> or <i>no</i><br>" +
+              "Enable or disable the creation of FCoE instances.<br>" +
+              "<b>DCB Required</b>: <i>yes</i> or <i>no</i><br>" +
+              "The default is <i>yes</i>, DCB is usually required.<br>" +
+              "<b>AUTO VLAN</b>: <i>yes</i> or <i>no</i><br>" +
+              "If set to <i>yes</i> 'fcoemon' will create the VLAN interfaces automatically.</p>"
           )
       } 
 
