@@ -100,12 +100,12 @@ module Yast
         # to the pool that is used by software proposal
         Builtins.y2milestone(
           "Adding packages %1 and yast2-fcoe-client to pool",
-           FcoeClient.FCOE_PKG_NAME
+           FcoeClientClass::FCOE_PKG_NAME
         )
         PackagesProposal.AddResolvables(
           "fcoe",
           :package,
-          [FcoeClient.FCOE_PKG_NAME, "yast2-fcoe-client"]
+          [FcoeClientClass::FCOE_PKG_NAME, "yast2-fcoe-client"]
         )
         # write changes to config files
         Builtins.y2milestone("Writing FCoE config files")
