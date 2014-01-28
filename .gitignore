@@ -9,8 +9,6 @@ configure.ac
 install-sh
 Makefile
 Makefile.in
-Makefile.am
-Makefile.am.common
 missing
 *.pot
 *.ami
