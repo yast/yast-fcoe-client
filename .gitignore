@@ -7,10 +7,10 @@ config.sub
 configure
 configure.ac
 install-sh
+/Makefile.am
+/Makefile.am.common
 Makefile
 Makefile.in
-Makefile.am
-Makefile.am.common
 missing
 *.pot
 *.ami
