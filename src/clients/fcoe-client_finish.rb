@@ -39,6 +39,7 @@ module Yast
       Yast.import "String"
       Yast.import "FcoeClient"
       Yast.import "Service"
+      Yast.import "SystemdSocket"
       Yast.include self, "installation/misc.rb"
 
       @ret = nil
@@ -131,10 +132,12 @@ module Yast
         end
 
         if @start_services
-          Builtins.y2milestone("Enabling service start of fcoe and lldpad")
-          # service lldpad has to be enabled first
-          Service.Enable("boot.lldpad")
-          Service.Enable("boot.fcoe")
+          Builtins.y2milestone("Enabling socket start of fcoe and lldpad")
+          # enable socket lldpad first
+          lldpad_socket = SystemdSocket.find("lldpad")
+          lldpad_socket.enable if lldpad_socket
+          fcoemon_socket = SystemdSocket.find("fcoemon")
+          fcoemon_socket.enable if fcoemon_socket
         end
       else
         Builtins.y2error("unknown function: %1", @func)
