@@ -135,9 +135,17 @@ module Yast
           Builtins.y2milestone("Enabling socket start of fcoe and lldpad")
           # enable socket lldpad first
           lldpad_socket = SystemdSocket.find("lldpad")
-          lldpad_socket.enable if lldpad_socket
+          if lldpad_socket
+            lldpad_socket.enable
+          else
+            Builtins.y2error("lldpad.socket not found")
+          end
           fcoemon_socket = SystemdSocket.find("fcoemon")
-          fcoemon_socket.enable if fcoemon_socket
+          if fcoemon_socket
+            fcoemon_socket.enable
+          else
+            Builtins.y2error("fcoemon.socket not found")
+          end
         end
       else
         Builtins.y2error("unknown function: %1", @func)
