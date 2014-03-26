@@ -842,7 +842,7 @@ module Yast
       success = true
 
       # Loading of modules in Stage::initial() is not required 
-      # (like done in IsciClientLib)
+      # (like done in IscsiClientLib)
       # SLES11 SP3: /etc/init.d/boot.fcoe, line 86 
       #             (modprobe $SUPPORTED_DRIVERS > /dev/null 2>&1)
       #             SUPPORTED_DRIVERS from /etc/fcoe/config
