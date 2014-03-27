@@ -70,7 +70,6 @@ module Yast
       FcoeClient.ResetNetworkCards
 
       # start services fcoe and lldpad
-      # (modules for fcoe are loaded in /etc/init.d/fcoe)
       @success = FcoeClient.ServiceStatus
       if !@success
         Builtins.y2error("Starting of services FAILED")

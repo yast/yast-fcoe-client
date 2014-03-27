@@ -53,14 +53,16 @@ module Yast
     def ReallyAbort
       Builtins.y2milestone("Aborting FCoE configuration")
 
-      # revert start of 'fcoe' or 'lldpad'
-      if FcoeClient.fcoe_started && !Service.Enabled("boot.fcoe")
-        Service.Stop("boot.fcoe")
+      # Services started at installation time are stopped on reboot.
+      # Revert start of 'fcoemon' or 'lldpad' socket if started but not needed.
+      if !Stage.initial
+        if FcoeClient.fcoe_started && !FcoeClient.fcoemonSocketEnabled?
+          FcoeClient.fcoemonSocketStop
+        end
+        if FcoeClient.lldpad_started && !FcoeClient.lldpadSocketEnabled?
+          FcoeClient.lldpadSocketStop
+        end
       end
-      if FcoeClient.lldpad_started && !Service.Enabled("boot.lldpad")
-        Service.Stop("boot.lldpad")
-      end
-
       return true if !FcoeClient.Modified
 
       abort = Popup.ReallyAbort(true)

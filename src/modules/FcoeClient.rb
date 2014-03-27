@@ -32,6 +32,8 @@ require "yast"
 module Yast
   class FcoeClientClass < Module
 
+    include Yast::Logger
+
     FCOE_PKG_NAME = "fcoe-utils"
 
     def main
@@ -50,6 +52,7 @@ module Yast
       Yast.import "NetworkService"
       Yast.import "String"
       Yast.import "FileUtils"
+      Yast.import "SystemdSocket"
 
       # Data
 
@@ -94,8 +97,8 @@ module Yast
       @NOT_CONFIGURED = "not configured"
       @NOT_AVAILABLE = "not available"
 
-      @lldpad_started = false # service fcoe was started
-      @fcoe_started = false # service lldpad was started
+      @lldpad_started = false # service lldpad was started
+      @fcoe_started = false # service fcoe was started
 
 
       # Settings: Define all variables needed for configuration of fcoe-client
@@ -112,6 +115,10 @@ module Yast
       # list of maps containing information about networks cards and VLAN, FCoE and DCB status
       @network_interfaces = []
 
+      # systemd sockets
+      @fcoemon_socket = nil
+      @lldpad_socket = nil
+
       FcoeClient()
     end
 
@@ -125,6 +132,132 @@ module Yast
       end
 
       nil
+    end
+
+    def fcoemonSocketActive?
+      if @fcoemon_socket
+        @fcoemon_socket.active?
+      else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def fcoemonSocketStart
+      if @fcoemon_socket
+        @fcoemon_socket.start
+      else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def fcoemonSocketStop
+      if @fcoemon_socket
+        @fcoemon_socket.stop
+     else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def fcoemonSocketEnabled?
+      if @fcoemon_socket
+        @fcoemon_socket.enabled?
+      else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def fcoemonSocketDisabled?
+      if @fcoemon_socket
+        @fcoemon_socket.disabled?
+      else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def fcoemonSocketEnable
+      if @fcoemon_socket
+        @fcoemon_socket.enable
+      else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def fcoemonSocketDisable
+      if @fcoemon_socket
+        @fcoemon_socket.disable
+      else
+        log.error("fcoemon.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketActive?
+      if @lldpad_socket
+        @lldpad_socket.active?
+      else
+        log.error("lldpad.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketStart
+      if @lldpad_socket
+        @lldpad_socket.start
+      else
+        log.error("lldpad.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketStop
+      if @lldpad_socket
+        @lldpad_socket.stop
+     else
+        log.error("lldpad.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketEnabled?
+      if @lldpad_socket
+        @lldpad_socket.enabled?
+      else
+        log.error("lldpad.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketDisabled?
+      if @lldpad_socket
+        @lldpad_socket.disabled?
+      else
+        log.error("lldpad.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketEnable
+      if @lldpad_socket
+        @lldpad_socket.enable
+      else
+        log.error("lldpad.socket not found")
+        false
+      end
+    end
+
+    def lldpadSocketDisable
+      if @lldpad_socket
+        @lldpad_socket.disable
+      else
+        log.error("lldpad.socket not found")
+        false
+      end
     end
 
     # Abort function
@@ -639,29 +772,32 @@ module Yast
     end
 
     #
-    # Set status of services
+    # Set start status of 'fcoemon' and 'lldpad' sockets
+    #
+    # 'Service' tab is only shown in installed system where
+    # sockets (and systemd) are available.
     #
     def AdjustStartStatus
       fcoe_start = Ops.get(@service_start, "fcoe", false)
       lldpad_start = Ops.get(@service_start, "lldpad", false)
       Builtins.y2milestone(
-        "Setting start of /etc/init.d/boot.fcoe to %1",
+        "Setting start of fcoe to %1",
         fcoe_start
       )
       Builtins.y2milestone(
-        "Setting start of /etc/init.d/lldpad to %1",
+        "Setting start of lldpad to %1",
         lldpad_start
       )
 
       if fcoe_start && lldpad_start
-        Service.Enable("boot.lldpad") # enable 'lldpad' first
-        Service.Enable("boot.fcoe")
+        lldpadSocketEnable             # enable 'lldpad' first
+        fcoemonSocketEnable
       elsif !fcoe_start && lldpad_start
-        Service.Disable("boot.fcoe")
-        Service.Enable("boot.lldpad")
+        fcoemonSocketDisable
+        lldpadSocketEnable
       elsif !fcoe_start && !lldpad_start
-        Service.Disable("boot.fcoe") # disable 'fcoe' first
-        Service.Disable("boot.lldpad")
+        fcoemonSocketDisable            # disable 'fcoe' first
+        lldpadSocketDisable
       end 
       # fcoe_start && !lldpad_start isn't possible -> see complex.ycp StoreServicesDialog
 
@@ -684,11 +820,11 @@ module Yast
     def DetectStartStatus
       status = false
 
-      status = Service.Enabled("boot.fcoe")
+      status = fcoemonSocketEnabled?
       Builtins.y2milestone("Start status of fcoe: %1", status)
       @service_start = Builtins.add(@service_start, "fcoe", status)
 
-      status = Service.Enabled("boot.lldpad")
+      status = lldpadSocketEnabled?
       Builtins.y2milestone("Start status of lldpad: %1", status)
       @service_start = Builtins.add(@service_start, "lldpad", status)
 
@@ -705,46 +841,71 @@ module Yast
     def ServiceStatus
       success = true
 
-      # Loading of modules in Stage::initial() is not required (like in IsciClientLib.ycp, line 523 )
-      # see /etc/init.d/fcoe, line 85 (modprobe fcoe > /dev/null 2>&1)
+      # Loading of modules in Stage::initial() is not required 
+      # (like done in IscsiClientLib)
+      # SLES11 SP3: /etc/init.d/boot.fcoe, line 86 
+      #             (modprobe $SUPPORTED_DRIVERS > /dev/null 2>&1)
+      #             SUPPORTED_DRIVERS from /etc/fcoe/config
+      # SLES12:     Service.Start in inst-sys runs commands from 
+      #             /usr/lib/systemd/system/fcoe.service
+      #             (including modprobe)
       ret = true
 
-      # first start lldpad
-      if Service.Status("boot.lldpad") != 0
-        success = Service.Start("boot.lldpad")
-        if success
-          Builtins.y2milestone("Lldpad started (/etc/init.d/boot.lldpad start)")
-          @lldpad_started = true
+      # start services during installation
+      if Stage.initial
+        # start service lldpad first
+        @lldpad_started = Service.Start("lldpad")
+        if @lldpad_started
+          log.info("Service lldpad started")
         else
-          Builtins.y2error(
-            "Cannot start service lldpad - '/etc/init.d/boot.lldpad start' failed"
-          )
-          Report.Error(
-            "Cannot start service lldpad.\n'/etc/init.d/boot.lldpad start' failed"
-          )
+          log.error("Cannot start service lldpad")
+          Report.Error(_("Cannot start service 'lldpad'"))
           ret = false
         end
-      else
-        Builtins.y2milestone("Lldpad service is running")
+
+        @fcoe_started = Service.Start("fcoe")
+        if @fcoe_started
+          log.info("Service fcoe started")
+        else
+          log.error("Cannot start service fcoe")
+          Report.Error(_("Cannot start service 'fcoe'"))
+          ret = false
+        end
+
+        return ret
       end
 
-      if Service.Status("boot.fcoe") != 0
-        success = Service.Start("boot.fcoe")
+      # start sockets in installed system
+      @fcoemon_socket = SystemdSocket.find!("fcoemon")
+      @lldpad_socket = SystemdSocket.find!("lldpad")
 
+      # first start lldpad
+      if !lldpadSocketActive?
+        success = lldpadSocketStart
         if success
-          Builtins.y2milestone("FCoE started (/etc/init.d/boot.fcoe start)")
-          @fcoe_started = true
+          log.info("lldpad.socket started")
+          @lldpad_started = true
         else
-          Builtins.y2error(
-            "Cannot start FCoE service - '/etc/init.d/boot.fcoe start' failed"
-          )
-          Report.Error(
-            "Cannot start FCoE service.\n'/etc/init.d/boot.fcoe start' failed"
-          )
+          log.error("Cannot start lldpad.socket")
+          Report.Error(_("Cannot start lldpad systemd socket"))
           ret = false
         end
       else
-        Builtins.y2milestone("FCoE service is running")
+        log.info("lldpad.socket is already active")
+      end
+
+      if !fcoemonSocketActive?
+        success = fcoemonSocketStart
+        if success
+          log.info("fcoemon.socket started")
+          @fcoe_started = true
+        else
+          log.error( "Cannot start fcoemon.socket")
+          Report.Error(_("Cannot start fcoemon systemd socket."))
+          ret = false
+        end
+      else
+        log.info("fcoemon.socket is already active")
       end
 
       ret
@@ -1245,7 +1406,7 @@ module Yast
       ret = true
 
       Builtins.y2milestone("Restarting fcoe")
-      ret = Service.Restart("boot.fcoe")
+      ret = Service.Restart("fcoe") 
 
       ret
     end
@@ -1309,14 +1470,15 @@ module Yast
       return false if PollAbort()
       Progress.NextStage
 
-      # check whether auto start of daemon fcoemon and lldpad is enabled or not
-      DetectStartStatus()
-      # check whether fcoe and lldpad are running and start services if required
+      # find sockets fcoemon and lldpad, check whether sockets are active, start if required
       start_status = ServiceStatus()
 
       # Error message
       Report.Error(_("Starting of services failed.")) if !start_status
       Builtins.sleep(sl)
+
+      # check whether auto start of daemon fcoemon and lldpad is enabled or not
+      DetectStartStatus()
 
       return false if PollAbort()
       Progress.NextStage
