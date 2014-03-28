@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 28 13:14:21 CET 2014 - gs@suse.de
+
+- Adapt start of services (resp. sockets) to systemd
+- 3.1.4
+
+-------------------------------------------------------------------
 Mon Dec  2 11:45:47 CET 2013 - gs@suse.de
 
 - Enhance help text, improve ruby code
