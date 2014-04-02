@@ -977,7 +977,7 @@ module Yast
       end
       Builtins.y2milestone("Detected netcards: %1", netcards)
 
-      netcards
+      netcards.delete_if {|card| card["dev_name"] == nil}
     end
 
     # list <map> network_interfaces
