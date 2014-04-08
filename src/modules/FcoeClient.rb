@@ -876,8 +876,8 @@ module Yast
       end
 
       # start sockets in installed system
-      @fcoemon_socket = SystemdSocket.find!("fcoemon")
-      @lldpad_socket = SystemdSocket.find!("lldpad")
+      @fcoemon_socket = SystemdSocket.find("fcoemon")
+      @lldpad_socket = SystemdSocket.find("lldpad")
 
       # first start lldpad
       if !lldpadSocketActive?
