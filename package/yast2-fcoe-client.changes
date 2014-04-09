@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Apr  9 13:09:19 CEST 2014 - gs@suse.de
+
+- Don't show interfaces not available for network,
+- don't throw exception if socket not found (related to bnc#872049)
+
+-------------------------------------------------------------------
 Fri Mar 28 13:14:21 CET 2014 - gs@suse.de
 
 - Adapt start of services (resp. sockets) to systemd
