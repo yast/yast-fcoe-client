@@ -1095,19 +1095,19 @@ module Yast
               "cfg_device"     => status_map["cfg_device"] || "" # part of cfg-file name, e.g. eth3.200
             }
             if card["fcoeoffload"] == nil
-              info_map["fcoe_flag"] = "not set"
+              info_map["fcoe_flag"] = _("not set")
             else
-              info_map["fcoe_flag"] = card["fcoeoffload"]?"true":"false"
+              info_map["fcoe_flag"] = card["fcoeoffload"]?_("true"):_("false")
             end
             if card["iscsioffload"] == nil
-              info_map["iscsi_flag"] = "not set"
+              info_map["iscsi_flag"] = _("not set")
             else
-             info_map["iscsi_flag"] = card["iscsioffload"]?"true":"false"
+             info_map["iscsi_flag"] = card["iscsioffload"]?_("true"):_("false")
             end
             if card["storageonly"] == nil
-              info_map["storage_only"] = "not set"
+              info_map["storage_only"] = _("not set")
             else
-             info_map["storage_only"] = card["storageonly"]?"true":"false"
+             info_map["storage_only"] = card["storageonly"]?_("true"):_("false")
             end
             network_interfaces = network_interfaces << info_map
           end # do |vlan|
