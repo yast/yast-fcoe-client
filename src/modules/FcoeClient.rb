@@ -1095,8 +1095,10 @@ module Yast
               "cfg_device"     => status_map["cfg_device"] || "" # part of cfg-file name, e.g. eth3.200
             }
             if card["fcoeoffload"] == nil
+              # it's about a flag which is not set at all
               info_map["fcoe_flag"] = _("not set")
             else
+              # also about setting of a flag
               info_map["fcoe_flag"] = card["fcoeoffload"]?_("true"):_("false")
             end
             if card["iscsioffload"] == nil
