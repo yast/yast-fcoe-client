@@ -953,7 +953,11 @@ module Yast
             "dev_names" => ["eth1"],
             "device"    => "TEST Ethernet Controller",
             "model"     => "Intel PRO/1000 MT Desktop Adapter",
-            "resource"  => { "hwaddr" => [{ "addr" => "08:00:27:11:64:e4" }] }
+            "resource"  => { "hwaddr" => [{ "addr" => "08:00:27:11:64:e4" }] },
+            "driver"    => "bnx2x",
+            "fcoeoffload" => true,
+            "iscsioffload" => false,
+            "storageonly" => true
           },
           {
             "bus"       => "PCI",
@@ -961,6 +965,8 @@ module Yast
             "class_id"  => 2,
             "dev_name"  => "eth15",
             "dev_names" => ["eth15"],
+            "driver"    => "bnx2x",
+            "fcoeoffload" => false,
             "device"    => "TEST Gigabit Ethernet Controller",
             "model"     => "Intel PRO/1000 MT Desktop Adapter",
             "resource"  => { "hwaddr" => [{ "addr" => "08:23:27:11:64:78" }] }
@@ -1079,6 +1085,7 @@ module Yast
               "dev_name"       => device, # network card, e.g. eth3
               "mac_addr"       => Ops.get_string(card, ["resource", "hwaddr", 0, "addr"], ""), # MAC address
               "device"         => card["device"] || card["model"] || "",
+              "driver"         => card["driver"] || "",
               "fcoe_vlan"      => fcoe_vlan_interface, # FCoE VLAN interface, e.g. eth3.200
               "fcoe_enable"    => status_map["FCOE_ENABLE"] || "yes",  # default for FCoE enable is yes
               "dcb_required"   => status_map["DCB_REQUIRED"] || dcb_default,
@@ -1087,7 +1094,21 @@ module Yast
               "vlan_interface" => vlan["vlan"] || "", # VLAN interface, e.g. 200
               "cfg_device"     => status_map["cfg_device"] || "" # part of cfg-file name, e.g. eth3.200
             }
-
+            if card["fcoeoffload"] == nil
+              info_map["fcoe_flag"] = "not set"
+            else
+              info_map["fcoe_flag"] = card["fcoeoffload"]?"true":"false"
+            end
+            if card["iscsioffload"] == nil
+              info_map["iscsi_flag"] = "not set"
+            else
+             info_map["iscsi_flag"] = card["iscsioffload"]?"true":"false"
+            end
+            if card["storageonly"] == nil
+              info_map["storage_only"] = "not set"
+            else
+             info_map["storage_only"] = card["storageonly"]?"true":"false"
+            end
             network_interfaces = network_interfaces << info_map
           end # do |vlan|
         end # else

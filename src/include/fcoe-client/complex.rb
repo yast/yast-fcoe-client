@@ -185,15 +185,19 @@ module Yast
           table_items,
           Item(
             Id(row),
-            Ops.get_string(card, "dev_name", ""),
-            Ops.get_string(card, "mac_addr", ""),
-            Ops.get_string(card, "device", ""),
-            Ops.get_string(card, "vlan_interface", ""),
-            Ops.get_string(card, "fcoe_vlan", ""),
-            Ops.get_string(card, "fcoe_enable", ""),
-            Ops.get_string(card, "dcb_required", ""),
-            Ops.get_string(card, "auto_vlan", ""),
-            Ops.get_string(card, "dcb_capable", "")
+            card["dev_name"] || "",
+            card["mac_addr"] || "",
+            card["device"] || "",
+            card["vlan_interface"] ||"",
+            card["fcoe_vlan"] || "",
+            card["fcoe_enable"] || "",
+            card["dcb_required"] || "",
+            card["auto_vlan"] || "",
+            card["dcb_capable"] || "",
+            card["driver"] || "",
+            card["fcoe_flag"] || "",
+            card["iscsi_flag"] || "",
+            card["storage_only"] || ""
           )
         )
         row = Ops.add(row, 1)

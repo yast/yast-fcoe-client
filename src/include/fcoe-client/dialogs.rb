@@ -175,7 +175,11 @@ module Yast
               _("FCoE Enable"),
               _("DCB Required"),
               _("AUTO VLAN"),
-              _("DCB capable")
+              _("DCB capable"),
+              _("Driver"),
+              _("Flag FCoE"),
+              _("Flag iSCSI"),
+              _("Storage Only")
             ),
             []
           ),
