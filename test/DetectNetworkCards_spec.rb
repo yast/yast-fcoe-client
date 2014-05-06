@@ -38,6 +38,7 @@ describe Yast::FcoeClientClass do
                                                  "bus_hwcfg" => "pci",
                                                  "class_id"  => 2,
                                                  "dev_name"  => "eth1",
+                                                 "driver"    => "fcoe",
                                                  "dev_names" => ["eth1"],
                                                  "device"    => "TEST Ethernet Controller",
                                                  "model"     => "Intel PRO/1000 MT Desktop Adapter",
@@ -48,9 +49,13 @@ describe Yast::FcoeClientClass do
                                                  "bus_hwcfg" => "pci",
                                                  "class_id"  => 2,
                                                  "dev_name"  => "eth2",
+                                                 "driver"    => "bnx2x",
                                                  "dev_names" => ["eth2"],
                                                  "model"     => "Intel PRO/1000 MT Desktop Adapter",
-                                                 "resource"  => { "hwaddr" => [{ "addr" => "08:23:27:99:64:78" }] }
+                                                 "resource"  => { "hwaddr" => [{ "addr" => "08:23:27:99:64:78" }] },
+                                                 "fcoeoffload" => true,
+                                                 "storageonly" => true,
+                                                 "iscsioffload"=> false
                                                }
                                               ])
       answer.should eq([
@@ -59,24 +64,32 @@ describe Yast::FcoeClientClass do
                           "cfg_device"=> "", 
                           "dcb_capable" => "no", 
                           "dcb_required" => "no", 
-                          "dev_name" => "eth1", 
+                          "dev_name" => "eth1",
+                          "driver" => "fcoe",
                           "device" => "TEST Ethernet Controller", 
                           "fcoe_enable" => "yes", 
                           "fcoe_vlan" => "not configured", 
                           "mac_addr" => "08:00:27:11:64:e4", 
-                          "vlan_interface" => "300"
+                          "vlan_interface" => "300",
+                          "fcoe_flag" => "not set",
+                          "iscsi_flag" => "not set",
+                          "storage_only" => "not set"
                         }, 
                         {
                           "auto_vlan" => "no", 
                           "cfg_device" => "eth1.400", 
                           "dcb_capable" => "no", 
-                          "dcb_required" => "yes", 
+                          "dcb_required" => "yes",
+                          "driver" => "fcoe",
                           "dev_name" => "eth1", 
                           "device" => "TEST Ethernet Controller", 
                           "fcoe_enable" => "yes", 
                           "fcoe_vlan" => "eth1.400", 
                           "mac_addr"  =>  "08:00:27:11:64:e4", 
-                          "vlan_interface" => "400"
+                          "vlan_interface" => "400",
+                          "fcoe_flag" => "not set",
+                          "iscsi_flag" => "not set",
+                          "storage_only" => "not set"
                         }, 
                         {
                           "auto_vlan" => "yes", 
@@ -84,11 +97,15 @@ describe Yast::FcoeClientClass do
                           "dcb_capable" => "no", 
                           "dcb_required" => "no", 
                           "dev_name" => "eth2", 
+                          "driver" => "bnx2x",
                           "device" => "Intel PRO/1000 MT Desktop Adapter", 
                           "fcoe_enable" => "yes", 
                           "fcoe_vlan" => "not configured", 
                           "mac_addr" => "08:23:27:99:64:78", 
-                          "vlan_interface" => "200"
+                          "vlan_interface" => "200",
+                          "fcoe_flag" => "true",
+                          "iscsi_flag" => "false",
+                          "storage_only" => "true"
                         }
                        ])
 
