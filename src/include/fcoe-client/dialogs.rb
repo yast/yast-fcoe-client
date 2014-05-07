@@ -86,9 +86,13 @@ module Yast
         VStretch(),
         VSpacing(1),
         # heading is replaced later (InitEditDialog)
-        Label(
-          Id(:heading),
-          "Configuration of Interface ......................."
+        HBox(
+          HStretch(),
+          Label(
+            Id(:heading), Opt(:hstretch),
+            "Configuration of Interface ......................."
+          ),
+          HStretch()
         ),
         VSpacing(1),
         HBox(
@@ -99,24 +103,24 @@ module Yast
               10,
               2,
               VBox(
-                # combo box label: enable FCoE (yes/no)
                 ComboBox(
                   Id(:fcoe),
+                  # combo box label: enable FCoE (yes/no)
                   _("&FCoE Enable"),
                   [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
                 ),
                 VSpacing(1),
-                # combo box label: require DCB (yes/no)
                 ComboBox(
                   Id(:dcb),
                   Opt(:notify),
+                  # combo box label: require DCB (yes/no)
                   _("&DCB Required"),
                   [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
                 ),
                 VSpacing(1),
-                # combo box label: AUTO_VLAN setting (yes/no)
                 ComboBox(
                   Id(:auto),
+                  # combo box label: AUTO_VLAN setting (yes/no)
                   _("&AUTO_VLAN"),
                   [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
                 )
@@ -137,18 +141,24 @@ module Yast
         @mbox_x,
         @mbox_y,
         VBox(
-          VSpacing(2.0),
-          # frame containing radio buttons for fcoe service start
-          Frame(
-            _("FCoE Service Start"),
-            VBox(RadioButtonGroup(Id("fcoe_service_startup"), @items_fcoe))
-          ),
           VStretch(),
-          # frame containing radio buttons for lldpad service start
-          Frame(
-            _("Lldpad Service Start"),
-            VBox(RadioButtonGroup(Id("lldpad_service_startup"), @items_lldpad))
-          ),
+          HBox(
+            HStretch(),
+            HSpacing(1),
+            VBox(
+              # frame containing radio buttons for fcoe service start
+              Frame( _("FCoE Service Start"),
+                VBox(RadioButtonGroup(Id("fcoe_service_startup"), @items_fcoe))
+              ),
+              VSpacing(2),
+              # frame containing radio buttons for lldpad service start
+              Frame( _("Lldpad Service Start"),
+                VBox(RadioButtonGroup(Id("lldpad_service_startup"), @items_lldpad))
+              )
+            ),
+            HSpacing(1),
+            HStretch()
+            ),
           VStretch()
         )
       )
@@ -164,14 +174,13 @@ module Yast
           Table(
             Id(:interfaces),
             Opt(:notify, :immediate, :keepSorting),
-            # column headers of a table with network interfaces (keep them short)
             Header(
+              # column headers of table of network interfaces (keep them short)
               _("Device"),
               _("MAC Address"),
               _("Model"),
               _("VLAN"),
               _("FCoE VLAN Interface"),
-              # continue column headers
               _("FCoE Enable"),
               _("DCB Required"),
               _("AUTO VLAN"),
@@ -183,9 +192,9 @@ module Yast
             ),
             []
           ),
-          # button labels
           Left(
             HBox(
+              # button labels
               PushButton(Id(:retry), _("Retry &Detection")),
               PushButton(Id(:edit), _("Change &Settings")),
               PushButton(Id(:create), _("Create &FCoE Interface")),
@@ -203,29 +212,42 @@ module Yast
         @mbox_x,
         @mbox_y,
         VBox(
-          VSpacing(2.0),
-          Frame(
-            # frame label - configuration settings of FCoE
-            _("Configuration Settings"),
+          VStretch(),
+          HBox(
+            HStretch(),
+            HSpacing(1),
             VBox(
-              # combo box label
-              Left(
-                ComboBox(
-                  Id("debug"),
-                  _("&Debug"),
-                  [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
-                )
-              ),
-              # combo box label
-              Left(
-                ComboBox(
-                  Id("syslog"),
-                  _("&Use syslog"),
-                  [Item(Id("yes"), "yes", true), Item(Id("no"), "no")]
+              Frame(
+                # frame label - configuration settings of FCoE
+                _("Configuration Settings"),
+                VBox(
+                  HBox(
+                    HSpacing(2),
+                    MinWidth( 6, ComboBox(
+                      Id("debug"),
+                      # combo box label (debug setting yes/no)
+                      _("&Debug"),
+                      [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
+                    )),
+                    HSpacing(2)
+                  ),
+                  VSpacing(2.0),
+                  HBox(
+                    HSpacing(2),
+                    MinWidth( 6, ComboBox(
+                    Id("syslog"),
+                    # combo box label (use syslog yes/no)
+                    _("&Use syslog"),
+                    [Item(Id("yes"), "yes", true), Item(Id("no"), "no")]
+                    )),
+                    HSpacing(2)
+                  )
                 )
               )
-            )
-          ),
+            ),
+            HSpacing(1),
+            HStretch()
+            ),
           VStretch()
         )
       )

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed May  7 12:01:31 CEST 2014 - gs@suse.de
+
+- Improve layout of services, configuration and edit dialog,
+  use latest Wizard methods
+
+-------------------------------------------------------------------
 Mon May  5 12:26:54 CEST 2014 - gs@suse.de
 
 - Add columns for driver and private flags to table of interfaces
