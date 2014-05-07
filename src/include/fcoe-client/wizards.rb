@@ -265,7 +265,7 @@ module Yast
         "edit"     => { :abort => :abort, :next => "global" }
       }
 
-      Wizard.CreateDialog
+      Wizard.OpenNextBackDialog
       if Mode.normal
         Wizard.SetDesktopTitleAndIcon("fcoe-client")
       else
@@ -274,7 +274,7 @@ module Yast
 
       ret = Sequencer.Run(aliases, sequence)
 
-      UI.CloseDialog
+      Wizard.CloseDialog
       deep_copy(ret)
     end
 
@@ -294,7 +294,7 @@ module Yast
         "write"    => { :abort => :abort, :next => :next }
       }
 
-      Wizard.CreateDialog
+      Wizard.OpenCancelOKDialog
       if Mode.normal
         Wizard.SetDesktopTitleAndIcon("fcoe-client")
       else
@@ -303,7 +303,7 @@ module Yast
 
       ret = Sequencer.Run(aliases, sequence)
 
-      UI.CloseDialog
+      Wizard.CloseDialog
       deep_copy(ret)
     end
 
