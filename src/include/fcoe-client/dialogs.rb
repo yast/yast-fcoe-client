@@ -107,7 +107,7 @@ module Yast
                   Id(:fcoe),
                   # combo box label: enable FCoE (yes/no)
                   _("&FCoE Enable"),
-                  [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
+                  [Item(Id("yes"), _("Yes")), Item(Id("no"), _("No"), true)]
                 ),
                 VSpacing(1),
                 ComboBox(
@@ -115,14 +115,14 @@ module Yast
                   Opt(:notify),
                   # combo box label: require DCB (yes/no)
                   _("&DCB Required"),
-                  [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
+                  [Item(Id("yes"), _("Yes")), Item(Id("no"), _("No"), true)]
                 ),
                 VSpacing(1),
                 ComboBox(
                   Id(:auto),
                   # combo box label: AUTO_VLAN setting (yes/no)
                   _("&AUTO_VLAN"),
-                  [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
+                  [Item(Id("yes"), _("Yes")), Item(Id("no"), _("No"), true)]
                 )
               )
             )
@@ -227,7 +227,7 @@ module Yast
                       Id("debug"),
                       # combo box label (debug setting yes/no)
                       _("&Debug"),
-                      [Item(Id("yes"), "yes"), Item(Id("no"), "no", true)]
+                      [Item(Id("yes"), _("Yes")), Item(Id("no"), _("No"), true)]
                     )),
                     HSpacing(2)
                   ),
@@ -238,7 +238,7 @@ module Yast
                     Id("syslog"),
                     # combo box label (use syslog yes/no)
                     _("&Use syslog"),
-                    [Item(Id("yes"), "yes", true), Item(Id("no"), "no")]
+                    [Item(Id("yes"), _("Yes"), true), Item(Id("no"), _("No"))]
                     )),
                     HSpacing(2)
                   )
