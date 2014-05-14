@@ -140,12 +140,18 @@ module Yast
           else
             Builtins.y2error("lldpad.socket not found")
           end
+          # and enable the service (needed during boot)
+          Service.Enable("lldpad")
+
+          # enable fcoemon socket
           fcoemon_socket = SystemdSocket.find("fcoemon")
           if fcoemon_socket
             fcoemon_socket.enable
           else
             Builtins.y2error("fcoemon.socket not found")
           end
+          # and enable the service (needed during boot)
+          Service.Enable("fcoe")
         end
       else
         Builtins.y2error("unknown function: %1", @func)
