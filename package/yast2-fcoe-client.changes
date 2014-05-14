@@ -1,9 +1,10 @@
 -------------------------------------------------------------------
-Wed May  7 12:01:31 CEST 2014 - gs@suse.de
+Wed May 14 14:23:31 CEST 2014 - gs@suse.de
 
 - Improve layout of services, configuration and edit dialog,
   use latest Wizard methods,
   enable 'lldpad' and 'fcoe' service in finish script (bnc #877352)
+- 3.1.7
 
 -------------------------------------------------------------------
 Mon May  5 12:26:54 CEST 2014 - gs@suse.de
