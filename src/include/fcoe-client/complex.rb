@@ -58,9 +58,11 @@ module Yast
       if !Stage.initial
         if FcoeClient.fcoe_started && !FcoeClient.fcoemonSocketEnabled?
           FcoeClient.fcoemonSocketStop
+          Service.Stop("fcoe")
         end
         if FcoeClient.lldpad_started && !FcoeClient.lldpadSocketEnabled?
           FcoeClient.lldpadSocketStop
+          Service.Stop("lldpad")
         end
       end
       return true if !FcoeClient.Modified
