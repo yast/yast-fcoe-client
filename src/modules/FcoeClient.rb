@@ -788,16 +788,22 @@ module Yast
         "Setting start of lldpad to %1",
         lldpad_start
       )
-
+      # enable/disable services and sockets as required
       if fcoe_start && lldpad_start
         lldpadSocketEnable             # enable 'lldpad' first
+        Service.Enable("lldpad")
         fcoemonSocketEnable
+        Service.Enable("fcoe")
       elsif !fcoe_start && lldpad_start
         fcoemonSocketDisable
+        Service.Disable("fcoe")
         lldpadSocketEnable
+        Service.Enable("lldpad")
       elsif !fcoe_start && !lldpad_start
         fcoemonSocketDisable            # disable 'fcoe' first
+        Service.Disable("fcoe")
         lldpadSocketDisable
+        Service.Disable("lldpad")
       end 
       # fcoe_start && !lldpad_start isn't possible -> see complex.ycp StoreServicesDialog
 
@@ -846,8 +852,8 @@ module Yast
       # SLES11 SP3: /etc/init.d/boot.fcoe, line 86 
       #             (modprobe $SUPPORTED_DRIVERS > /dev/null 2>&1)
       #             SUPPORTED_DRIVERS from /etc/fcoe/config
-      # SLES12:     Service.Start in inst-sys runs commands from 
-      #             /usr/lib/systemd/system/fcoe.service
+      # SLES12:     Service.Start in inst-sys uses '/bin/service_start' to run
+      #             commands from /usr/lib/systemd/system/fcoe.service
       #             (including modprobe)
       ret = true
 
@@ -895,6 +901,17 @@ module Yast
         log.info("lldpad.socket is already active")
       end
 
+      if lldpadSocketActive? && (Service.Status("lldpad") != 0)
+        success = Service.Start("lldpad")
+        if success
+          log.info("lldpad service started")
+        else
+          log.error( "Cannot start lldpad service")
+          Report.Error(_("Cannot start lldpad service."))
+          ret = false
+        end
+      end
+
       if !fcoemonSocketActive?
         success = fcoemonSocketStart
         if success
@@ -907,6 +924,17 @@ module Yast
         end
       else
         log.info("fcoemon.socket is already active")
+      end
+
+      if fcoemonSocketActive? && (Service.Status("fcoe") != 0)
+        success = Service.Start("fcoe")
+        if success
+          log.info("fcoe service started")
+        else
+          log.error( "Cannot start fcoe service")
+          Report.Error(_("Cannot start fcoe service."))
+          ret = false
+        end
       end
 
       ret
