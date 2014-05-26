@@ -1042,6 +1042,25 @@ module Yast
       netcards.each do |card|
         device = card["dev_name"] || ""
         dcb_capable = DCBCapable(device) # DCB capable
+        flags_map = {}
+
+        if card["fcoeoffload"] == nil
+          # it's about a flag which is not set at all
+          flags_map["fcoe_flag"] = _("not set")
+        else
+          # also about setting of a flag
+          flags_map["fcoe_flag"] = card["fcoeoffload"]?_("true"):_("false")
+        end
+        if card["iscsioffload"] == nil
+          flags_map["iscsi_flag"] = _("not set")
+        else
+          flags_map["iscsi_flag"] = card["iscsioffload"]?_("true"):_("false")
+        end
+        if card["storageonly"] == nil
+          flags_map["storage_only"] = _("not set")
+        else
+          flags_map["storage_only"] = card["storageonly"]?_("true"):_("false")
+        end
 
         if Ops.get(vlan_info, device, []).empty?
           # Interface down or FCoE not enabled on the switch - we can't do anything here.
@@ -1051,11 +1070,12 @@ module Yast
           info_map = {
             "dcb_capable"=> dcb_capable,
             "dev_name"   => device, # network card, e.g. eth3
+            "driver"     => card["driver"] || "",
             "mac_addr"   => Ops.get_string(card, ["resource", "hwaddr", 0, "addr"], ""), # MAC address
             "device"     => card["device"] || card["model"] || "",
             "fcoe_vlan"  => fcoe_vlan_interface
           }
-
+          info_map.merge!(flags_map)
           network_interfaces = network_interfaces << info_map
         else
           # add infos about card and VLAN interfaces
@@ -1122,23 +1142,7 @@ module Yast
               "vlan_interface" => vlan["vlan"] || "", # VLAN interface, e.g. 200
               "cfg_device"     => status_map["cfg_device"] || "" # part of cfg-file name, e.g. eth3.200
             }
-            if card["fcoeoffload"] == nil
-              # it's about a flag which is not set at all
-              info_map["fcoe_flag"] = _("not set")
-            else
-              # also about setting of a flag
-              info_map["fcoe_flag"] = card["fcoeoffload"]?_("true"):_("false")
-            end
-            if card["iscsioffload"] == nil
-              info_map["iscsi_flag"] = _("not set")
-            else
-             info_map["iscsi_flag"] = card["iscsioffload"]?_("true"):_("false")
-            end
-            if card["storageonly"] == nil
-              info_map["storage_only"] = _("not set")
-            else
-             info_map["storage_only"] = card["storageonly"]?_("true"):_("false")
-            end
+            info_map.merge!(flags_map)
             network_interfaces = network_interfaces << info_map
           end # do |vlan|
         end # else
