@@ -1044,22 +1044,14 @@ module Yast
         dcb_capable = DCBCapable(device) # DCB capable
         flags_map = {}
 
-        if card["fcoeoffload"] == nil
-          # it's about a flag which is not set at all
-          flags_map["fcoe_flag"] = _("not set")
-        else
-          # also about setting of a flag
-          flags_map["fcoe_flag"] = card["fcoeoffload"]?_("true"):_("false")
+        if card["fcoeoffload"] != nil
+           flags_map["fcoe_flag"] = card["fcoeoffload"]
         end
-        if card["iscsioffload"] == nil
-          flags_map["iscsi_flag"] = _("not set")
-        else
-          flags_map["iscsi_flag"] = card["iscsioffload"]?_("true"):_("false")
+        if card["iscsioffload"] != nil
+          flags_map["fcoe_flag"] = card["fcoeoffload"]
         end
-        if card["storageonly"] == nil
-          flags_map["storage_only"] = _("not set")
-        else
-          flags_map["storage_only"] = card["storageonly"]?_("true"):_("false")
+        if card["storageonly"] != nil
+          flags_map["storage_only"] = card["storageonly"]
         end
 
         if Ops.get(vlan_info, device, []).empty?

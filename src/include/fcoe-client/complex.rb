@@ -42,6 +42,14 @@ module Yast
 
       Yast.include include_target, "fcoe-client/helps.rb"
       Yast.include include_target, "fcoe-client/dialogs.rb"
+
+      @yes_no_mapping = {
+        # setting of config value is 'yes'
+        "yes" => _("yes"),
+        # setting of config value is 'no'
+        "no"  => _("no"),
+        nil   => ""
+      }
     end
 
     # Show a popup on abort if data are modified and
@@ -182,6 +190,22 @@ module Yast
 
       table_items = []
 
+      fcoe_vlan_mapping = {
+        # FCoE is not available on the interface
+        @NOT_AVAILABLE  => _("not available"),
+        # the interface is not configured for FCoE
+        @NOT_CONFIGURED => _("not configured"),
+        nil             => ""
+      }
+
+      flags_mapping = {
+        # the flag is 'true'
+        true => _("true"),
+        # the flag is 'false'
+        false  => _("false"),
+        # the flag is not set at all
+        nil   => _("not set")
+      }
       Builtins.foreach(netcards) do |card|
         table_items = Builtins.add(
           table_items,
@@ -190,16 +214,16 @@ module Yast
             card["dev_name"] || "",
             card["mac_addr"] || "",
             card["device"] || "",
-            card["vlan_interface"] ||"",
-            card["fcoe_vlan"] || "",
-            card["fcoe_enable"] || "",
-            card["dcb_required"] || "",
-            card["auto_vlan"] || "",
-            card["dcb_capable"] || "",
+            card["vlan_interface"] || "",
+            fcoe_vlan_mapping[card["fcoe_vlan"]] || card["fcoe_vlan"],
+            @yes_no_mapping[card["fcoe_enable"]],
+            @yes_no_mapping[card["dcb_required"]],
+            @yes_no_mapping[card["auto_vlan"]],
+            @yes_no_mapping[card["dcb_capable"]],
             card["driver"] || "",
-            card["fcoe_flag"] || "",
-            card["iscsi_flag"] || "",
-            card["storage_only"] || ""
+            flags_mapping[card["fcoe_flag"]],
+            flags_mapping[card["iscsi_flag"]],
+            flags_mapping[card["storage_only"]]
           )
         )
         row = Ops.add(row, 1)
@@ -537,17 +561,17 @@ module Yast
         UI.ChangeWidget(
           Id(:interfaces),
           Cell(FcoeClient.current_card, 5),
-          Ops.get_string(status_map, "FCOE_ENABLE", "")
+          @yes_no_mapping[status_map["FCOE_ENABLE"]]
         )
         UI.ChangeWidget(
           Id(:interfaces),
           Cell(FcoeClient.current_card, 6),
-          Ops.get_string(status_map, "DCB_REQUIRED", "")
+          @yes_no_mapping[status_map["DCB_REQUIRED"]]
         )
         UI.ChangeWidget(
           Id(:interfaces),
           Cell(FcoeClient.current_card, 7),
-          Ops.get_string(status_map, "AUTO_VLAN", "")
+          @yes_no_mapping[status_map["AUTO_VLAN"]]
         )
         AdjustButtons()
       elsif action == :remove
@@ -702,22 +726,22 @@ module Yast
               UI.ChangeWidget(
                 Id(:interfaces),
                 Cell(FcoeClient.current_card, 4),
-                Ops.get_string(card, "fcoe_vlan", "")
+                card["fcoe_vlan"] || ""
               )
               UI.ChangeWidget(
                 Id(:interfaces),
                 Cell(FcoeClient.current_card, 5),
-                Ops.get_string(card, "fcoe_enable", "")
+                @yes_no_mapping[card["fcoe_enable"]]
               )
               UI.ChangeWidget(
                 Id(:interfaces),
                 Cell(FcoeClient.current_card, 6),
-                Ops.get_string(card, "dcb_required", "")
+                @yes_no_mapping[card["dcb_required"]]
               )
               UI.ChangeWidget(
                 Id(:interfaces),
                 Cell(FcoeClient.current_card, 7),
-                Ops.get_string(card, "auto_vlan", "")
+                @yes_no_mapping[card["auto_vlan"]]
               )
               AdjustButtons()
             else
