@@ -70,10 +70,7 @@ describe Yast::FcoeClientClass do
                           "fcoe_enable" => "yes", 
                           "fcoe_vlan" => "not configured", 
                           "mac_addr" => "08:00:27:11:64:e4", 
-                          "vlan_interface" => "300",
-                          "fcoe_flag" => "not set",
-                          "iscsi_flag" => "not set",
-                          "storage_only" => "not set"
+                          "vlan_interface" => "300"
                         }, 
                         {
                           "auto_vlan" => "no", 
@@ -86,10 +83,7 @@ describe Yast::FcoeClientClass do
                           "fcoe_enable" => "yes", 
                           "fcoe_vlan" => "eth1.400", 
                           "mac_addr"  =>  "08:00:27:11:64:e4", 
-                          "vlan_interface" => "400",
-                          "fcoe_flag" => "not set",
-                          "iscsi_flag" => "not set",
-                          "storage_only" => "not set"
+                          "vlan_interface" => "400"
                         }, 
                         {
                           "auto_vlan" => "yes", 
@@ -103,9 +97,9 @@ describe Yast::FcoeClientClass do
                           "fcoe_vlan" => "not configured", 
                           "mac_addr" => "08:23:27:99:64:78", 
                           "vlan_interface" => "200",
-                          "fcoe_flag" => "true",
-                          "iscsi_flag" => "false",
-                          "storage_only" => "true"
+                          "fcoe_flag" => true,
+                          "iscsi_flag" => false,
+                          "storage_only" => true
                         }
                        ])
 
