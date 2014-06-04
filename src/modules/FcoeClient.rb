@@ -1048,7 +1048,7 @@ module Yast
            flags_map["fcoe_flag"] = card["fcoeoffload"]
         end
         if card["iscsioffload"] != nil
-          flags_map["fcoe_flag"] = card["fcoeoffload"]
+          flags_map["iscsi_flag"] = card["iscsioffload"]
         end
         if card["storageonly"] != nil
           flags_map["storage_only"] = card["storageonly"]
