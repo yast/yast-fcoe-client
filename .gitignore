@@ -16,8 +16,7 @@ missing
 *.ami
 *.ybc
 .dep
-doc/autodocs/*.html
-doc/autodocs/*.tmp
+doc/autodocs
 testsuite/*.log
 testsuite/*.sum
 testsuite/*.test
@@ -25,4 +24,7 @@ testsuite/tmp*
 testsuite/site.exp
 testsuite/config
 testsuite/run
+test/*.log
+test/*.trs
+test-driver
 package/*.tar.bz2
