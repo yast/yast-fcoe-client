@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Sep  4 12:20:35 UTC 2014 - mvidner@suse.com
+
+- Use a more flexible rubygem requirement syntax (bnc#895069)
+- 3.1.11
+
+-------------------------------------------------------------------
 Tue Jun  3 14:52:59 CEST 2014 - gs@suse.de
 
 - Mark configuration values for translation (bnc #877911)
