@@ -17,7 +17,7 @@
 
 
 Name:           yast2-fcoe-client
-Version:        3.1.10
+Version:        3.1.11
 Release:        0
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -29,7 +29,7 @@ Requires:	yast2 >= 2.21.22
 Requires:       fcoe-utils
 BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-testsuite
 BuildRequires:  yast2-devtools >= 3.1.10
-BuildRequires:  rubygem-rspec
+BuildRequires:  rubygem(rspec)
 
 BuildArchitectures:	noarch
 
