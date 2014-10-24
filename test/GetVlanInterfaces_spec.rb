@@ -1,4 +1,4 @@
-#! /usr/bin/rspec
+#!/usr/bin/env rspec
 require_relative '../src/modules/FcoeClient'
 
 describe Yast::FcoeClientClass do
