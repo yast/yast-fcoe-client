@@ -1,8 +1,8 @@
 -------------------------------------------------------------------
 Thu Apr  9 13:58:24 UTC 2015 - jreidinger@suse.com
 
-- restrict number of retries for fipvlan to properly report
-  failure (bnc#838739)
+- increase number of retries for fipvlan to try harder to connect
+  (bnc#838739)
 - 2.17.26
 
 -------------------------------------------------------------------
