@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jul 26 09:43:33 CEST 2016 - gs@suse.de
+
+- handle duplicate vlan ids correctly (bsc#988050)
+- 3.1.14
+
+-------------------------------------------------------------------
 Tue Jun  7 10:36:05 UTC 2016 - igonzalezsosa@suse.com
 
 - Stop generating autodocs (fate#320356)
