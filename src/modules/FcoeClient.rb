@@ -468,6 +468,7 @@ module Yast
             "< \n" +
             "------------------------------------------\n" +
             "eth1           | 500   |54:7f:ee:09:55:9f\n" +
+            "eth1           | 500   |57:9f:ea:08:34:78\n" +
             "eth15          | 2012  |54:7f:ee:04:55:9f\n" +
             "eth15          | 0     |54:7f:ee:04:55:9f\n" +
             "eth15          | 200   |54:7f:ee:04:55:8f\n" +
@@ -500,59 +501,49 @@ module Yast
     #   }
     #
     def GetVlanInterfaces(net_devices, fcoe_info)
-      net_devices = deep_copy(net_devices)
-      fcoe_info = deep_copy(fcoe_info)
       vlan_info = {}
 
-      Builtins.foreach(
-        Convert.convert(net_devices, :from => "list", :to => "list <string>")
-      ) { |dev| Builtins.foreach(fcoe_info) do |line|
-        # Check whether there is a line for the given interface, e.g.
-        # eth3            | 200  | 00:0d:ec:a2:ef:00\n
-        # Get VLAN channel from second column and FCF MAC from third.
-        line = Builtins.deletechars(line, " \t")
-        columns = Builtins.splitstring(line, "|")
-        if Ops.get(columns, 0, "") == dev
-          # get VLAN and FCF MAC and add it to vlan_info
-          vlan_interface = { "vlan" => Ops.get(columns, 1, ""), "fcf" => Ops.get(columns, 2, "") }
+      net_devices.each { |dev| fcoe_info.each do |line|
+          # Check whether there is a line for the given interface, e.g.
+          # eth3            | 200  | 00:0d:ec:a2:ef:00\n
+          line.delete!(" \t")
+          columns = line.split("|")
 
-          Builtins.y2milestone(
-            "Interface: %1 VLAN: %2 FCF: %3",
-            dev,
-            Ops.get(columns, 1, ""),
-            Ops.get(columns, 2, "")
-          )
+          if columns[0] == dev
+            vlan_interface = {"vlan" => columns[1] || "", "fcf" => columns[2] || ""}
+            log.info "Interface: #{dev} VLAN: #{columns[1]} FCF: #{columns[2]}"
 
-          if Ops.get(vlan_info, dev, []) == []
-            vlan_info = Builtins.add(vlan_info, dev, [vlan_interface])
-          else
-            vlans = Convert.convert(
-              Ops.get(vlan_info, dev, []),
-              :from => "list",
-              :to   => "list <map>"
-            )
+            vlans = vlan_info[dev] || []
 
-            # add vlan_interface only if no entry with identical FCF MAC exists
-            if Builtins.find(vlans) do |vlan|
-                (vlan["fcf"] || "") == (vlan_interface["fcf"] || "")
+            # Do not add entries with identical VLAN IDs (bsc#988050).
+            # The FCF MAC adress might be identical. It's the address which
+            # can be reached via the FCoE interface and it's possible to
+            # reach same FCF MAC address from different VLANs.
+            if vlans.find_index do |vlan|
+                (vlan["vlan"] || "") == (vlan_interface["vlan"] || "")
               end == nil
-              vlans = Builtins.add(vlans, vlan_interface)
-            elsif (vlan_interface["vlan"] || "") == "0" # for VLAN = 0 replace existing entry
-              # VLAN = 0 'wins' (see bnc #813621, comment #4)
-              vlans = Builtins.maplist(vlans) do |vlan|
-                if (vlan["fcf"] || "") == (vlan_interface["fcf"] || "")
-                  Builtins.y2milestone("VLAN = 0 is taken")
-                  Ops.set(vlan, "vlan", "0")
-                end
-                deep_copy(vlan)
+              vlans << vlan_interface
+            end
+
+            # Check for VLAN ID "0" which is treated special:
+            # if there are other VLANs with the same FCF MAC address,
+            # only the "0" ID should be in the list (bnc #813621, comment #4)
+            fcf_zero = ""
+            vlans.each do |vlan|
+              if vlan["vlan"] == "0"
+                fcf_zero = vlan["fcf"] || ""
               end
             end
-            Ops.set(vlan_info, dev, vlans)
+            if !fcf_zero.empty?
+              vlans.delete_if { |vlan| (vlan["fcf"] == fcf_zero) &&
+                                       (vlan["vlan"] != "0") }
+            end
+            vlan_info[dev] = vlans
           end
-        end
-      end }
-      Builtins.y2milestone("VLAN info: %1", vlan_info)
-      deep_copy(vlan_info)
+        end }
+
+      log.info "VLAN info: #{vlan_info}"
+      vlan_info
     end
 
     #
