@@ -77,20 +77,20 @@ term EditDialogContents()
 					    `VBox(
 						  // combo box label: enable FCoE (yes/no)
 						  `ComboBox( `id(`fcoe), _("&FCoE Enable"),
-							     [`item(`id("yes"), "yes" ),
-							      `item(`id("no"), "no", true ) ]
+							     [`item(`id("yes"), _("Yes") ),
+							      `item(`id("no"), _("No"), true ) ]
 							     ),
 						  `VSpacing (1),
 						  // combo box label: require DCB (yes/no)
 						  `ComboBox( `id(`dcb), `opt (`notify), _("&DCB Required"),
-							     [`item(`id("yes"), "yes" ),
-							      `item(`id("no"), "no", true ) ]
+							     [`item(`id("yes"), _("Yes") ),
+							      `item(`id("no"), _("No"), true ) ]
 							     ),
 						  `VSpacing (1),
 						  // combo box label: AUTO_VLAN setting (yes/no)
 						  `ComboBox( `id(`auto), _("&AUTO_VLAN"),
-							     [`item(`id("yes"), "yes" ),
-							      `item(`id("no"), "no", true ) ]
+							     [`item(`id("yes"), _("Yes") ),
+							      `item(`id("no"), _("No"), true ) ]
 							     )
 						  )
 					    )
@@ -162,14 +162,14 @@ term ConfigurationDialogContent() {
 				     `VBox (
 					    // combo box label
 					    `Left(`ComboBox(`id("debug"), _("&Debug"),
-							    [`item(`id("yes"), "yes" ),
-							     `item(`id("no"), "no", true )
+							    [`item(`id("yes"), _("Yes") ),
+							     `item(`id("no"), _("No"), true )
 							     ])
 						  ),
 					     // combo box label
 					    `Left(`ComboBox(`id("syslog"), _("&Use syslog"),
-							    [`item(`id("yes"), "yes", true ),
-							     `item(`id("no"), "no" )
+							    [`item(`id("yes"), _("Yes"), true ),
+							     `item(`id("no"), _("No") )
 							     ])
 						  )
 					    )
