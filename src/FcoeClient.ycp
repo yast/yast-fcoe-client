@@ -729,7 +729,7 @@ global boolean DetectNetworkCards()
 	    if ( vlan_info[card["dev_name"]:""]:"" == "" )
 	    {
 		// Interface down or FCoE not enabled on the switch - we can't do anything here.
-		fcoe_vlan_interface = NOT_AVAILABLE;
+		fcoe_vlan_interface = _("not available");
 	    }
 	    else
 	    {
