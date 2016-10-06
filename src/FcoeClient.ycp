@@ -685,6 +685,16 @@ global boolean ServiceStatus()
     return ret;
 }
 
+// Helper function to translate the FCOE VLAN interface in case it's needed.
+string humanized_interface(string interface) {
+  if (interface == NOT_AVAILABLE)
+    return _("not available");
+  else if (interface == NOT_CONFIGURED)
+    return _("not configured");
+  else
+    return interface;
+}
+
 // list <map> network_interfaces
 //
 // dev_name  mac_addr  device      fcoe_vlan  fcoe_enable dcb_required auto_vlan dcb_capable vlan_interface  cfg_file
@@ -729,7 +739,7 @@ global boolean DetectNetworkCards()
 	    if ( vlan_info[card["dev_name"]:""]:"" == "" )
 	    {
 		// Interface down or FCoE not enabled on the switch - we can't do anything here.
-		fcoe_vlan_interface = _("not available");
+		fcoe_vlan_interface = NOT_AVAILABLE;
 	    }
 	    else
 	    {
@@ -782,7 +792,7 @@ VLAN interface to get a valid configuration."), fcoe_vlan_interface) );
 		info_map = add( info_map, "device", card["model"]:"");		// model
 	    }
 		
-	    info_map = add( info_map, "fcoe_vlan", fcoe_vlan_interface );	// FCoE VLAN interface, e.g. eth3.200
+	    info_map = add( info_map, "fcoe_vlan", humanized_interface(fcoe_vlan_interface) );	// FCoE VLAN interface, e.g. eth3.200
 
 	    if ( fcoe_vlan_interface != NOT_AVAILABLE )
 	    {
