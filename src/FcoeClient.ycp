@@ -882,6 +882,7 @@ global boolean WriteSysconfigFiles( )
                     SCR::Write(.network.value + card["fcoe_vlan"]:"" + "STARTMODE", "nfsroot" );
                     SCR::Write(.network.value + card["fcoe_vlan"]:"" + "ETHERDEVICE", card["dev_name"]:"" );
                     SCR::Write(.network.value + card["fcoe_vlan"]:"" + "USERCONTROL", "no" );
+                    SCR::Write(.network.value + card["fcoe_vlan"]:"" + "VLAN_ID", card["vlan_interface"]:"" );
                 }
 		string ifcfg_file = sformat( "/etc/sysconfig/network/ifcfg-%1", card["dev_name"]:"" );
 		y2milestone( "Writing %1", ifcfg_file );
