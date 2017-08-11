@@ -1236,6 +1236,7 @@ module Yast
             SCR.Write(vifcfg_path + "STARTMODE", "nfsroot")
             SCR.Write(vifcfg_path + "ETHERDEVICE", dev_name)
             SCR.Write(vifcfg_path + "USERCONTROL", "no")
+            SCR.Write(vifcfg_path + "VLAN_ID", card.fetch("vlan_interface", ""))
           end
           ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}"
           Builtins.y2milestone("Writing %1", ifcfg_file)
