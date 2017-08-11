@@ -348,6 +348,7 @@ module Yast
         card = FcoeClient.GetCurrentNetworkCard
         Builtins.y2milestone("Selected card: %1", card)
         dev_name = Ops.get_string(card, "dev_name", "")
+        vlan_interface = card.fetch("vlan_interface", "") # eg. "200"
 
         configured_vlans = FcoeClient.IsConfigured(dev_name)
 
@@ -362,28 +363,22 @@ module Yast
             # text of an error popup
             Popup.Error(
               Builtins.sformat(
-                _(
-                  "Cannot start FCoE on VLAN interface %1\n" +
+                _("Cannot start FCoE on VLAN interface %1\n" +
                     "because FCoE is already configured on\n" +
-                    "network interface %2 itself."
-                ),
-                Ops.get_string(card, "vlan_interface", ""),
-                dev_name
+                    "network interface %2 itself."),
+                vlan_interface, dev_name
               )
             )
             return nil
           end
-          if Ops.get_string(card, "vlan_interface", "") == "0"
+          if vlan_interface == "0"
             # text of an error popup
             Popup.Error(
               Builtins.sformat(
-                _(
-                  "Cannot start FCoE on network interface %1 itself\n" +
+                _("Cannot start FCoE on network interface %1 itself\n" +
                     "because FCoE is already configured on\n" +
-                    "VLAN interface(s) %2."
-                ),
-                dev_name,
-                configured_vlans
+                    "VLAN interface(s) %2."),
+                dev_name, configured_vlans
               )
             )
             return nil
@@ -403,24 +398,17 @@ module Yast
         fcoe_vlan_interface = ""
         status_map = {}
 
-        ifcfg_file = Builtins.sformat(
-          "/etc/sysconfig/network/ifcfg-%1.%2",
-          dev_name,
-          Ops.get_string(card, "vlan_interface", "")
-        )
+        ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}.#{vlan_interface}"
 
         # headline of a popup: creating and starting Fibre Channel over Ethernet
         ret = Popup.YesNoHeadline(
           _("Creating and Starting FCoE on Detected VLAN Device"),
           # question to the user: really create and start FCoE
           Builtins.sformat(
-            _(
-              "Do you really want to create a FCoE network\n" +
+            _("Do you really want to create a FCoE network\n" +
                 "interface for discovered VLAN interface %1\n" +
-                "on %2 and start the FCoE initiator?"
-            ),
-            Ops.get_string(card, "vlan_interface", ""),
-            dev_name
+                "on %2 and start the FCoE initiator?"),
+            vlan_interface, dev_name
           )
         )
         if ret == true
@@ -447,11 +435,7 @@ module Yast
             # if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
             # call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
             if FileUtils.Exists(ifcfg_file)
-              cmd_ifup = Builtins.sformat(
-                "ifup %1.%2",
-                dev_name,
-                Ops.get_string(card, "vlan_interface", "")
-              )
+              cmd_ifup = Builtins.sformat("ifup %1.%2", dev_name, vlan_interface)
               Builtins.y2milestone("Executing command: %1", cmd_ifup)
               output = Convert.to_map(
                 SCR.Execute(path(".target.bash_output"), cmd_ifup)
