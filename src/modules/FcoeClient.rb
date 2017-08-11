@@ -1223,107 +1223,33 @@ module Yast
       success = true
 
       Builtins.foreach(netcards) do |card|
-        if Ops.get_string(card, "fcoe_vlan", "") != @NOT_AVAILABLE &&
-            Ops.get_string(card, "fcoe_vlan", "") != @NOT_CONFIGURED
+        fcoe_vlan = card.fetch("fcoe_vlan", "")
+        if fcoe_vlan != @NOT_AVAILABLE &&
+            fcoe_vlan != @NOT_CONFIGURED
           # write ifcfg-<if>.>VLAN> only if VLAN was created (not for VLAN = 0 which means
           # FCoE is started on the network interface itself)
+          dev_name = card.fetch("dev_name", "")
           if Ops.get_string(card, "vlan_interface", "") != "0"
-            Builtins.y2milestone(
-              "Writing /etc/sysconfig/network/ifcfg-%1",
-              Ops.get_string(card, "fcoe_vlan", "")
-            )
+            Builtins.y2milestone("Writing /etc/sysconfig/network/ifcfg-%1", fcoe_vlan)
+            vifcfg_path = path(".network.value") + fcoe_vlan
             # write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "fcoe_vlan", "")
-                ),
-                "BOOTPROTO"
-              ),
-              "static"
-            )
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "fcoe_vlan", "")
-                ),
-                "STARTMODE"
-              ),
-              "nfsroot"
-            )
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "fcoe_vlan", "")
-                ),
-                "ETHERDEVICE"
-              ),
-              Ops.get_string(card, "dev_name", "")
-            )
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "fcoe_vlan", "")
-                ),
-                "USERCONTROL"
-              ),
-              "no"
-            )
+            SCR.Write(vifcfg_path + "BOOTPROTO", "static")
+            SCR.Write(vifcfg_path + "STARTMODE", "nfsroot")
+            SCR.Write(vifcfg_path + "ETHERDEVICE", dev_name)
+            SCR.Write(vifcfg_path + "USERCONTROL", "no")
           end
-          ifcfg_file = Builtins.sformat(
-            "/etc/sysconfig/network/ifcfg-%1",
-            Ops.get_string(card, "dev_name", "")
-          )
+          ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}"
           Builtins.y2milestone("Writing %1", ifcfg_file)
 
           # write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
+          ifcfg_path = path(".network.value") + dev_name
           if !FileUtils.Exists(ifcfg_file)
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "dev_name", "")
-                ),
-                "BOOTPROTO"
-              ),
-              "static"
-            )
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "dev_name", "")
-                ),
-                "STARTMODE"
-              ),
-              "nfsroot"
-            )
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "dev_name", "")
-                ),
-                "NAME"
-              ),
-              Ops.get_string(card, "device", "")
-            )
+            SCR.Write(ifcfg_path + "BOOTPROTO", "static")
+            SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
+            SCR.Write(ifcfg_path + "NAME", Ops.get_string(card, "device", ""))
           else
             # don't overwrite BOOTPROTO !!!
-            SCR.Write(
-              Ops.add(
-                Ops.add(
-                  path(".network.value"),
-                  Ops.get_string(card, "dev_name", "")
-                ),
-                "STARTMODE"
-              ),
-              "nfsroot"
-            )
+            SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
           end
         end
       end
