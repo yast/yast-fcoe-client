@@ -182,7 +182,6 @@ module Yast
     end
 
     def ShowInterfaces
-      vlan_interface = ""
       row = 0
 
       netcards = FcoeClient.GetNetworkCards
@@ -314,9 +313,7 @@ module Yast
 
     # Handle
     #
-    def HandleServicesDialog(id, event)
-      event = deep_copy(event)
-      action = Ops.get(event, "ID")
+    def HandleServicesDialog(_id, _event)
       nil
     end
 
@@ -774,9 +771,7 @@ module Yast
       nil
     end
 
-    def HandleConfigurationDialog(id, event)
-      event = deep_copy(event)
-      action = Ops.get(event, "ID")
+    def HandleConfigurationDialog(_id, _event)
       nil
     end
 

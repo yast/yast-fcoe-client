@@ -673,7 +673,6 @@ module Yast
     #
     def GetFcoeStatus(vlan_device_name, device_name)
       status_map = {}
-      content = ""
       file_name = ""
       device = vlan_device_name
 
