@@ -36,6 +36,27 @@ module Yast
 
     FCOE_PKG_NAME = "fcoe-utils"
 
+    # Used by FcoeClientClass to keep data about an individual network interface
+    # (Not a real class; documents the structure of a Hash)
+    class Interface < Hash
+      # @!method [](k)
+      #   I am not sure when the keys are present/absent :-/
+      #   @option k [String] 'fcoe_vlan'
+      #     "eth1.500" or "not configured" or "not available"
+      #   @option k [String] 'vlan_interface'
+      #     "500", or "0" for no VLAN used;  yes, the name is nonsense, should be "vid"
+      #   @option k [String] 'dev_name'     "eth1"
+      #   @option k [String] 'auto_vlan'    "yes" or "no"
+      #   @option k [String] 'mac_addr'     "00:11:22:33:44:55"
+      #   @option k [String] 'fcoe_enable'  "yes" or "no"
+      #   @option k [String] 'dcb_required' "yes" or "no"
+      #   @option k [String] 'dcb_capable'  "yes" or "no"
+      #   @option k [String] 'cfg_device'   "eth1.500" or "" ???
+      #   @option k [Boolean] 'fcoe_flag' fcoe offload
+      #   @option k [Boolean] 'iscsi_flag' scsi offload
+      #   @option k [Boolean] 'storage_only'
+    end
+
     def main
       Yast.import "UI"
       textdomain "fcoe-client"
@@ -369,6 +390,7 @@ module Yast
     end
 
     # Get currently selected network card
+    # @return [Interface]
     def GetCurrentNetworkCard
       Ops.get(@network_interfaces, @current_card, {})
     end
@@ -933,7 +955,8 @@ module Yast
     #
     # Check whether there are configured FCoE VLANs for the given network interface
     # Return list of configured VLANs
-    #
+    # @param device_name [String] "eth1"
+    # @return [Array<String>] ["200", "300"]
     def IsConfigured(device_name)
       configured_vlans = []
       interfaces = GetNetworkCards()
@@ -951,9 +974,9 @@ module Yast
       deep_copy(configured_vlans)
     end
 
-    #
     # Detect network interface cards (hardware probe)
-    #
+    # @return [Array<Hash>] .probe.netcard output
+    #   (except the items without dev_name)
     def ProbeNetcards
       if !TestMode()
         netcards = Convert.convert(
@@ -1011,7 +1034,8 @@ module Yast
     # eth3      08:00:... Gigabit... 200             eth3.200   yes/no      yes/no       yes/no    yes/no      eth3.200
     #
     # Get the network cards and check Fcoe status
-    #
+    # @param netcards [Array<Hash>] .probe.netcard output
+    # @return [Array<Interface>]
     def DetectNetworkCards(netcards)
       return [] if netcards == nil
 
