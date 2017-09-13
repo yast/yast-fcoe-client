@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Aug 10 14:12:31 UTC 2017 - mvidner@suse.com
+
+- Fix wrong interface name with auto_vlan=yes (bsc#1043419)
+- 2.17.29
+
+-------------------------------------------------------------------
 Thu Oct  6 14:27:50 UTC 2016 - igonzalezsosa@suse.com
 
 - Fixed more translation issues related to bug

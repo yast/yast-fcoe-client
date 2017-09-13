@@ -332,7 +332,14 @@ on %1 and start the FCoE initiator?"), dev_name ) );
 	    else	// installed system - if VLAN already exists only start FCoE
 	    {
 		// create and start FCoE
-		command = sformat( "fipvlan -c -s --link-retry 60 %1", dev_name );
+		if ( card["auto_vlan"]:"no" == "yes" || card["vlan_interface"]:"" == "0" )
+		{
+		    command = sformat( "fipvlan -c -s -f '-fcoe' --link-retry 60 %1", dev_name );
+		}
+		else
+		{
+		    command = sformat( "fipvlan -c -s --link-retry 60 %1", dev_name );
+		}
 
                 // if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
 		// call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
