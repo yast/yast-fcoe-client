@@ -393,9 +393,9 @@ module Yast
         end
 
         if card["auto_vlan"] == "yes" || vlan_interface == "0"
-          command = Builtins.sformat("fipvlan -c -s -f '-fcoe' %1", dev_name)
+          command = "fipvlan -c -s -f '-fcoe' #{dev_name}"
         else
-          command = Builtins.sformat("fipvlan -c -s %1", dev_name)
+          command = "fipvlan -c -s #{dev_name}"
         end
 
         output = {}

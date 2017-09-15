@@ -1252,7 +1252,8 @@ module Yast
           # write ifcfg-<if>.>VLAN> only if VLAN was created (not for VLAN = 0 which means
           # FCoE is started on the network interface itself)
           dev_name = card.fetch("dev_name", "")
-          if Ops.get_string(card, "vlan_interface", "") != "0"
+          vid = card.fetch("vlan_interface", "")
+          if vid != "0"
             Builtins.y2milestone("Writing /etc/sysconfig/network/ifcfg-%1", fcoe_vlan)
             vifcfg_path = path(".network.value") + fcoe_vlan
             # write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
@@ -1260,20 +1261,18 @@ module Yast
             SCR.Write(vifcfg_path + "STARTMODE", "nfsroot")
             SCR.Write(vifcfg_path + "ETHERDEVICE", dev_name)
             SCR.Write(vifcfg_path + "USERCONTROL", "no")
-            SCR.Write(vifcfg_path + "VLAN_ID", card.fetch("vlan_interface", ""))
+            SCR.Write(vifcfg_path + "VLAN_ID", vid)
           end
           ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}"
           Builtins.y2milestone("Writing %1", ifcfg_file)
 
           # write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
           ifcfg_path = path(".network.value") + dev_name
+          SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
+          # don't overwrite BOOTPROTO !!!
           if !FileUtils.Exists(ifcfg_file)
             SCR.Write(ifcfg_path + "BOOTPROTO", "static")
-            SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
-            SCR.Write(ifcfg_path + "NAME", Ops.get_string(card, "device", ""))
-          else
-            # don't overwrite BOOTPROTO !!!
-            SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
+            SCR.Write(ifcfg_path + "NAME", card.fetch("device", ""))
           end
         end
       end
