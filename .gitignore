@@ -6,6 +6,7 @@ config.status
 config.sub
 configure
 configure.ac
+/coverage/
 install-sh
 /Makefile.am
 /Makefile.am.common

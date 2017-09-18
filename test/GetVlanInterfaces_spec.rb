@@ -1,5 +1,6 @@
 #!/usr/bin/env rspec
-require_relative '../src/modules/FcoeClient'
+require_relative "test_helper"
+Yast.import "FcoeClient"
 
 describe Yast::FcoeClientClass do
   before :each do
