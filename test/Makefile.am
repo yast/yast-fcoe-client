@@ -1,4 +1,5 @@
 TESTS = \
+  fcoe_client_write_spec.rb        \
   DetectNetworkCards_spec.rb       \
   GetVlanInterfaces_spec.rb
 

@@ -145,7 +145,6 @@ module Yast
         # FCoE is possible. We can not start exactly the interface from imported
         # data because the numeration of interfaces (eth0, eth1...) may differ.
         Builtins.foreach(@detected_netcards) do |card|
-          vlan_interface = ""
           fcoe_vlan_interface = ""
           command = ""
           output = {}

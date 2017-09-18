@@ -6,6 +6,7 @@ config.status
 config.sub
 configure
 configure.ac
+/coverage/
 install-sh
 /Makefile.am
 /Makefile.am.common
@@ -20,6 +21,7 @@ doc/autodocs
 testsuite/*.log
 testsuite/*.sum
 testsuite/*.test
+testsuite/raw*
 testsuite/tmp*
 testsuite/site.exp
 testsuite/config
@@ -28,3 +30,5 @@ test/*.log
 test/*.trs
 test-driver
 package/*.tar.bz2
+/doc
+/.yardoc
