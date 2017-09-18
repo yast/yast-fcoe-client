@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Sep 15 11:31:03 UTC 2017 - mvidner@suse.com
+
+- Fix wrong interface name with auto_vlan=yes (bsc#1043419)
+- 3.1.15
+
+-------------------------------------------------------------------
 Tue Jul 26 09:43:33 CEST 2016 - gs@suse.de
 
 - handle duplicate vlan ids correctly (bsc#988050)
