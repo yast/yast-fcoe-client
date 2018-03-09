@@ -150,11 +150,14 @@ module Yast
           output = {}
           ifcfg_file = ""
           status_map = {}
-          if Ops.get_string(card, "fcoe_vlan", "") == FcoeClient.NOT_CONFIGURED
-            command = Builtins.sformat(
-              "fipvlan -c -s %1",
-              Ops.get_string(card, "dev_name", "")
-            )
+          dev_name = card["dev_name"]
+          if card["fcoe_vlan"] == FcoeClient.NOT_CONFIGURED
+            if card["auto_vlan"] == "yes"
+              command = "fipvlan -c -s -f '-fcoe' #{dev_name}"
+            else
+              command = "fipvlan -c -s #{dev_name}"
+            end
+
             ifcfg_file = Builtins.sformat(
               "/etc/sysconfig/network/ifcfg-%1.%2",
               Ops.get_string(card, "dev_name", ""),
