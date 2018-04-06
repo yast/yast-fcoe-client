@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Apr  6 18:51:13 UTC 2018 - mfilka@suse.com
+
+- bnc#1087957 - version bump
+- 4.0.0
+
+-------------------------------------------------------------------
 Wed Mar  7 14:00:29 UTC 2018 - knut.anderssen@suse.com
 
 - Fix wrong interface name with auto_vlan=yes also during an
