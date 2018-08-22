@@ -24,7 +24,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Source0:        %{name}-%{version}.tar.bz2
 
 Group:          System/YaST
-License:        GPL-2.0
+License:        GPL-2.0-only
 Requires:	yast2 >= 2.21.22
 Requires:       fcoe-utils
 BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-testsuite
@@ -63,7 +63,7 @@ Ethernet (FCoE) configuration.
 %dir %{yast_scrconfdir}
 %{yast_scrconfdir}/*.scr
 %doc %{yast_docdir}
-%doc COPYING
+%license COPYING
 
 %changelog
 
