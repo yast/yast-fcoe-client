@@ -28,6 +28,8 @@
 # Authors:
 #  Gabriele Mohr <gs@suse.de>
 #
+require "yast2/systemd/socket"
+
 module Yast
   class FcoeClientFinishClient < Client
     def main
@@ -39,7 +41,6 @@ module Yast
       Yast.import "String"
       Yast.import "FcoeClient"
       Yast.import "Service"
-      Yast.import "SystemdSocket"
       Yast.include self, "installation/misc.rb"
 
       @ret = nil
@@ -134,7 +135,7 @@ module Yast
         if @start_services
           Builtins.y2milestone("Enabling socket start of fcoe and lldpad")
           # enable socket lldpad first
-          lldpad_socket = SystemdSocket.find("lldpad")
+          lldpad_socket = Yast2::Systemd::Socket.find("lldpad")
           if lldpad_socket
             lldpad_socket.enable
           else
@@ -144,7 +145,7 @@ module Yast
           Service.Enable("lldpad")
 
           # enable fcoemon socket
-          fcoemon_socket = SystemdSocket.find("fcoemon")
+          fcoemon_socket = Yast2::Systemd::Socket.find("fcoemon")
           if fcoemon_socket
             fcoemon_socket.enable
           else

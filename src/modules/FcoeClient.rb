@@ -28,6 +28,7 @@
 # Representation of the configuration of fcoe-client.
 # Input and output routines.
 require "yast"
+require "yast2/systemd/socket"
 
 module Yast
   class FcoeClientClass < Module
@@ -73,7 +74,6 @@ module Yast
       Yast.import "NetworkService"
       Yast.import "String"
       Yast.import "FileUtils"
-      Yast.import "SystemdSocket"
 
       # Data
 
@@ -895,8 +895,8 @@ module Yast
 
       # start sockets in installed system
       # throw exception if sockets not found
-      @fcoemon_socket = SystemdSocket.find!("fcoemon")
-      @lldpad_socket = SystemdSocket.find!("lldpad")
+      @fcoemon_socket = Yast2::Systemd::Socket.find!("fcoemon")
+      @lldpad_socket = Yast2::Systemd::Socket.find!("lldpad")
 
       # first start lldpad
       if !lldpadSocketActive?
