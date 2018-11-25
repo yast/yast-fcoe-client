@@ -17,7 +17,7 @@
 
 
 Name:           yast2-fcoe-client
-Version:        4.1.0
+Version:        4.1.1
 Release:        0
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -66,6 +66,7 @@ Ethernet (FCoE) configuration.
 %dir %{yast_scrconfdir}
 %{yast_scrconfdir}/*.scr
 %doc %{yast_docdir}
+%{_datadir}/icons/*
 %license COPYING
 
 %changelog
