@@ -66,7 +66,7 @@ Ethernet (FCoE) configuration.
 %dir %{yast_scrconfdir}
 %{yast_scrconfdir}/*.scr
 %doc %{yast_docdir}
-%{_datadir}/icons/*
+%{yast_icondir}
 %license COPYING
 
 %changelog
