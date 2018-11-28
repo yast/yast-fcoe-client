@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sun Nov 25 14:04:13 UTC 2018 - Stasiek Michalski <hellcp@mailbox.org>
+
+- Provide icon with module (boo#1109310)
+- 4.1.1
+
+-------------------------------------------------------------------
 Wed Aug 22 07:28:35 UTC 2018 - dgonzalez@suse.com
 
 - Update calls to YaST2 systemd classes (related to fate#319428)
