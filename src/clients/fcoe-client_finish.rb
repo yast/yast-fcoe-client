@@ -28,6 +28,8 @@
 # Authors:
 #  Gabriele Mohr <gs@suse.de>
 #
+require "shellwords"
+
 require "yast2/systemd/socket"
 
 module Yast
@@ -76,21 +78,10 @@ module Yast
         if @netcards != []
           Builtins.y2milestone("Copying files /etc/fcoe/* to destination")
           # copy fcoe config files to destdir
+          destdir = File.join(Installation.destdir, "etc/fcoe")
           WFM.Execute(
             path(".local.bash"),
-            Ops.add(
-              Ops.add(
-                Ops.add(
-                  Ops.add(
-                    "test -d /etc/fcoe/ && mkdir -p '",
-                    String.Quote(Installation.destdir)
-                  ),
-                  "/etc/fcoe' && cp -a /etc/fcoe/* '"
-                ),
-                String.Quote(Installation.destdir)
-              ),
-              "/etc/fcoe/'"
-            )
+            "/usr/bin/test -d /etc/fcoe/ && /usr/bin/mkdir -p #{destdir.shellescape} && /usr/bin/cp -a /etc/fcoe/* #{destdir.shellescape}"
           )
         else
           Builtins.y2milestone("Nothing to do")
@@ -111,9 +102,9 @@ module Yast
               Ops.get_string(card, "vlan_interface", "")
             )
             command = Builtins.sformat(
-              "cp -a %1 '%2/etc/sysconfig/network'",
-              file_name,
-              String.Quote(Installation.destdir)
+              "/usr/bin/cp -a %1 %2/etc/sysconfig/network",
+              file_name.shellescape,
+              Installation.destdir.shellescape
             )
             Builtins.y2milestone("Executing command: %1", command)
             WFM.Execute(path(".local.bash"), command)
@@ -123,9 +114,9 @@ module Yast
               Ops.get_string(card, "dev_name", "")
             )
             command = Builtins.sformat(
-              "cp -a %1 '%2/etc/sysconfig/network'",
-              file_name,
-              String.Quote(Installation.destdir)
+              "/usr/bin/cp -a %1 %2/etc/sysconfig/network",
+              file_name.shellescape,
+              Installation.destdir.shellescape
             )
             Builtins.y2milestone("Executing command: %1", command)
             WFM.Execute(path(".local.bash"), command)

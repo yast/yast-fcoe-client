@@ -24,6 +24,9 @@
 # Summary:	Dialogs definitions
 # Authors:	Gabriele Mohr <gs@suse.de>
 #
+
+require "shellwords"
+
 module Yast
   module FcoeClientComplexInclude
     def initialize_fcoe_client_complex(include_target)
@@ -393,9 +396,9 @@ module Yast
         end
 
         if card["auto_vlan"] == "yes" || vlan_interface == "0"
-          command = "fipvlan -c -s -f '-fcoe' #{dev_name}"
+          command = "/usr/sbin/fipvlan -c -s -f '-fcoe' #{dev_name.shellescape}"
         else
-          command = "fipvlan -c -s #{dev_name}"
+          command = "/usr/sbin/fipvlan -c -s #{dev_name.shellescape}"
         end
 
         output = {}
@@ -420,9 +423,7 @@ module Yast
             # execute command, e.g. 'fipvlan -c -s eth3'
 
             Builtins.y2milestone("Executing command: %1", command)
-            output = Convert.to_map(
-              SCR.Execute(path(".target.bash_output"), command)
-            )
+            output = SCR.Execute(path(".target.bash_output"), command)
             Builtins.y2milestone("Output: %1", output)
 
             if Ops.get_integer(output, "exit", 255) != 0
@@ -439,7 +440,7 @@ module Yast
             # if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
             # call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
             if FileUtils.Exists(ifcfg_file)
-              cmd_ifup = Builtins.sformat("ifup %1.%2", dev_name, vlan_interface)
+              cmd_ifup = Builtins.sformat("/usr/sbin/ifup %1.%2", dev_name.shellescape, vlan_interface.shellescape)
               Builtins.y2milestone("Executing command: %1", cmd_ifup)
               output = Convert.to_map(
                 SCR.Execute(path(".target.bash_output"), cmd_ifup)
@@ -448,14 +449,12 @@ module Yast
 
               if Ops.get_integer(output, "exit", 255) == 0
                 # only start FCoE
-                command = Builtins.sformat("fipvlan -s %1", dev_name)
+                command = Builtins.sformat("/usr/sbin/fipvlan -s %1", dev_name.shellescape)
               end
             end
 
             Builtins.y2milestone("Executing command: %1", command)
-            output = Convert.to_map(
-              SCR.Execute(path(".target.bash_output"), command)
-            )
+            output = SCR.Execute(path(".target.bash_output"), command)
             Builtins.y2milestone("Output: %1", output)
             if Ops.get_integer(output, "exit", 255) != 0
               if !FcoeClient.TestMode
@@ -505,7 +504,7 @@ module Yast
           # and removes the interface properly (tested on SP2 RC1)
           # TODO: Retest for SLES12
           FcoeClient.AddRevertCommand(
-            Builtins.sformat("vconfig rem %1", fcoe_vlan_interface)
+            Builtins.sformat("/usr/sbin/vconfig rem %1", fcoe_vlan_interface.shellescape)
           )
         else
           fcoe_vlan_interface = FcoeClient.NOT_CONFIGURED
@@ -605,19 +604,17 @@ module Yast
 
           # call fcoeadm -d <fcoe_vlan> first (bnc #719443)
           command = Builtins.sformat(
-            "fcoeadm -d %1",
-            Ops.get_string(card, "cfg_device", "")
+            "/usr/sbin/fcoeadm -d %1",
+            Ops.get_string(card, "cfg_device", "").shellescape
           )
           Builtins.y2milestone("Calling %1", command)
-          output = Convert.to_map(
-            SCR.Execute(path(".target.bash_output"), command)
-          )
+          output = SCR.Execute(path(".target.bash_output"), command)
           Builtins.y2milestone("Output: %1", output)
 
           if Ops.get_integer(output, "exit", 255) == 0 || FcoeClient.TestMode
             command = Builtins.sformat(
-              "vconfig rem %1",
-              Ops.get_string(card, "fcoe_vlan", "")
+              "/usr/sbin/vconfig rem %1",
+              Ops.get_string(card, "fcoe_vlan", "").shellescape
             )
             Builtins.y2milestone("Calling %1", command)
             output = Convert.to_map(
@@ -652,13 +649,11 @@ module Yast
 
               if del_cfg
                 command = Builtins.sformat(
-                  "rm /etc/fcoe/cfg-%1",
-                  Ops.get_string(card, "cfg_device", "")
+                  "/usr/bin/rm /etc/fcoe/cfg-%1",
+                  Ops.get_string(card, "cfg_device", "").shellescape
                 )
                 Builtins.y2milestone("Calling %1", command)
-                output = Convert.to_map(
-                  SCR.Execute(path(".target.bash_output"), command)
-                )
+                output = SCR.Execute(path(".target.bash_output"), command)
                 Builtins.y2milestone("Output: %1", output)
               else
                 Builtins.y2milestone(
@@ -671,8 +666,8 @@ module Yast
 
               if Ops.get_string(card, "vlan_interface", "") != "0"
                 command = Builtins.sformat(
-                  "rm /etc/sysconfig/network/ifcfg-%1",
-                  Ops.get_string(card, "fcoe_vlan", "")
+                  "/usr/bin/rm /etc/sysconfig/network/ifcfg-%1",
+                  Ops.get_string(card, "fcoe_vlan", "").shellescape
                 )
                 Builtins.y2milestone("Calling %1", command)
                 output = Convert.to_map(

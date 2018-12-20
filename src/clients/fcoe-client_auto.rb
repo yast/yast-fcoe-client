@@ -23,18 +23,20 @@
 # Package:	Configuration of fcoe-client
 # Summary:	Client for autoinstallation
 # Authors:	Gabriele Mohr <gs@suse.de>
-#
-#
-# This is a client for autoinstallation. It takes its arguments,
-# goes through the configuration and return the setting.
-# Does not do any changes to the configuration.
 
-# @param function to execute
-# @param map/list of fcoe-client settings
-# @return [Hash] edited settings, Summary or boolean on success depending on called function
-# @example map mm = $[ "FAIL_DELAY" : "77" ];
-# @example map ret = WFM::CallFunction ("fcoe-client_auto", [ "Summary", mm ]);
+require "shellwords"
+
 module Yast
+  #
+  # This is a client for autoinstallation. It takes its arguments,
+  # goes through the configuration and return the setting.
+  # Does not do any changes to the configuration.
+
+  # @param function to execute
+  # @param map/list of fcoe-client settings
+  # @return [Hash] edited settings, Summary or boolean on success depending on called function
+  # @example map mm = $[ "FAIL_DELAY" : "77" ];
+  # @example map ret = WFM::CallFunction ("fcoe-client_auto", [ "Summary", mm ]);
   class FcoeClientAutoClient < Client
     def main
       Yast.import "UI"
@@ -153,9 +155,9 @@ module Yast
           dev_name = card["dev_name"]
           if card["fcoe_vlan"] == FcoeClient.NOT_CONFIGURED
             if card["auto_vlan"] == "yes"
-              command = "fipvlan -c -s -f '-fcoe' #{dev_name}"
+              command = "/usr/sbin/fipvlan -c -s -f '-fcoe' #{dev_name.shellescape}"
             else
-              command = "fipvlan -c -s #{dev_name}"
+              command = "/usr/sbin/fipvlan -c -s #{dev_name.shellescape}"
             end
 
             ifcfg_file = Builtins.sformat(
@@ -167,29 +169,25 @@ module Yast
             # call 'ifup' for the interface (creates /proc/net/vlan/<vlan-interface>)
             if FileUtils.Exists(ifcfg_file)
               cmd_ifup = Builtins.sformat(
-                "ifup %1.%2",
-                Ops.get_string(card, "dev_name", ""),
-                Ops.get_string(card, "vlan_interface", "")
+                "/usr/sbin/ifup %1.%2",
+                Ops.get_string(card, "dev_name", "").shellescape,
+                Ops.get_string(card, "vlan_interface", "").shellescape
               )
               Builtins.y2milestone("Executing command: %1", cmd_ifup)
-              output = Convert.to_map(
-                SCR.Execute(path(".target.bash_output"), cmd_ifup)
-              )
+              output = SCR.Execute(path(".target.bash_output"), cmd_ifup)
               Builtins.y2milestone("Output: %1", output)
 
               if Ops.get_integer(output, "exit", 255) == 0
                 # start FCoE
                 command = Builtins.sformat(
-                  "fipvlan -s %1",
-                  Ops.get_string(card, "dev_name", "")
+                  "/usr/sbin/fipvlan -s %1",
+                  Ops.get_string(card, "dev_name", "").shellescape
                 )
               end
             end
 
             Builtins.y2milestone("Executing command: %1", command)
-            output = Convert.to_map(
-              SCR.Execute(path(".target.bash_output"), command)
-            )
+            output = SCR.Execute(path(".target.bash_output"), command)
             Builtins.y2milestone("Output: %1", output)
 
             if Ops.get_integer(output, "exit", 255) != 0
