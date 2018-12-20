@@ -27,6 +27,9 @@
 #
 # Representation of the configuration of fcoe-client.
 # Input and output routines.
+
+require "shellwords"
+
 require "yast"
 require "yast2/systemd/socket"
 
@@ -99,17 +102,6 @@ module Yast
       # Abort function
       # return boolean return true if abort
       @AbortFunction = fun_ref(method(:Modified), "boolean ()")
-
-      #   from IscsiClientLib.ycp (line 53) - reading output
-      #
-      #   string from_bios = ((map<string, any>)SCR::Execute(.target.bash_output, "iscsiadm -m fw"))["stdout"]:"";
-      #   foreach(string row, splitstring(from_bios, "\n"), {
-      #   list<string> key_val=splitstring(row, "=");
-      # //   if (size(key_val[0]:"")>0) ibft[key_val[0]:""] = key_val[1]:"";
-      #    string kv = String::CutBlanks(key_val[0]:"");
-      #    if (size(kv) > 0) ibft[kv] = String::CutBlanks(key_val[1]:"");
-      #    });
-
 
       # Define all the variables necessary to hold
 
@@ -461,15 +453,13 @@ module Yast
     def GetFcoeInfo(net_devices)
       # Add option -u (or --link_up): don't shut down interfaces
       # to be able to detect DCB state afterwards (see bnc #737683)
-      vlan_cmd = "LANG=POSIX fipvlan -u"
+      vlan_cmd = "LANG=POSIX /usr/sbin/fipvlan -u"
 
       if !Mode.autoinst
-        vlan_cmd = Ops.add(Ops.add(vlan_cmd, " -l "), @number_of_retries)
+        vlan_cmd << " -l #{@number_of_retries.to_s.shellescape}"
       end # reduce number of retries
 
-      Builtins.foreach(
-        Convert.convert(net_devices, :from => "list", :to => "list <string>")
-      ) { |dev| vlan_cmd = Ops.add(Ops.add(vlan_cmd, " "), dev) }
+      Builtins.foreach(net_devices) { |dev| vlan_cmd << " #{dev.shellescape}" }
 
       # call fipvlan command for all interfaces (saves time because is executed in parallel)
       Builtins.y2milestone("Executing command: %1", vlan_cmd)
@@ -590,9 +580,9 @@ module Yast
       end
 
       command = Builtins.sformat(
-        "sed -n 's/\\([^ ]*\\) *.*%1*.*%2/\\1/p' /proc/net/vlan/config",
-        vlan_interface,
-        interface
+        "/usr/bin/sed -n 's/\\([^ ]*\\) *.*'%1'*.*'%2'/\\1/p' /proc/net/vlan/config",
+        vlan_interface.shellescape,
+        interface.shellescape
       )
       Builtins.y2milestone("Executing command: %1", command)
 
@@ -672,7 +662,7 @@ module Yast
         file_exists = SCR.Write(path(".target.string"), file_name, content)
 
         if file_exists
-          AddRevertCommand(Builtins.sformat("rm %1", file_name))
+          AddRevertCommand(Builtins.sformat("/usr/bin/rm %1", file_name.shellescape))
           # fill status map
           status_map = {
             "FCOE_ENABLE"  => netcard["fcoe_enable"] || "yes",
@@ -753,10 +743,10 @@ module Yast
 
       # 'lldpad' must be started to be able to use 'dcbtool'
       # -> is started in ServiceStatus() ( called in Read() before DetectNetworkCards() )
-      command = Builtins.sformat("LANG=POSIX dcbtool gc %1 dcb", netcard)
+      command = Builtins.sformat("LANG=POSIX /usr/sbin/dcbtool gc %1 dcb", netcard.shellescape)
       Builtins.y2milestone("Executing command: %1", command)
 
-      output = Convert.to_map(SCR.Execute(path(".target.bash_output"), command))
+      output = SCR.Execute(path(".target.bash_output"), command)
       Builtins.y2milestone("Output:  %1", output)
       status = ""
 
@@ -1353,13 +1343,11 @@ module Yast
           if Ops.get_string(card, "dcb_required", "no") == "yes"
             # enable DCB on the interface
             command = Builtins.sformat(
-              "dcbtool sc %1 dcb on",
-              Ops.get_string(card, "dev_name", "")
+              "/usr/sbin/dcbtool sc %1 dcb on",
+              Ops.get_string(card, "dev_name", "").shellescape
             )
             Builtins.y2milestone("Executing command: %1", command)
-            output = Convert.to_map(
-              SCR.Execute(path(".target.bash_output"), command)
-            )
+            output = SCR.Execute(path(".target.bash_output"), command)
             Builtins.y2milestone("Output: %1", output)
             if Ops.get_integer(output, "exit", 255) != 0
               # only warning, not necessarily an error
@@ -1367,14 +1355,12 @@ module Yast
             end
             # enable App:FCoE on the interface
             command = Builtins.sformat(
-              "dcbtool sc %1 app:0 e:1 a:1 w:1",
-              Ops.get_string(card, "dev_name", "")
+              "/usr/sbin/dcbtool sc %1 app:0 e:1 a:1 w:1",
+              Ops.get_string(card, "dev_name", "").shellescape
             )
             Builtins.y2milestone("Executing command: %1", command)
 
-            output = Convert.to_map(
-              SCR.Execute(path(".target.bash_output"), command)
-            )
+            output = SCR.Execute(path(".target.bash_output"), command)
             Builtins.y2milestone("Output: %1", output)
             if Ops.get_integer(output, "exit", 255) != 0
               # only warning, not necessarily an error

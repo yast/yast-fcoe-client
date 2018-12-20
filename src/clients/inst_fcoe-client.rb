@@ -59,7 +59,7 @@ module Yast
       Builtins.y2milestone("fcoe-client module started during installation")
 
       # create /etc/fcoe
-      SCR.Execute(path(".target.bash"), "mkdir -p /etc/fcoe")
+      SCR.Execute(path(".target.bash"), "/usr/bin/mkdir -p /etc/fcoe")
 
       # FcoeClient::CheckInstalledPackages()  not needed in inst-sys
       # FcoeClient::DetectStartStatus()	 doesn't make sense in inst-sys
