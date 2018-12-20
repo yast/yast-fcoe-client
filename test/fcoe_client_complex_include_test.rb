@@ -2,6 +2,7 @@
 require_relative "test_helper"
 
 Yast.import "Popup"
+Yast.import "FcoeClient"
 
 class ComplexIncludeTest < Yast::Module
   def initialize
@@ -34,7 +35,7 @@ describe "Yast::FcoeClientComplexInclude" do
       it "smokes not" do
         expect(Yast::SCR)
           .to receive(:Execute)
-                .with(path(".target.bash_output"), "fipvlan -c -s eth9")
+                .with(path(".target.bash_output"), "/usr/sbin/fipvlan -c -s eth9")
                 .and_return({"exit" => 0})
         expect(Yast::FcoeClient).to receive(:GetFcoeVlanInterface).and_return("eth9.500")
         expect { subject.HandleInterfacesDialog(nil, event) }.to_not raise_error
