@@ -19,6 +19,7 @@ X-SuSE-YaST-Keywords=fibre,channel,ethernet,network
 Icon=yast-fcoe
 Exec=/usr/bin/xdg-su -c '/sbin/yast2 fcoe-client'
 
-Name=FCoE Client Configuration
-GenericName=Fibre Channel over Ethernet Configuration
+Name=YaST FCoE
+GenericName=FCoE Client Configuration
+Comment=Fibre Channel over Ethernet Configuration
 StartupNotify=true
