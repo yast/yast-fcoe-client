@@ -197,7 +197,7 @@ module Yast
 
       # TODO: rename icon to yast-fcoe (yast2-theme package)
       if Mode.normal
-        Wizard.SetDesktopTitleAndIcon("org.openSUSE.YaST.FCoEClient")
+        Wizard.SetDesktopTitleAndIcon("org.opensuse.yast.FCoEClient")
       else
         Wizard.SetTitleIcon("fcoe")
       end
@@ -267,7 +267,7 @@ module Yast
 
       Wizard.OpenNextBackDialog
       if Mode.normal
-        Wizard.SetDesktopTitleAndIcon("org.openSUSE.YaST.FCoEClient")
+        Wizard.SetDesktopTitleAndIcon("org.opensuse.yast.FCoEClient")
       else
         Wizard.SetTitleIcon("fcoe")
       end
@@ -296,7 +296,7 @@ module Yast
 
       Wizard.OpenCancelOKDialog
       if Mode.normal
-        Wizard.SetDesktopTitleAndIcon("org.openSUSE.YaST.FCoEClient")
+        Wizard.SetDesktopTitleAndIcon("org.opensuse.yast.FCoEClient")
       else
         Wizard.SetTitleIcon("fcoe")
       end

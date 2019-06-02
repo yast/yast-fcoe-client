@@ -22,7 +22,7 @@ scrconf_DATA = \
   scrconf/fcoe_cfg-ethx.scr
 
 desktop_DATA = \
-  desktop/org.openSUSE.YaST.FCoEClient.desktop
+  desktop/org.opensuse.yast.FCoEClient.desktop
 
 symbolicdir = @icondir@/hicolor/symbolic/apps
 symbolic_DATA = \
