@@ -26,7 +26,7 @@ Url:            https://github.com/yast/yast-fcoe-client
 
 Source0:        %{name}-%{version}.tar.bz2
 
-BuildRequires:	perl-XML-Writer update-desktop-files yast2 yast2-testsuite
+BuildRequires:	perl-XML-Writer update-desktop-files yast2
 BuildRequires:  yast2-devtools >= 4.2.2
 BuildRequires:  rubygem(%{rb_default_ruby_abi}:rspec)
 
