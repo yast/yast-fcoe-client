@@ -1235,35 +1235,34 @@ module Yast
       netcards = GetNetworkCards()
       success = true
 
-      Builtins.foreach(netcards) do |card|
+      netcards.each do |card|
         fcoe_vlan = card.fetch("fcoe_vlan", "")
-        if fcoe_vlan != @NOT_AVAILABLE &&
-            fcoe_vlan != @NOT_CONFIGURED
-          # write ifcfg-<if>.>VLAN> only if VLAN was created (not for VLAN = 0 which means
-          # FCoE is started on the network interface itself)
-          dev_name = card.fetch("dev_name", "")
-          vid = card.fetch("vlan_interface", "")
-          if vid != "0"
-            Builtins.y2milestone("Writing /etc/sysconfig/network/ifcfg-%1", fcoe_vlan)
-            vifcfg_path = path(".network.value") + fcoe_vlan
-            # write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
-            SCR.Write(vifcfg_path + "BOOTPROTO", "static")
-            SCR.Write(vifcfg_path + "STARTMODE", "nfsroot")
-            SCR.Write(vifcfg_path + "ETHERDEVICE", dev_name)
-            SCR.Write(vifcfg_path + "USERCONTROL", "no")
-            SCR.Write(vifcfg_path + "VLAN_ID", vid)
-          end
-          ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}"
-          Builtins.y2milestone("Writing %1", ifcfg_file)
+        # write ifcfg-<if>.<VLAN> only if VLAN was created (not for VLAN = 0 which means
+        # FCoE is started on the network interface itself)
+        next if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
 
-          # write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
-          ifcfg_path = path(".network.value") + dev_name
-          SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
-          # don't overwrite BOOTPROTO !!!
-          if !FileUtils.Exists(ifcfg_file)
-            SCR.Write(ifcfg_path + "BOOTPROTO", "static")
-            SCR.Write(ifcfg_path + "NAME", card.fetch("device", ""))
-          end
+        dev_name = card.fetch("dev_name", "")
+        vid = card.fetch("vlan_interface", "")
+        if vid != "0"
+          Builtins.y2milestone("Writing /etc/sysconfig/network/ifcfg-%1", fcoe_vlan)
+          vifcfg_path = path(".network.value") + fcoe_vlan
+          # write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
+          SCR.Write(vifcfg_path + "BOOTPROTO", "static")
+          SCR.Write(vifcfg_path + "STARTMODE", "nfsroot")
+          SCR.Write(vifcfg_path + "ETHERDEVICE", dev_name)
+          SCR.Write(vifcfg_path + "USERCONTROL", "no")
+          SCR.Write(vifcfg_path + "VLAN_ID", vid)
+        end
+        ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}"
+        Builtins.y2milestone("Writing %1", ifcfg_file)
+
+        # write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
+        ifcfg_path = path(".network.value") + dev_name
+        SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
+        # don't overwrite BOOTPROTO !!!
+        if !FileUtils.Exists(ifcfg_file)
+          SCR.Write(ifcfg_path + "BOOTPROTO", "static")
+          SCR.Write(ifcfg_path + "NAME", card.fetch("device", ""))
         end
       end
       # This is very important- it flushes the cache, and stores the configuration on the disk
@@ -1282,90 +1281,87 @@ module Yast
 
       success = false
 
-      Builtins.foreach(netcards) do |card|
-        if Ops.get_string(card, "fcoe_vlan", "") != @NOT_AVAILABLE &&
-            Ops.get_string(card, "fcoe_vlan", "") != @NOT_CONFIGURED
-          command = ""
-          output = {}
+      netcards.each do |card|
+        fcoe_vlan = card.fetch("fcoe_vlan", "")
+        next if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
 
-          Builtins.y2milestone(
-            "Writing /etc/fcoe/cfg-%1",
-            Ops.get_string(card, "cfg_device", "")
-          )
-          success = SCR.Write(
+        Builtins.y2milestone(
+          "Writing /etc/fcoe/cfg-%1",
+          Ops.get_string(card, "cfg_device", "")
+        )
+        success = SCR.Write(
+          Ops.add(
             Ops.add(
-              Ops.add(
-                path(".fcoe.cfg-ethx.value"),
-                Ops.get_string(card, "cfg_device", "")
-              ),
-              "FCOE_ENABLE"
+              path(".fcoe.cfg-ethx.value"),
+              Ops.get_string(card, "cfg_device", "")
             ),
+            "FCOE_ENABLE"
+          ),
+          Ops.get_string(card, "fcoe_enable", "no")
+        )
+        if !success
+          Builtins.y2error(
+            "Writing FCOE_ENABLE=%1 failed",
             Ops.get_string(card, "fcoe_enable", "no")
           )
-          if !success
-            Builtins.y2error(
-              "Writing FCOE_ENABLE=%1 failed",
-              Ops.get_string(card, "fcoe_enable", "no")
-            )
-          end
-          success = SCR.Write(
+        end
+        success = SCR.Write(
+          Ops.add(
             Ops.add(
-              Ops.add(
-                path(".fcoe.cfg-ethx.value"),
-                Ops.get_string(card, "cfg_device", "")
-              ),
-              "DCB_REQUIRED"
+              path(".fcoe.cfg-ethx.value"),
+              Ops.get_string(card, "cfg_device", "")
             ),
+            "DCB_REQUIRED"
+          ),
+          Ops.get_string(card, "dcb_required", "no")
+        )
+        if !success
+          Builtins.y2error(
+            "Writing DCB_REQUIRED=%1 failed",
             Ops.get_string(card, "dcb_required", "no")
           )
-          if !success
-            Builtins.y2error(
-              "Writing DCB_REQUIRED=%1 failed",
-              Ops.get_string(card, "dcb_required", "no")
-            )
-          end
-          success = SCR.Write(
+        end
+        success = SCR.Write(
+          Ops.add(
             Ops.add(
-              Ops.add(
-                path(".fcoe.cfg-ethx.value"),
-                Ops.get_string(card, "cfg_device", "")
-              ),
-              "AUTO_VLAN"
+              path(".fcoe.cfg-ethx.value"),
+              Ops.get_string(card, "cfg_device", "")
             ),
+            "AUTO_VLAN"
+          ),
+          Ops.get_string(card, "auto_vlan", "no")
+        )
+        if !success
+          Builtins.y2error(
+            "Writing AUTO_VLAN=%1 failed",
             Ops.get_string(card, "auto_vlan", "no")
           )
-          if !success
-            Builtins.y2error(
-              "Writing AUTO_VLAN=%1 failed",
-              Ops.get_string(card, "auto_vlan", "no")
-            )
+        end
+        if Ops.get_string(card, "dcb_required", "no") == "yes"
+          # enable DCB on the interface
+          command = Builtins.sformat(
+            "/usr/sbin/dcbtool sc %1 dcb on",
+            Ops.get_string(card, "dev_name", "").shellescape
+          )
+          Builtins.y2milestone("Executing command: %1", command)
+          output = SCR.Execute(path(".target.bash_output"), command)
+          Builtins.y2milestone("Output: %1", output)
+          if Ops.get_integer(output, "exit", 255) != 0
+            # only warning, not necessarily an error
+            Builtins.y2warning("Command: %1 failed", command)
           end
-          if Ops.get_string(card, "dcb_required", "no") == "yes"
-            # enable DCB on the interface
-            command = Builtins.sformat(
-              "/usr/sbin/dcbtool sc %1 dcb on",
-              Ops.get_string(card, "dev_name", "").shellescape
-            )
-            Builtins.y2milestone("Executing command: %1", command)
-            output = SCR.Execute(path(".target.bash_output"), command)
-            Builtins.y2milestone("Output: %1", output)
-            if Ops.get_integer(output, "exit", 255) != 0
-              # only warning, not necessarily an error
-              Builtins.y2warning("Command: %1 failed", command)
-            end
-            # enable App:FCoE on the interface
-            command = Builtins.sformat(
-              "/usr/sbin/dcbtool sc %1 app:0 e:1 a:1 w:1",
-              Ops.get_string(card, "dev_name", "").shellescape
-            )
-            Builtins.y2milestone("Executing command: %1", command)
+          # enable App:FCoE on the interface
+          command = Builtins.sformat(
+            "/usr/sbin/dcbtool sc %1 app:0 e:1 a:1 w:1",
+            Ops.get_string(card, "dev_name", "").shellescape
+          )
+          Builtins.y2milestone("Executing command: %1", command)
 
-            output = SCR.Execute(path(".target.bash_output"), command)
-            Builtins.y2milestone("Output: %1", output)
-            if Ops.get_integer(output, "exit", 255) != 0
-              # only warning, not necessarily an error
-              Builtins.y2warning("Command: %1 failed", command)
-            end
+          output = SCR.Execute(path(".target.bash_output"), command)
+          Builtins.y2milestone("Output: %1", output)
+          if Ops.get_integer(output, "exit", 255) != 0
+            # only warning, not necessarily an error
+            Builtins.y2warning("Command: %1 failed", command)
           end
         end
       end
