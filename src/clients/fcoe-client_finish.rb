@@ -88,18 +88,14 @@ module Yast
         end
 
         @netcards.each do |card|
-          fcoe_vlan = card.fetch("fcoe_vlan", "")
-          next if fcoe_vlan == FcoeClient.NOT_AVAILABLE || fcoe_vlan == FcoeClient.NOT_CONFIGURED
+          iface_name = FcoeClient.fcoe_vlan(card)
+          next if iface_name.nil?
 
           # FCoE VLAN interface is configured -> start services
           @start_services = true
 
           # copy sysconfig files
-          file_name = Builtins.sformat(
-            "/etc/sysconfig/network/ifcfg-%1.%2",
-            Ops.get_string(card, "dev_name", ""),
-            Ops.get_string(card, "vlan_interface", "")
-          )
+          file_name = "/etc/sysconfig/network/ifcfg-#{iface_name}"
 
           command = Builtins.sformat(
             "/usr/bin/cp -a %1 %2/etc/sysconfig/network",

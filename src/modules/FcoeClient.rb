@@ -952,9 +952,7 @@ module Yast
       interfaces = GetNetworkCards()
 
       Builtins.foreach(interfaces) do |interface|
-        if device_name == Ops.get_string(interface, "dev_name", "") &&
-            Ops.get_string(interface, "fcoe_vlan", "") != @NOT_CONFIGURED &&
-            Ops.get_string(interface, "fcoe_vlan", "") != @NOT_AVAILABLE
+        if device_name == interface.fetch("dev_name", "") && fcoe_vlan?(interface)
           configured_vlans = Builtins.add(
             configured_vlans,
             Ops.get_string(interface, "vlan_interface", "")
@@ -1236,10 +1234,10 @@ module Yast
       success = true
 
       netcards.each do |card|
-        fcoe_vlan = card.fetch("fcoe_vlan", "")
+        fcoe_vlan = fcoe_vlan(card)
         # write ifcfg-<if>.<VLAN> only if VLAN was created (not for VLAN = 0 which means
         # FCoE is started on the network interface itself)
-        next if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
+        next if fcoe_vlan.nil?
 
         dev_name = card.fetch("dev_name", "")
         vid = card.fetch("vlan_interface", "")
@@ -1282,8 +1280,7 @@ module Yast
       success = false
 
       netcards.each do |card|
-        fcoe_vlan = card.fetch("fcoe_vlan", "")
-        next if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
+        next unless fcoe_vlan?(card)
 
         Builtins.y2milestone(
           "Writing /etc/fcoe/cfg-%1",
@@ -1684,6 +1681,28 @@ module Yast
     def AutoPackages
       # installation of fcoe-utils required
       { "install" => [FcoeClientClass::FCOE_PKG_NAME], "remove" => [] }
+    end
+
+    # Name of the network interface configured as FCoE VLAN for the given
+    # network card, if any
+    #
+    # @param card [Hash] a hash with all the information about a network interface
+    # @return [String, nil] nil if no FCoE VLAN is configured for the given interface
+    def fcoe_vlan(card)
+      fcoe_vlan = card.fetch("fcoe_vlan", "")
+      return nil if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
+
+      fcoe_vlan
+    end
+
+    # Whether a FCoE VLAN is configured for the given network card
+    #
+    # @see #fcoe_vlan
+    #
+    # @param card [Hash] a hash with all the information about a network interface
+    # @return [Boolean]
+    def fcoe_vlan?(card)
+      !!fcoe_vlan(card)
     end
 
     publish :function => :Modified, :type => "boolean ()"
