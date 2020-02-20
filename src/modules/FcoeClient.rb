@@ -46,7 +46,7 @@ module Yast
       # @!method [](k)
       #   I am not sure when the keys are present/absent :-/
       #   @option k [String] 'fcoe_vlan'
-      #     "eth1.500" or "not configured" or "not available"
+      #     "eth1.500-fcoe" or "not configured" or "not available"
       #   @option k [String] 'vlan_interface'
       #     "500", or "0" for no VLAN used;  yes, the name is nonsense, should be "vid"
       #   @option k [String] 'dev_name'     "eth1"
@@ -1690,6 +1690,7 @@ module Yast
     # @return [String, nil] nil if no FCoE VLAN is configured for the given interface
     def fcoe_vlan(card)
       fcoe_vlan = card["fcoe_vlan"]
+      # It should never contain a nil or an empty string, but better safe than sorry
       return nil if fcoe_vlan.nil? || fcoe_vlan.empty?
       return nil if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
 
