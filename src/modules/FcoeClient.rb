@@ -1689,7 +1689,8 @@ module Yast
     # @param card [Hash] a hash with all the information about a network interface
     # @return [String, nil] nil if no FCoE VLAN is configured for the given interface
     def fcoe_vlan(card)
-      fcoe_vlan = card.fetch("fcoe_vlan", "")
+      fcoe_vlan = card["fcoe_vlan"]
+      return nil if fcoe_vlan.nil? || fcoe_vlan.empty?
       return nil if fcoe_vlan == @NOT_AVAILABLE || fcoe_vlan == @NOT_CONFIGURED
 
       fcoe_vlan

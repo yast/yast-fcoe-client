@@ -25,7 +25,8 @@ describe Yast::FcoeClientClass do
       let(:interfaces) do
         [
           { "dev_name" => "eth0", "fcoe_vlan" => "not available" },
-          { "dev_name" => "eth1", "fcoe_vlan" => "not configured" }
+          { "dev_name" => "eth1", "fcoe_vlan" => "not configured" },
+          { "dev_name" => "eth2", "fcoe_vlan" => "" },
         ]
       end
 
@@ -46,6 +47,7 @@ describe Yast::FcoeClientClass do
         [
           { "dev_name" => "eth0", "fcoe_vlan" => "not available" },
           { "dev_name" => "eth1", "fcoe_vlan" => "eth1.500-fcoe" },
+          { "dev_name" => "eth2", "fcoe_vlan" => "" },
         ]
       end
 
