@@ -87,40 +87,35 @@ module Yast
           Builtins.y2milestone("Nothing to do")
         end
 
-        Builtins.foreach(@netcards) do |card|
-          command = ""
-          file_name = ""
-          if Ops.get_string(card, "fcoe_vlan", "") != FcoeClient.NOT_AVAILABLE &&
-              Ops.get_string(card, "fcoe_vlan", "") != FcoeClient.NOT_CONFIGURED
-            # FCoE VLAN interface is configured -> start services
-            @start_services = true
+        @netcards.each do |card|
+          iface_name = FcoeClient.fcoe_vlan(card)
+          next if iface_name.nil?
 
-            # copy sysconfig files
-            file_name = Builtins.sformat(
-              "/etc/sysconfig/network/ifcfg-%1.%2",
-              Ops.get_string(card, "dev_name", ""),
-              Ops.get_string(card, "vlan_interface", "")
-            )
-            command = Builtins.sformat(
-              "/usr/bin/cp -a %1 %2/etc/sysconfig/network",
-              file_name.shellescape,
-              Installation.destdir.shellescape
-            )
-            Builtins.y2milestone("Executing command: %1", command)
-            WFM.Execute(path(".local.bash"), command)
+          # FCoE VLAN interface is configured -> start services
+          @start_services = true
 
-            file_name = Builtins.sformat(
-              "/etc/sysconfig/network/ifcfg-%1",
-              Ops.get_string(card, "dev_name", "")
-            )
-            command = Builtins.sformat(
-              "/usr/bin/cp -a %1 %2/etc/sysconfig/network",
-              file_name.shellescape,
-              Installation.destdir.shellescape
-            )
-            Builtins.y2milestone("Executing command: %1", command)
-            WFM.Execute(path(".local.bash"), command)
-          end
+          # copy sysconfig files
+          file_name = "/etc/sysconfig/network/ifcfg-#{iface_name}"
+
+          command = Builtins.sformat(
+            "/usr/bin/cp -a %1 %2/etc/sysconfig/network",
+            file_name.shellescape,
+            Installation.destdir.shellescape
+          )
+          Builtins.y2milestone("Executing command: %1", command)
+          WFM.Execute(path(".local.bash"), command)
+
+          file_name = Builtins.sformat(
+            "/etc/sysconfig/network/ifcfg-%1",
+            Ops.get_string(card, "dev_name", "")
+          )
+          command = Builtins.sformat(
+            "/usr/bin/cp -a %1 %2/etc/sysconfig/network",
+            file_name.shellescape,
+            Installation.destdir.shellescape
+          )
+          Builtins.y2milestone("Executing command: %1", command)
+          WFM.Execute(path(".local.bash"), command)
         end
 
         if @start_services
