@@ -1,5 +1,6 @@
 # YaST - The FCoE Client Module #
 
-[![Travis Build](https://travis-ci.org/yast/yast-fcoe-client.svg?branch=master)](https://travis-ci.org/yast/yast-fcoe-client)
-[![Jenkins Build](http://img.shields.io/jenkins/s/https/ci.opensuse.org/yast-fcoe-client-master.svg)](https://ci.opensuse.org/view/Yast/job/yast-fcoe-client-master/)
-
+[![Workflow Status](https://github.com/yast/yast-fcoe-client/workflows/CI/badge.svg?branch=master)](
+https://github.com/yast/yast-fcoe-client/actions?query=branch%3Amaster)
+[![Jenkins Status](https://ci.opensuse.org/buildStatus/icon?job=yast-yast-fcoe-client-master)](
+https://ci.opensuse.org/view/Yast/job/yast-yast-fcoe-client-master/)
