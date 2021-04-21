@@ -1,7 +1,7 @@
 #
 # spec file for package yast2-fcoe-client
 #
-# Copyright (c) 2013 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# Copyright (c) 2021 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,26 +17,23 @@
 
 
 Name:           yast2-fcoe-client
-Version:        4.4.0
+Version:        4.4.1
 Release:        0
 Summary:        YaST2 - Configuration of Fibre Channel over Ethernet
-Group:          System/YaST
 License:        GPL-2.0-only
-Url:            https://github.com/yast/yast-fcoe-client
-
+Group:          System/YaST
+URL:            https://github.com/yast/yast-fcoe-client
 Source0:        %{name}-%{version}.tar.bz2
-
-BuildRequires:	perl-XML-Writer update-desktop-files yast2
-BuildRequires:  yast2-devtools >= 4.2.2
+BuildRequires:  perl-XML-Writer
+BuildRequires:  update-desktop-files
+BuildRequires:  yast2
+BuildRequires:  yast2-devtools >= 4.4.0
 BuildRequires:  rubygem(%{rb_default_ruby_abi}:rspec)
-
 # Yast2::Systemd::Service
-Requires:       yast2 >= 4.1.3
 Requires:       fcoe-utils
+Requires:       yast2 >= 4.1.3
 Requires:       yast2-ruby-bindings >= 1.0.0
-
 Supplements:    autoyast(fcoe-client)
-
 BuildArch:      noarch
 
 %description
@@ -54,14 +51,13 @@ Ethernet (FCoE) configuration.
 %yast_metainfo
 
 %files
+%license COPYING
 %{yast_yncludedir}
 %{yast_clientdir}
 %{yast_moduledir}
 %{yast_desktopdir}
 %{yast_metainfodir}
 %{yast_scrconfdir}
-%doc %{yast_docdir}
 %{yast_icondir}
-%license COPYING
 
 %changelog
