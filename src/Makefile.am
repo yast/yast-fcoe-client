@@ -17,6 +17,10 @@ ynclude_DATA = \
   include/fcoe-client/complex.rb \
   include/fcoe-client/helps.rb
 
+schemafilesdir = $(schemadir)/autoyast/rnc
+schemafiles_DATA = \
+  autoyast-rnc/fcoe-client.rnc
+
 scrconf_DATA = \
   scrconf/fcoe_config.scr \
   scrconf/fcoe_cfg-ethx.scr
@@ -31,6 +35,7 @@ scalabledir = @icondir@/hicolor/scalable/apps
 scalable_DATA = \
   icons/hicolor/scalable/apps/yast-fcoe.svg
 
-EXTRA_DIST = $(module_DATA) $(client_DATA) $(ynclude_DATA) $(scrconf_DATA) $(desktop_DATA) $(symbolic_DATA) $(scalable_DATA)
+EXTRA_DIST = $(module_DATA) $(client_DATA) $(ynclude_DATA)  $(scrconf_DATA) $(desktop_DATA) \
+             $(schemafiles_DATA) $(symbolic_DATA) $(scalable_DATA)
 
 include $(top_srcdir)/Makefile.am.common

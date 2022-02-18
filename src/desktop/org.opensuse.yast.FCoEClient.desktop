@@ -14,6 +14,7 @@ X-SuSE-YaST-Geometry=
 X-SuSE-YaST-SortKey=
 X-SuSE-YaST-AutoInstResource=fcoe-client
 X-SuSE-YaST-AutoInstClonable=true
+X-SuSE-YaST-AutoInstSchema=fcoe-client.rnc
 X-SuSE-YaST-Keywords=fibre,channel,ethernet,network
 
 Icon=yast-fcoe
