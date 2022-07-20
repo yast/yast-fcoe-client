@@ -32,6 +32,7 @@ require "shellwords"
 
 require "yast"
 require "yast2/systemd/socket"
+require "y2network/fcoe_conn_generator"
 
 module Yast
   class FcoeClientClass < Module
@@ -77,6 +78,7 @@ module Yast
       Yast.import "NetworkService"
       Yast.import "String"
       Yast.import "FileUtils"
+      Yast.import "Lan"
 
       # Data
 
@@ -1225,50 +1227,20 @@ module Yast
       success
     end
 
+    # Writes the network configuration for the FCoE Vlan interface and the related parent device
     #
-    # Write ifcfg-files in /etc/sysconfig/network (for FCoE VLAN interface and underlying interface)
-    # using network.scr from yast2/library/network
-    #
+    # @param card [Hash] a hash with all the information about a network interface
+    # @return [Boolean] whether it wrote the ifcfg files for netcards or not
     def WriteSysconfigFiles
-      netcards = GetNetworkCards()
-      success = true
+      netcards = GetNetworkCards().select { |c| fcoe_vlan?(c) }
+      return true if netcards.empty?
 
-      netcards.each do |card|
-        fcoe_vlan = fcoe_vlan(card)
-        # write ifcfg-<if>.<VLAN> only if VLAN was created (not for VLAN = 0 which means
-        # FCoE is started on the network interface itself)
-        next if fcoe_vlan.nil?
+      Yast::Lan.read_config(report: false) unless Yast::Lan.yast_config
+      conn_generator = Y2Network::FcoeConnGenerator.new(Yast::Lan.yast_config)
+      netcards.each { |card| conn_generator.update_connections_for(card) }
+      Yast::Lan.write_config(only: [:connections])
 
-        dev_name = card.fetch("dev_name", "")
-        vid = card.fetch("vlan_interface", "")
-        if vid != "0"
-          Builtins.y2milestone("Writing /etc/sysconfig/network/ifcfg-%1", fcoe_vlan)
-          vifcfg_path = path(".network.value") + fcoe_vlan
-          # write /etc/sysconfig/network/ifcfg-<fcoe-vlan-interface>, e.g. ifcfg-eth3.200
-          SCR.Write(vifcfg_path + "BOOTPROTO", "static")
-          SCR.Write(vifcfg_path + "STARTMODE", "nfsroot")
-          SCR.Write(vifcfg_path + "ETHERDEVICE", dev_name)
-          SCR.Write(vifcfg_path + "USERCONTROL", "no")
-          SCR.Write(vifcfg_path + "VLAN_ID", vid)
-        end
-        ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}"
-        Builtins.y2milestone("Writing %1", ifcfg_file)
-
-        # write /etc/sysconfig/network/ifcfg-<interface> (underlying interface), e.g. ifcfg-eth3
-        ifcfg_path = path(".network.value") + dev_name
-        SCR.Write(ifcfg_path + "STARTMODE", "nfsroot")
-        # don't overwrite BOOTPROTO !!!
-        if !FileUtils.Exists(ifcfg_file)
-          SCR.Write(ifcfg_path + "BOOTPROTO", "static")
-          SCR.Write(ifcfg_path + "NAME", card.fetch("device", ""))
-        end
-      end
-      # This is very important- it flushes the cache, and stores the configuration on the disk
-      success = SCR.Write(path(".network"), nil)
-      if !success
-        Builtins.y2error("Error writing /etc/sysconfig/network/ifcfg-files")
-      end
-      success
+      true
     end
 
     #

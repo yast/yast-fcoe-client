@@ -1,6 +1,7 @@
 #!/usr/bin/env rspec
 require_relative "test_helper"
 Yast.import "FcoeClient"
+Yast.import "Lan"
 
 describe Yast::FcoeClientClass do
   subject { Yast::FcoeClient }
@@ -16,8 +17,13 @@ describe Yast::FcoeClientClass do
   end
 
   describe "#WriteSysconfigFiles" do
+    let(:config) { stub_const("Y2Network::Config", double.as_null_object) }
+
     before do
       allow(subject).to receive(:GetNetworkCards).and_return(interfaces)
+      allow(Yast::Lan).to receive(:yast_config).and_return(config)
+      allow(Yast::Lan).to receive(:read_config)
+      allow(Yast::Lan).to receive(:write_config)
     end
 
 
@@ -34,9 +40,8 @@ describe Yast::FcoeClientClass do
         expect { subject.WriteSysconfigFiles }.to_not raise_error
       end
 
-      it "writes nothing into /etc/sysconfig/network" do
-        expect(Yast::SCR).to_not receive(:Write)
-          .with(path_matching(/^\.network\..*/), anything)
+      it "does not nodify the network configuration" do
+        expect(Yast::Lan).to_not receive(:write_config)
 
         subject.WriteSysconfigFiles
       end
@@ -52,33 +57,24 @@ describe Yast::FcoeClientClass do
       end
 
       before do
-        allow(Yast::SCR).to receive(:Write).and_return(true)
         allow(Yast::FileUtils).to receive(:Exists).and_return(false)
+      end
+
+      it "calls the FCoE connection generator to add or update the device and VLAN connections" do
+        expect_any_instance_of(Y2Network::FcoeConnGenerator)
+          .to receive(:update_connections_for).once.with(interfaces[1])
+
+        subject.WriteSysconfigFiles
+      end
+
+      it "writes the modified network connections configuration" do
+        expect(Yast::Lan).to receive(:write_config).with(only: [:connections])
+
+        subject.WriteSysconfigFiles
       end
 
       it "smokes not" do
         expect { subject.WriteSysconfigFiles }.to_not raise_error
-      end
-
-      it "writes the sysconfig configuration for the interface and its FCoE VLAN" do
-        expect(Yast::SCR).to receive(:Write)
-          .with(path_matching(/^\.network\.value\.\"eth1.500-fcoe\"\.*/), anything)
-        expect(Yast::SCR).to receive(:Write)
-          .with(path_matching(/^\.network\.value\.\"eth1\"\.*/), anything)
-        # A final call is also needed to flush the content
-        expect(Yast::SCR).to receive(:Write).with(Yast::Path.new(".network"), nil)
-
-        subject.WriteSysconfigFiles
-      end
-
-      it "writes nothing in /etc/sysconfig/network for interfaces without FCoE VLAN" do
-        allow(Yast::SCR).to receive(:Write) do |path, value|
-          # All calls to SCR.Write must contain a path starting with ".network.value.\"eth1"
-          # or exactly the path ".network" (for flushing)
-          expect(path.to_s).to match("(^\.network$)|(^\.network\.value\.\"eth1(\.|\"))")
-        end
-
-        subject.WriteSysconfigFiles
       end
     end
   end
