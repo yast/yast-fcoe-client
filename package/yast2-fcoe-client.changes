@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Jul 21 10:07:04 UTC 2022 - Knut Anderssen <kanderssen@suse.com>
+
+- Use yast2-network to write the sysconfig files in order to be
+  aware of the new connections added during the installation
+  (bsc#1199554).
+- 4.3.2
+
+-------------------------------------------------------------------
 Fri Feb 18 11:47:53 UTC 2022 - Knut Anderssen <kanderssen@suse.com>
 
 - Added AutoYaST schema (bsc#1194895)

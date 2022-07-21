@@ -17,7 +17,7 @@
 
 
 Name:           yast2-fcoe-client
-Version:        4.3.1
+Version:        4.3.2
 Release:        0
 Summary:        YaST2 - Configuration of Fibre Channel over Ethernet
 Group:          System/YaST
@@ -28,10 +28,12 @@ Source0:        %{name}-%{version}.tar.bz2
 
 BuildRequires:	perl-XML-Writer update-desktop-files yast2
 BuildRequires:  yast2-devtools >= 4.2.2
+BuildRequires:  yast2-network >= 4.3.85
 BuildRequires:  rubygem(%{rb_default_ruby_abi}:rspec)
 
 # Yast2::Systemd::Service
 Requires:       yast2 >= 4.1.3
+Requires:       yast2-network >= 4.3.85
 Requires:       fcoe-utils
 Requires:       yast2-ruby-bindings >= 1.0.0
 
