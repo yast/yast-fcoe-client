@@ -36,11 +36,7 @@ describe Yast::FcoeClientClass do
         ]
       end
 
-      it "smokes not" do
-        expect { subject.WriteSysconfigFiles }.to_not raise_error
-      end
-
-      it "does not nodify the network configuration" do
+      it "does not modify the network configuration" do
         expect(Yast::Lan).to_not receive(:write_config)
 
         subject.WriteSysconfigFiles
@@ -71,10 +67,6 @@ describe Yast::FcoeClientClass do
         expect(Yast::Lan).to receive(:write_config).with(only: [:connections])
 
         subject.WriteSysconfigFiles
-      end
-
-      it "smokes not" do
-        expect { subject.WriteSysconfigFiles }.to_not raise_error
       end
     end
   end
