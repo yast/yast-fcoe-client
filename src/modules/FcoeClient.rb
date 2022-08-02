@@ -1229,7 +1229,6 @@ module Yast
 
     # Writes the network configuration for the FCoE Vlan interface and the related parent device
     #
-    # @param card [Hash] a hash with all the information about a network interface
     # @return [Boolean] whether it wrote the ifcfg files for netcards or not
     def WriteSysconfigFiles
       netcards = GetNetworkCards().select { |c| fcoe_vlan?(c) }
