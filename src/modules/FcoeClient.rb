@@ -411,6 +411,17 @@ module Yast
       nil
     end
 
+    # Refresh list of detected card
+    def ReadNetworkCards
+      ResetNetworkCards()
+      netcards = DetectNetworkCards(ProbeNetcards())
+      if netcards.empty?
+        Builtins.y2error("Detecting netcards FAILED")
+      else
+        SetNetworkCards(netcards)
+      end
+    end
+
     #
     # Check whether fcoe-utils is installed and do installation if user agrees
     # (dependencies: 'open-lldp', 'libhbalinux2' and 'libHBAAPI2')

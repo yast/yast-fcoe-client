@@ -85,22 +85,13 @@ module Y2FcoeClient
       # NetworkService::RunningNetworkPopup() do not check for running network, the
       # interfaces are set up in FcoeClient::GetVlanInterface()
 
-      # reset global values
-      FcoeClient.ResetNetworkCards
-
       # start services fcoe and lldpad
       @success = FcoeClient.ServiceStatus
       if !@success
         Builtins.y2error("Starting of services FAILED")
       end
 
-      # detect netcards
-      netcards = FcoeClient.DetectNetworkCards(FcoeClient.ProbeNetcards)
-      if netcards.empty?
-        Builtins.y2error("Detecting netcards FAILED")
-      else
-        FcoeClient.SetNetworkCards(netcards)
-      end
+      FcoeClient.ReadNetworkCards
 
       # read general FCoE settings
       @success = FcoeClient.ReadFcoeConfig
