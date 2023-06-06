@@ -534,28 +534,7 @@ module Yast
           FcoeClient.GetNetworkCards
         )
 
-        # replace values in table
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 4),
-          fcoe_vlan_interface
-        )
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 5),
-          @yes_no_mapping[status_map["FCOE_ENABLE"]]
-        )
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 6),
-          @yes_no_mapping[status_map["DCB_REQUIRED"]]
-        )
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 7),
-          @yes_no_mapping[status_map["AUTO_VLAN"]]
-        )
-        AdjustButtons()
+        RefreshCurrentCard()
       elsif action == :remove
         card = FcoeClient.GetCurrentNetworkCard
         output = {}
@@ -700,28 +679,7 @@ module Yast
                 FcoeClient.GetNetworkCards
               )
 
-              # replace values in table
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 4),
-                card["fcoe_vlan"] || ""
-              )
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 5),
-                @yes_no_mapping[card["fcoe_enable"]]
-              )
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 6),
-                @yes_no_mapping[card["dcb_required"]]
-              )
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 7),
-                @yes_no_mapping[card["auto_vlan"]]
-              )
-              AdjustButtons()
+              RefreshCurrentCard()
             else
               Popup.Error(
                 Builtins.sformat(
@@ -750,6 +708,33 @@ module Yast
       end
 
       nil
+    end
+
+    # Replace values in table
+    def RefreshCurrentCard
+      card = FcoeClient.GetCurrentNetworkCard
+
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 4),
+        card["fcoe_vlan"] || ""
+      )
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 5),
+        @yes_no_mapping[card["fcoe_enable"]]
+      )
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 6),
+        @yes_no_mapping[card["dcb_required"]]
+      )
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 7),
+        @yes_no_mapping[card["auto_vlan"]]
+      )
+      AdjustButtons()
     end
 
     def HandleConfigurationDialog(_id, _event)
