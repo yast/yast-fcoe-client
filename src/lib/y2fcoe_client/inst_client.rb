@@ -70,7 +70,7 @@ module Y2FcoeClient
     end
 
     # Initializes Yast::FcoeClient and perform basic preparations in the int-sys
-    def read
+    def read(silent: false)
       Yast.import "FcoeClient"
 
       @success = false
@@ -86,16 +86,16 @@ module Y2FcoeClient
       # interfaces are set up in FcoeClient::GetVlanInterface()
 
       # start services fcoe and lldpad
-      @success = FcoeClient.ServiceStatus
-      if !@success
+      @success = FcoeClient.ServiceStatusInst(silent: silent)
+      if !@success && !silent
         Builtins.y2error("Starting of services FAILED")
       end
 
-      FcoeClient.ReadNetworkCards
+      FcoeClient.ReadNetworkCards(silent: silent)
 
       # read general FCoE settings
       @success = FcoeClient.ReadFcoeConfig
-      if !@success
+      if !@success && !silent
         Builtins.y2error("Reading /etc/fcoe/config FAILED")
       end
     end
@@ -117,6 +117,7 @@ module Y2FcoeClient
       Builtins.y2milestone("Writing FCoE config files")
       FcoeClient.WriteFcoeConfig
       FcoeClient.WriteCfgFiles
+
       # restart fcoemon
       Builtins.y2milestone("Restarting FCoE")
       FcoeClient.RestartServiceFcoe
