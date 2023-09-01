@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Sep 01 19:57:03 UTC 2023 - Josef Reidinger <jreidinger@suse.com>
+
+- Branch package for SP6 (bsc#1208913)
+
+-------------------------------------------------------------------
 Thu Jul 21 10:07:04 UTC 2022 - Knut Anderssen <kanderssen@suse.com>
 
 - Use yast2-network to write the sysconfig files in order to be
