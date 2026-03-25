@@ -17,7 +17,7 @@
 
 
 Name:           yast2-fcoe-client
-Version:        5.0.0
+Version:        5.0.1
 Release:        0
 Summary:        YaST2 - Configuration of Fibre Channel over Ethernet
 License:        GPL-2.0-only
@@ -25,7 +25,6 @@ Group:          System/YaST
 URL:            https://github.com/yast/yast-fcoe-client
 Source0:        %{name}-%{version}.tar.bz2
 BuildRequires:  perl-XML-Writer
-BuildRequires:  update-desktop-files
 BuildRequires:  yast2
 BuildRequires:  yast2-devtools >= 4.4.0
 BuildRequires:  yast2-network >= 4.5.5
