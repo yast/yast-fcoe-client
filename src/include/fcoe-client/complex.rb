@@ -25,7 +25,7 @@
 # Authors:	Gabriele Mohr <gs@suse.de>
 #
 
-require "shellwords"
+require "y2fcoe_client/actions"
 
 module Yast
   module FcoeClientComplexInclude
@@ -335,77 +335,21 @@ module Yast
         )
         AdjustButtons()
       elsif action == :retry
-        FcoeClient.ResetNetworkCards
-        netcards = FcoeClient.DetectNetworkCards(FcoeClient.ProbeNetcards)
-        FcoeClient.SetNetworkCards(netcards)
+        FcoeClient.ReadNetworkCards
         ShowInterfaces()
       elsif action == :create
-        # haendel:~/:[0]# fipvlan -c -s eth3
-        # Fibre Channel Forwarders Discovered
-        # interface       | VLAN | FCF MAC
-        # ------------------------------------------
-        # eth3            | 200  | 00:0d:ec:a2:ef:00
-        # Created VLAN device eth3.200
-        # Starting FCoE on interface eth3.200
-
-        card = FcoeClient.GetCurrentNetworkCard
+        action = Y2FcoeClient::Actions::Create.new(FcoeClient.current_card)
+        card = action.card
+        dev_name = card.fetch("dev_name", "")
         Builtins.y2milestone("Selected card: %1", card)
-        dev_name = Ops.get_string(card, "dev_name", "")
-        vlan_interface = card.fetch("vlan_interface", "") # eg. "200"
 
-        configured_vlans = FcoeClient.IsConfigured(dev_name)
-
-        if configured_vlans != []
-          Builtins.y2milestone(
-            "Configured VLANs on %1: %2",
-            dev_name,
-            configured_vlans
-          )
-
-          if Builtins.contains(configured_vlans, "0")
-            # text of an error popup
-            Popup.Error(
-              Builtins.sformat(
-                _("Cannot start FCoE on VLAN interface %1\n" +
-                    "because FCoE is already configured on\n" +
-                    "network interface %2 itself."),
-                vlan_interface, dev_name
-              )
-            )
-            return nil
-          end
-          if vlan_interface == "0"
-            # text of an error popup
-            Popup.Error(
-              Builtins.sformat(
-                _("Cannot start FCoE on network interface %1 itself\n" +
-                    "because FCoE is already configured on\n" +
-                    "VLAN interface(s) %2."),
-                dev_name, configured_vlans
-              )
-            )
-            return nil
-          end
-          Popup.Warning(
-            Builtins.sformat(
-              "FCoE VLAN interface(s) %1 already configured on %2.",
-              configured_vlans,
-              dev_name
-            )
-          )
+        issues = action.validate
+        if issues.error?
+          Popup.Error(issues.find(&:error?).message)
+          return nil
+        elsif issues.any?
+          Popup.Warning(issues.first.message)
         end
-
-        if card["auto_vlan"] == "yes" || vlan_interface == "0"
-          command = "/usr/sbin/fipvlan -c -s -f '-fcoe' #{dev_name.shellescape}"
-        else
-          command = "/usr/sbin/fipvlan -c -s #{dev_name.shellescape}"
-        end
-
-        output = {}
-        fcoe_vlan_interface = ""
-        status_map = {}
-
-        ifcfg_file = "/etc/sysconfig/network/ifcfg-#{dev_name}.#{vlan_interface}"
 
         # headline of a popup: creating and starting Fibre Channel over Ethernet
         ret = Popup.YesNoHeadline(
@@ -415,65 +359,25 @@ module Yast
             _("Do you really want to create a FCoE network\n" +
                 "interface for discovered VLAN interface %1\n" +
                 "on %2 and start the FCoE initiator?"),
-            vlan_interface, dev_name
+            card.fetch("vlan_interface", ""), dev_name
           )
         )
         if ret == true
-          if Stage.initial # first stage of installation - create and start FCoE VLAN interface
-            # execute command, e.g. 'fipvlan -c -s eth3'
-
-            Builtins.y2milestone("Executing command: %1", command)
-            output = SCR.Execute(path(".target.bash_output"), command)
-            Builtins.y2milestone("Output: %1", output)
-
-            if Ops.get_integer(output, "exit", 255) != 0
-              # text of an error popup
-              Popup.Error(
-                Builtins.sformat(
-                  _("Cannot create and start FCoE on %1."),
-                  dev_name
-                )
+          issues = action.execute
+          if issues.any?
+            if FcoeClient.TestMode
+              Popup.Warning(
+                _("Creating FCoE interface failed.\nContinue because running in test mode")
               )
-              return nil
-            end # installed system - if VLAN already exists only start FCoE
-          else
-            # if /etc/sysconfig/network/ifcfg-<if>.<vlan> already exists
-            # call 'ifup' for the interface (creates /proc/net/vlan/<if>.<vlan>)
-            if FileUtils.Exists(ifcfg_file)
-              cmd_ifup = Builtins.sformat("/usr/sbin/ifup %1.%2", dev_name.shellescape, vlan_interface.shellescape)
-              Builtins.y2milestone("Executing command: %1", cmd_ifup)
-              output = Convert.to_map(
-                SCR.Execute(path(".target.bash_output"), cmd_ifup)
-              )
-              Builtins.y2milestone("Output: %1", output)
-
-              if Ops.get_integer(output, "exit", 255) == 0
-                # only start FCoE
-                command = Builtins.sformat("/usr/sbin/fipvlan -s %1", dev_name.shellescape)
-              end
-            end
-
-            Builtins.y2milestone("Executing command: %1", command)
-            output = SCR.Execute(path(".target.bash_output"), command)
-            Builtins.y2milestone("Output: %1", output)
-            if Ops.get_integer(output, "exit", 255) != 0
-              if !FcoeClient.TestMode
-                # text of an error popup: command failed on the network interface
+            else
+              if Stage.initial
                 Popup.Error(
-                  Builtins.sformat(
-                    _("Command \"%1\" on %2 failed."),
-                    command,
-                    dev_name
-                  )
+                  Builtins.sformat(_("Cannot create and start FCoE on %1."), dev_name)
                 )
-                return nil
               else
-                Popup.Warning(
-                  _(
-                    "Creating FCoE interface failed.\nContinue because running in test mode"
-                  )
-                )
+                Popup.Error(issues.first.message)
               end
+              return nil
             end
           end
         else
@@ -481,87 +385,10 @@ module Yast
           return nil
         end
 
-        # Get values and exchange list (table) entries
-
-        if Ops.get_string(card, "vlan_interface", "") == "0"
-          # for VLAN interface "0" there isn't an entry in /proc/net/vlan/config
-          fcoe_vlan_interface = Ops.get_string(card, "dev_name", "") # get interface from /proc/net/vlan/config
-        else
-          fcoe_vlan_interface = FcoeClient.GetFcoeVlanInterface(
-            Ops.get_string(card, "dev_name", ""),
-            Ops.get_string(card, "vlan_interface", "")
-          )
-        end
-
-        if fcoe_vlan_interface != ""
-          # write config for FCoE VLAN interface
-          status_map = FcoeClient.CreateFcoeConfig(fcoe_vlan_interface, card)
-          Builtins.y2milestone("GOT status map: %1", status_map)
-
-          # command to be able to revert the creation of FCoE VLAN interface in case of 'Cancel'
-          # FcoeClient::AddRevertCommand( sformat("fcoeadm -d %1 && vconfig rem %2", status_map["cfg_device"]:"", fcoe_vlan_interface ) );
-          # 'fcoeadm -d <if>/<if>.<vlan>' fails here, 'vconfig rem <if>.<vlan>' succeeds
-          # and removes the interface properly (tested on SP2 RC1)
-          # TODO: Retest for SLES12
-          FcoeClient.AddRevertCommand(
-            Builtins.sformat("/usr/sbin/vconfig rem %1", fcoe_vlan_interface.shellescape)
-          )
-        else
-          fcoe_vlan_interface = FcoeClient.NOT_CONFIGURED
-        end
-
-        # set new values in global map network_interfaces
-        Ops.set(card, "fcoe_vlan", fcoe_vlan_interface)
-        Ops.set(
-          card,
-          "fcoe_enable",
-          Ops.get_string(status_map, "FCOE_ENABLE", "")
-        )
-        Ops.set(
-          card,
-          "dcb_required",
-          Ops.get_string(status_map, "DCB_REQUIRED", "")
-        )
-        Ops.set(card, "auto_vlan", Ops.get_string(status_map, "AUTO_VLAN", ""))
-        Ops.set(
-          card,
-          "cfg_device",
-          Ops.get_string(status_map, "cfg_device", "")
-        )
-        FcoeClient.SetModified(true)
-
-        FcoeClient.SetNetworkCardsValue(FcoeClient.current_card, card)
-        Builtins.y2milestone(
-          "Current network interfaces: %1",
-          FcoeClient.GetNetworkCards
-        )
-
-        # replace values in table
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 4),
-          fcoe_vlan_interface
-        )
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 5),
-          @yes_no_mapping[status_map["FCOE_ENABLE"]]
-        )
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 6),
-          @yes_no_mapping[status_map["DCB_REQUIRED"]]
-        )
-        UI.ChangeWidget(
-          Id(:interfaces),
-          Cell(FcoeClient.current_card, 7),
-          @yes_no_mapping[status_map["AUTO_VLAN"]]
-        )
-        AdjustButtons()
+        Builtins.y2milestone("Current network interfaces: %1", FcoeClient.GetNetworkCards)
+        RefreshCurrentCard()
       elsif action == :remove
         card = FcoeClient.GetCurrentNetworkCard
-        output = {}
-        command = ""
         # popup text: really remove FCoE VLAN interface
         popup_text = Builtins.sformat(
           _("Do you really want to remove the FCoE interface %1?"),
@@ -597,161 +424,46 @@ module Yast
         ) # default: Cancel
 
         if ret == true
-          Builtins.y2milestone(
-            "Removing %1",
-            Ops.get_string(card, "fcoe_vlan", "")
-          )
+          action = Y2FcoeClient::Actions::Remove.new(FcoeClient.current_card)
+          issues = action.execute
 
-          # call fcoeadm -d <fcoe_vlan> first (bnc #719443)
-          command = Builtins.sformat(
-            "/usr/sbin/fcoeadm -d %1",
-            Ops.get_string(card, "cfg_device", "").shellescape
-          )
-          Builtins.y2milestone("Calling %1", command)
-          output = SCR.Execute(path(".target.bash_output"), command)
-          Builtins.y2milestone("Output: %1", output)
-
-          if Ops.get_integer(output, "exit", 255) == 0 || FcoeClient.TestMode
-            command = Builtins.sformat(
-              "/usr/sbin/vconfig rem %1",
-              Ops.get_string(card, "fcoe_vlan", "").shellescape
-            )
-            Builtins.y2milestone("Calling %1", command)
-            output = Convert.to_map(
-              SCR.Execute(path(".target.bash_output"), command)
-            )
-            Builtins.y2milestone("Output: %1", output)
-
-            if Ops.get_integer(output, "exit", 255) == 0 || FcoeClient.TestMode
-              del_cfg = true
-              # check whether /etc/fcoe/cfg-file is also used for another VLAN interface.
-              # Example: eth1 have FCoE configured on VLAN 200 and 300 with AUTO_VLAN="yes"
-              #          -> /etc/fcoe/cfg-eth1 applies to both.
-              interfaces = FcoeClient.GetNetworkCards
-
-              Builtins.foreach(interfaces) do |interface|
-                if Ops.get_string(interface, "dev_name", "") ==
-                    Ops.get_string(card, "dev_name", "") &&
-                    Ops.get_string(interface, "vlan_interface", "") !=
-                      Ops.get_string(card, "vlan_interface", "") &&
-                    Ops.get_string(interface, "cfg_device", "") ==
-                      Ops.get_string(card, "cfg_device", "")
-                  Builtins.y2milestone(
-                    Builtins.sformat(
-                      "/etc/fcoe/cfg-%1 also used for VLAN %2",
-                      Ops.get_string(card, "cfg_device", ""),
-                      Ops.get_string(interface, "vlan_interface", "")
-                    )
-                  )
-                  del_cfg = false
-                end
-              end
-
-              if del_cfg
-                command = Builtins.sformat(
-                  "/usr/bin/rm /etc/fcoe/cfg-%1",
-                  Ops.get_string(card, "cfg_device", "").shellescape
-                )
-                Builtins.y2milestone("Calling %1", command)
-                output = SCR.Execute(path(".target.bash_output"), command)
-                Builtins.y2milestone("Output: %1", output)
-              else
-                Builtins.y2milestone(
-                  Builtins.sformat(
-                    "/etc/fcoe/cfg-%1 not deleted",
-                    Ops.get_string(card, "cfg_device", "")
-                  )
-                )
-              end
-
-              if Ops.get_string(card, "vlan_interface", "") != "0"
-                command = Builtins.sformat(
-                  "/usr/bin/rm /etc/sysconfig/network/ifcfg-%1",
-                  Ops.get_string(card, "fcoe_vlan", "").shellescape
-                )
-                Builtins.y2milestone("Calling %1", command)
-                output = Convert.to_map(
-                  SCR.Execute(path(".target.bash_output"), command)
-                )
-                Builtins.y2milestone("Output: %1", output)
-              else
-                Builtins.y2milestone(
-                  Builtins.sformat(
-                    "/etc/sysconfig/network/ifcfg-%1 not deleted",
-                    Ops.get_string(card, "fcoe_vlan", "")
-                  )
-                )
-              end
-              # set new values in global map network_interfaces
-              Ops.set(card, "fcoe_vlan", FcoeClient.NOT_CONFIGURED)
-              Ops.set(card, "fcoe_enable", "yes")
-              # exception for Broadcom cards: DCB_REQUIRED should be set to "no" (bnc #728658)
-              Ops.set(
-                card,
-                "dcb_required",
-                Ops.get_string(card, "driver", "") != "bnx2x" &&
-                  Ops.get_string(card, "dcb_capable", "") == "yes" ? "yes" : "no"
-              )
-              Ops.set(card, "auto_vlan", "yes") # default is "yes" (bnc #724563)
-              Ops.set(card, "cfg_device", "")
-              FcoeClient.SetModified(true)
-
-              FcoeClient.SetNetworkCardsValue(FcoeClient.current_card, card)
-              Builtins.y2milestone(
-                "Current network interfaces: %1",
-                FcoeClient.GetNetworkCards
-              )
-
-              # replace values in table
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 4),
-                card["fcoe_vlan"] || ""
-              )
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 5),
-                @yes_no_mapping[card["fcoe_enable"]]
-              )
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 6),
-                @yes_no_mapping[card["dcb_required"]]
-              )
-              UI.ChangeWidget(
-                Id(:interfaces),
-                Cell(FcoeClient.current_card, 7),
-                @yes_no_mapping[card["auto_vlan"]]
-              )
-              AdjustButtons()
-            else
-              Popup.Error(
-                Builtins.sformat(
-                  _("Removing of interface %1 failed."),
-                  Ops.get_string(card, "fcoe_vlan", "")
-                )
-              )
-              Builtins.y2error(
-                "Removing of interface %1 failed",
-                Ops.get_string(card, "fcoe_vlan", "")
-              )
-            end
+          if issues.any?
+            Popup.Error(issues.first.message)
           else
-            Popup.Error(
-              Builtins.sformat(
-                _("Destroying interface %1 failed."),
-                Ops.get_string(card, "fcoe_vlan", "")
-              )
-            )
-            Builtins.y2error(
-              "Destroying interface %1 failed",
-              Ops.get_string(card, "fcoe_vlan", "")
-            )
+            Builtins.y2milestone("Current network interfaces: %1", FcoeClient.GetNetworkCards)
+            RefreshCurrentCard()
           end
         end
       end
 
       nil
+    end
+
+    # Replace values in table
+    def RefreshCurrentCard
+      card = FcoeClient.GetCurrentNetworkCard
+
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 4),
+        card["fcoe_vlan"] || ""
+      )
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 5),
+        @yes_no_mapping[card["fcoe_enable"]]
+      )
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 6),
+        @yes_no_mapping[card["dcb_required"]]
+      )
+      UI.ChangeWidget(
+        Id(:interfaces),
+        Cell(FcoeClient.current_card, 7),
+        @yes_no_mapping[card["auto_vlan"]]
+      )
+      AdjustButtons()
     end
 
     def HandleConfigurationDialog(_id, _event)

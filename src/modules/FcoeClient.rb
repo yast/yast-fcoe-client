@@ -411,6 +411,17 @@ module Yast
       nil
     end
 
+    # Refresh list of detected card
+    def ReadNetworkCards(silent: false)
+      ResetNetworkCards()
+      netcards = DetectNetworkCards(ProbeNetcards(), silent: silent)
+      if netcards.empty?
+        Builtins.y2error("Detecting netcards FAILED") unless silent
+      else
+        SetNetworkCards(netcards)
+      end
+    end
+
     #
     # Check whether fcoe-utils is installed and do installation if user agrees
     # (dependencies: 'open-lldp', 'libhbalinux2' and 'libHBAAPI2')
@@ -849,8 +860,6 @@ module Yast
     # Check status of services 'fcoe' and 'lldpad' and start them if required
     #
     def ServiceStatus
-      success = true
-
       # Loading of modules in Stage::initial() is not required 
       # (like done in IscsiClientLib)
       # SLES11 SP3: /etc/init.d/boot.fcoe, line 86 
@@ -859,31 +868,12 @@ module Yast
       # SLES12:     Service.Start in inst-sys uses '/bin/service_start' to run
       #             commands from /usr/lib/systemd/system/fcoe.service
       #             (including modprobe)
-      ret = true
 
       # start services during installation
-      if Stage.initial
-        # start service lldpad first
-        @lldpad_started = Service.Start("lldpad")
-        if @lldpad_started
-          log.info("Service lldpad started")
-        else
-          log.error("Cannot start service lldpad")
-          Report.Error(_("Cannot start service 'lldpad'"))
-          ret = false
-        end
+      return ServiceStatusInst() if Stage.initial
 
-        @fcoe_started = Service.Start("fcoe")
-        if @fcoe_started
-          log.info("Service fcoe started")
-        else
-          log.error("Cannot start service fcoe")
-          Report.Error(_("Cannot start service 'fcoe'"))
-          ret = false
-        end
-
-        return ret
-      end
+      success = true
+      ret = true
 
       # start sockets in installed system
       # throw exception if sockets not found
@@ -939,6 +929,36 @@ module Yast
           Report.Error(_("Cannot start fcoe service."))
           ret = false
         end
+      end
+
+      ret
+    end
+
+    #
+    # Same than ServiceStatus, but containing only the functionality to be used during installation
+    # (when Stage.initial). If in doubt, use ServiceStatus which will work and do the correct thing
+    # in all stages.
+    #
+    def ServiceStatusInst(silent: false)
+      ret = true
+
+      # start service lldpad first
+      @lldpad_started = Service.Start("lldpad")
+      if @lldpad_started
+        log.info("Service lldpad started")
+      else
+        log.error("Cannot start service lldpad")
+        Report.Error(_("Cannot start service 'lldpad'")) unless silent
+        ret = false
+      end
+
+      @fcoe_started = Service.Start("fcoe")
+      if @fcoe_started
+        log.info("Service fcoe started")
+      else
+        log.error("Cannot start service fcoe")
+        Report.Error(_("Cannot start service 'fcoe'")) unless silent
+        ret = false
       end
 
       ret
@@ -1026,7 +1046,7 @@ module Yast
     # Get the network cards and check Fcoe status
     # @param netcards [Array<Hash>] .probe.netcard output
     # @return [Array<Interface>]
-    def DetectNetworkCards(netcards)
+    def DetectNetworkCards(netcards, silent: false)
       return [] if netcards == nil
 
       net_devices = []
@@ -1100,16 +1120,18 @@ module Yast
                                    "Cannot read config file for %1 in /etc/fcoe",
                                    fcoe_vlan_interface
                                    )
-                Report.Warning(
-                  Builtins.sformat(
-                    _(
-                        "Cannot read config file for %1.\n" +
+                if !silent
+                  Report.Warning(
+                    Builtins.sformat(
+                      _(
+                          "Cannot read config file for %1.\n" +
                           "You may edit the settings and recreate the FCoE\n" +
                           "VLAN interface to get a valid configuration."
                       ),
                       fcoe_vlan_interface
                     )
                   )
+                end
                 # set interface to NOT_CONFIGURED
                 fcoe_vlan_interface = @NOT_CONFIGURED
               end # if status_map == {}
